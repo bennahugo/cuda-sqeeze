@@ -1,0 +1,7 @@
+Guys
+
+1. write stuff in your dividers
+2. we need to come together and decide on a style (edit the default.css)
+3. dunno if you want more javascript/php stuff... but we dont have a hell of a lot of time so i suggest keep it simple
+4. WHY this? wix doesn't support exporting without premium account.... :(
+
