@@ -22,3 +22,25 @@ div.tabContent {
 div.tabContent.hide { 
 	display: none; 
 } 
+
+h1.ProjectTitle {
+vertical-align: middle;
+}
+
+p.basictext {
+}
+
+p.instructions {
+color: #7f3f3f;
+font-style: italic;
+}
+
+p.TODO {
+  color: red;
+  text-decoration: blink;
+}
+
+iframe.individualpages {
+  border: none;
+  display: block; 
+}
