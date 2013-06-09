@@ -51,7 +51,7 @@ p.basictext {
 }
 
 p.instructions {
-color: #7f3f3f;
+color: #3f3f7f;
 font-style: italic;
 }
 
@@ -63,4 +63,8 @@ p.TODO {
 iframe.individualpages {
   border: none;
   display: block; 
+}
+h1.indivHeading1{
+	font-family: "Impact", "Charcoal", sans-serif;
+	font-weight: normal;
 }
