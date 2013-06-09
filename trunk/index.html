@@ -30,15 +30,15 @@ CUDA squeeze web site
 </div>
 <!--Define the tabs-->
 <ul id="tabs">
-  <li><a href="#synopsis">Project synopsis</a></li>
+  <li><a href="#synopsis">Project Synopsis</a></li>
   <li><a href="#supervision">Supervision</a></li>
-  <li><a href="#benCorner">Benjamin's corner</a></li>
-  <li><a href="#brandonCorner">Brandon's corner</a></li>
-  <li><a href="#straussCorner">Strauss' corner</a></li>
+  <li><a href="#benCorner">Benjamin's Corner</a></li>
+  <li><a href="#brandonCorner">Brandon's Corner</a></li>
+  <li><a href="#straussCorner">Strauss' Corner</a></li>
 </ul>
 <!--Define tab pages-->
 <div class="tabContent" id="synopsis">
-  <h2>About CUDA Squeeze</h2>
+  <h2 class="indivHeading1">About CUDA Squeeze</h2>
   <div>
     <p class="TODO">TODO: WRITE STUFF HERE CHECK ANNE'S ANNOUNCEMENT</p>
     <p class="instructions">Your project Web pages contain material relevant to the project as a whole and to your individual
@@ -48,26 +48,45 @@ project is a web-accessible application, you must add an absolute link from the 
 the Web application, labelling it as a non-permanent external link. Please be sparing with external
 links and only link to well-established sites that are likely to remain for a long time.
 The entry point to the project is the project (group) Web page. This must indicate the
-accomplishments of the project and have the documents produced jointly by the team (like the pro-
-ject proposal). In future this will be the first impression people get of the work you did for your hon-
-ours project. The main entry page must be called index.html and must be located in the root directory
+accomplishments of the project and have the documents produced jointly by the team (like the project proposal). 
+In future this will be the first impression people get of the work you did for your honours project. 
+The main entry page must be called index.html and must be located in the root directory
 of the website</p><p class="instructions">
 Individual Web sites are a statement of the work of the individual. A mark is assigned for this
 when the Web pages are evaluated. All supporting documentation must be part of each Web site.
 Document files must be in a portable format (e.g., PDF, HTML), with Microsoft Word and LaTeX
 files converted as needed. Source code should be linked into Web pages as compressed archives.</p>
+<p class="basicText">The SKA (Square Kilometer Array) South Africa requires a compression algorithm that offers reasonable compression ratios, as well as being fast enough to keep up with the antenna output rates. 
+This need arises due
+to the requirement of saving streaming data onto a storage system and reading queries from that system
+simultaneously. This is where the focus of our project lies. We will be taking streaming data from correlators
+and beamformers (which combines pairs of data channels from the antennae) and compress the data-stream
+using GPGPU (General-Purpose Computing on Graphical Processing Units) in order to achieve the speeds
+that SKA requires, while maintaining reasonable compression ratios. We operate as a &lquot;shim&rquot; between the Compute Nodes and the storage sub-system.</p>
   </div>
 </div>
 <div class="tabContent" id="supervision">
   <h2>About our supervisors</h2>
   <div>
     <p class="TODO">TODO: WRITE STUFF HERE ABOUT JAMES, PATRICK AND JASON</p>
+    <h3>Associate-Professor James Gain</h3>
+    <p>Professor James Gain completed his Masters at Rhodes University with distinction in 1995. After two years of teaching, he moved on to complete his Doctorate at Cambridge University.</p>
+    <p>He has been a Senior Lecturer at the University of Cape Town since 2000 and was promoted to Associate-Professor in December 2009.</p>
+    <h3>Doctor Patrick Marais</h3>
+    
+    <h3>Jason Manley (external advisor)</h3>
+    
+    <ul>
+    <li><a class="extSupervisor" href="http://people.cs.uct.ac.za/~jgain/">Associate-Professor James Gain (external)</a></li>
+    <li><a class="extSupervisor" href="http://people.cs.uct.ac.za/~patrick/">Doctor Patrick Marais (external)</a></li>
+    <li><a class="extSupervisor" href="http://www.ska.ac.za/">Jason Manley (external)</a></li>
+    </ul>
   </div>
 </div>
 <div class="tabContent" id="benCorner">
- <h1>Overview</h1>
+ <h1 class="indivHeading1">Overview</h1>
  <p>As we stated in the synopsis our goal is to develop 3 algorithms for compressing the 32 bit floating point radio astronomy data
-	  of the Square Kilometer Array (SKA). Altough each of the group members are investigating a particular compression scheme, our goal is
+	  of the Square Kilometer Array (SKA). Although each of the group members are investigating a particular compression scheme, our goal is
 	  to publish our findings jointly in order to establish which of the 3 schemes performs best in terms of the tradeoff between throughput 
 	  and compression ratio.</p>
 	  <p>I will be investigating a predictive compression scheme. In such a scheme the streaming data is divided into chunks which can be
@@ -92,7 +111,18 @@ files converted as needed. Source code should be linked into Web pages as compre
  <!--     <h2>Strauss's section</h2> -->
   <div>
     <!--     <iframe class="individualpages" src="import/strauss.html"/> -->
-    <p>Blank</p>
+    <h1 class="indivHeading1">Zero-Length Encoding</h1>
+    <p class="basicText">The third implemented algorithm will be Zero-Length Encoding, a derivative of Run-Length Encoding, which I will investigate.</p>
+    <p class="basicText">Zero-Length Encoding is basically run-length encoding, just performed on the binary representation of data.
+In Zero-Length Encoding you run through the data and replace sections of the binary stream where there are
+multiple 0s or 1s with the number of repetitions and what is repeating, Eg. 1000001 becomes 1(5)01. where
+the (5) is a tag to say it is a number representation and the 5 to tell how many 0s there are.
+This is a viable option because the data samples we receive are skewed towards the least-significant bits.
+</p>
+<p class="basicText">This algorithm should be tweaked to efficiently handle the various patterns the data will follow, which are dependent on the number of dishes in use for a particular observation and the spectrum being captured.</p>
+    <p class="basicText">Again, a SSE- and AVX-enabled CPU version will be done, followed by a GPU-optimised implementation.</p
+    <p class="basicText">This allows for a cohesive comparison of the different methods, excluding Arithmetic Coding which was shown in practice (by our supervisors, et al.) to provide insufficient throughput for our purposes in 2012.</p>
+    <!-- <p>Blank</p> -->
   </div>
 </div>
 </body>
