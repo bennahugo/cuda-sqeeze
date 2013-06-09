@@ -113,9 +113,19 @@ that SKA requires, while maintaining reasonable compression ratios. We operate a
  	<br>
  	<br>
  	This algorithm can be done for streaming data by making a small adjustment. Each new value that is read is placed into a list which shows each unique value, and how many times that value has been seen so far. 
- 	At each stage it then calculates the new values (if needed) and continues using the new value, making note of the change. It can then decompress the file since it knows the change took place, and when. 
+ 	At each stage it then calculates the new values (if needed) and continues using the new value, making note of the change. It can then decompress the file since it knows the change took place, and when.
+ 	<br>
+ 	<br>
+ 	Three versions of the algorithm are to be made:
  </p>
- <h3><a href="http://darkjaguar.99k.org/">Brandons Site.</a></h3>
+ <ul>
+ 	<li>Sequential CPU - Normal Adaptive Huffman Coding algorithm</li>
+ 	<li>Fully Multi-threaded CPU - Complient to SSE and AVX-Enabled CPU version of the Adaptive Huffman coding algorithm</li>
+ 	<li>GPU - A GPU implementation of the Adaptive Huffman Coding algorithm</li>
+ </ul>
+ <p>
+ 	Tests will then be done to see if it is capapble of meeting SKAs requirements, and if the CUDA inplementation is even worth the effort.
+ </p>
 </div>
 <div class="tabContent" id="straussCorner">
  <!--     <h2>Strauss's section</h2> -->

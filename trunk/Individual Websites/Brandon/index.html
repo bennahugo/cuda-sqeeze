@@ -12,16 +12,50 @@
 			</div>
 			<div id="nav">
 				<ul>
-					<li><a href="http://darkjaguar.99k.org/">Home</a></li>
+					<li><a href="./index.html">Home</a></li>
   					<li><a href="./Algorithm.html">Algorithm</a></li>
-  					<li><a href="#">Results</a></li>
-  					<li style="border-right: medium none;"><a href="#">about</a></li>
+  					<li><a href="./Results.html">Results</a></li>
+  					<li style="border-right: medium none;"><a href="./About.html">About</a></li>
 				</ul>
 			</div>
 			<div id="site-content">
 				<h1 class="h-text-1">Project</h1>
 				<p class="text-1">
-					CUDA-SQUEEZE is a comression project for SKA (Square Kilometer Array) South Africa.
+					CUDA-SQUEEZE is a UCT Computer Science Honours comression project for SKA (Square Kilometer Array) South Africa.
+				</p>
+				<h2 class="h-text-2">Aim</h2>
+				<p class="text-1">
+					The aim is to create an algorithm that can compress the data from the SKA dishes for storage in "Real Time" (Without 
+					the compression slowing it down). The current speed of data input from the dishes is 2 terra-samples of 10-bit 
+					floating point data per second, sent through FPGAs to convert each value to a 32-bit floating point value (Figure 1). 
+					This is equivalent to 2.2 Terra-bytes (TB) per second. Since the data is then send through networks, this is brought 
+					down to an aproximate 36 Giga-Bytes (GB) per second. Thus in order to acheive the "Real Time" compression 
+					we will need to acheive an aproximation of 37GB per second of incoming data.
+				</p>
+				<div align="center" style="color: white">
+					<img src="images/ProcessFig1.png" alt="" widht="900px" height="450px"/>
+					<P>
+						Figure 1
+					</P>
+				</div>
+				<h2 class="h-text-2">Process</h2>
+				<p class="text-1">
+					In order to find the best possible algorithm for SKA the Honours Group I am in decided to make 3 different algorithms 
+					(One for each person in the group):
+				</p>
+				<div style="margin-left:50px;" >
+					<ul class="list-1">
+						<li><a href="#">Benjamin Hugo -> Predictive method</a></li>
+						<li><a href="./Algorithm.html">Brandon Talbot -> Huffman Coding</a></li>
+						<li><a href="#">Heinrich Strauss -> Zero Length Coding</a></li>
+					</ul>
+				</div>
+				<p class="text-1">
+					A sequential CPU algorithm, fully multithreaded CPU algorithm and a GPU algorithm will be made for all compression methods 
+					listed above. This will allow us to determine if the algorithm is worth running on the GPU, or even if the CPU method is 
+					a good candidate.
+					<br>
+					It will also allow us to compare algorithms to determine the best possible method for SKA's needs. 
 				</p>
 			</div>
 			<div id="footer">
@@ -30,7 +64,10 @@
 					&copy; Copyright 2013. Designed by Brandon James Talbot 
 				</p>
 				<ul class="footer-nav">
-  					<li><a href="#">Home</a></li>
+  					<li><a href="./index.html">Home</a></li>
+  					<li><a href="./Algorithm.html">Algorithm</a></li>
+  					<li><a href="./Results.html">Results</a></li>
+  					<li><a href="./About.html">About</a></li>
 				</ul>
 			</div>
 		</div>
