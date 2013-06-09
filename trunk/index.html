@@ -38,12 +38,12 @@ CUDA squeeze web site
 </ul>
 <!--Define tab pages-->
 <div class="tabContent" id="synopsis">
-  <h2 class="indivHeading1">About CUDA Squeeze</h2>
+  <h1 class="indivHeading1">About CUDA Squeeze</h2>
   <div>
     <p class="TODO">TODO: WRITE STUFF HERE CHECK ANNE'S ANNOUNCEMENT</p>
     <p class="instructions">Your project Web pages contain material relevant to the project as a whole and to your individual
 contribution to the project. The Web site must be self-contained with relative links only. Web sites
-must be completely static — this means no PHP, ASP, server-side JS or any such scripts. If your
+must be completely static -- this means no PHP, ASP, server-side JS or any such scripts. If your
 project is a web-accessible application, you must add an absolute link from the project Web site to
 the Web application, labelling it as a non-permanent external link. Please be sparing with external
 links and only link to well-established sites that are likely to remain for a long time.
@@ -61,25 +61,26 @@ This need arises due
 to the requirement of saving streaming data onto a storage system and reading queries from that system
 simultaneously. This is where the focus of our project lies. We will be taking streaming data from correlators
 and beamformers (which combines pairs of data channels from the antennae) and compress the data-stream
-using GPGPU (General-Purpose Computing on Graphical Processing Units) in order to achieve the speeds
-that SKA requires, while maintaining reasonable compression ratios. We operate as a &lquot;shim&rquot; between the Compute Nodes and the storage sub-system.</p>
+using optimised CPU (with SSE and AVX) and GPGPU (General-Purpose Computing on Graphical Processing Units) implementations in order to achieve the speeds
+that SKA requires, while maintaining reasonable compression ratios. We operate as a 'shim' between the Compute Nodes and the storage sub-system.</p>
   </div>
 </div>
 <div class="tabContent" id="supervision">
-  <h2>About our supervisors</h2>
+  <h1 class="indivHeading1">About our supervisors</h2>
   <div>
     <p class="TODO">TODO: WRITE STUFF HERE ABOUT JAMES, PATRICK AND JASON</p>
-    <h3>Associate-Professor James Gain</h3>
-    <p>Professor James Gain completed his Masters at Rhodes University with distinction in 1995. After two years of teaching, he moved on to complete his Doctorate at Cambridge University.</p>
-    <p>He has been a Senior Lecturer at the University of Cape Town since 2000 and was promoted to Associate-Professor in December 2009.</p>
-    <h3>Doctor Patrick Marais</h3>
-    
-    <h3>Jason Manley (external advisor)</h3>
-    
+    <h3 class="supervisorTitle">Associate-Professor James Gain</h3>
+    <p class="basicText">Professor James Gain completed his Masters at Rhodes University with distinction in 1995. After two years of teaching, he moved on to complete his Doctorate at Cambridge University.</p>
+    <p class="basicText">He has been a Senior Lecturer at the University of Cape Town since 2000 and was promoted to Associate-Professor in December 2009.</p>
+    <h3 class="supervisorTitle">Doctor Patrick Marais</h3>
+    <p class="basicText">Doctor Patrick Marais completed his Masters in Computer Science at the University of Cape Town in 1994 and his Doctorate in Engineering Science at Oxford University in 1997.</p>
+    <p class="basicText">He currently occupies a Senior Lecturer post at the University of Cape Town and is a member of the Collaborative Visual Computing (CVC) and High-Performance Computing (HPC) laboratories.</p> 
+    <h3 class="supervisorTitle">Jason Manley (external advisor)</h3>
+    <p class="basicText">Jason Manley is a Digital Design Engineer and Digital Signal Processing specialist at the SKA office in Pinelands.</p>
+    <p class="basicText">Jason has provided valuable insight into the SKA architecture and serves as our external advisor.</p>
     <ul>
     <li><a class="extSupervisor" href="http://people.cs.uct.ac.za/~jgain/">Associate-Professor James Gain (external)</a></li>
     <li><a class="extSupervisor" href="http://people.cs.uct.ac.za/~patrick/">Doctor Patrick Marais (external)</a></li>
-    <li><a class="extSupervisor" href="http://www.ska.ac.za/">Jason Manley (external)</a></li>
     </ul>
   </div>
 </div>
@@ -120,7 +121,7 @@ the (5) is a tag to say it is a number representation and the 5 to tell how many
 This is a viable option because the data samples we receive are skewed towards the least-significant bits.
 </p>
 <p class="basicText">This algorithm should be tweaked to efficiently handle the various patterns the data will follow, which are dependent on the number of dishes in use for a particular observation and the spectrum being captured.</p>
-    <p class="basicText">Again, a SSE- and AVX-enabled CPU version will be done, followed by a GPU-optimised implementation.</p
+    <p class="basicText">Again, a SSE- and AVX-enabled CPU version will be done, followed by a GPU-optimised implementation.</p>
     <p class="basicText">This allows for a cohesive comparison of the different methods, excluding Arithmetic Coding which was shown in practice (by our supervisors, et al.) to provide insufficient throughput for our purposes in 2012.</p>
     <!-- <p>Blank</p> -->
   </div>
