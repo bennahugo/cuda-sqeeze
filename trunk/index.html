@@ -101,12 +101,21 @@ that SKA requires, while maintaining reasonable compression ratios. We operate a
 	  multithreaded) and a GPU version of the code if time permits.</p>
 </div>
 <div class="tabContent" id="brandonCorner">
- <!--     <h2>Brandon's section</h2> -->
-  <div>
-     <!--    <iframe class="individualpages" src="import/brandon.html"/> -->
- <!--   <p class="basic">TODO: BRANDON WRITE STUFF HERE</p> -->
-     <p>Blank</p>
-  </div>
+ <h1>Algorithm</h1>
+ <h2>Huffman Coding</h2>
+ <p>
+ 	Huffman coding is a Entropy Coding algorithm, which compresses files by replacing all values in the file with shorter representations of them.
+ 	<br>
+ 	It calculates what to represent each value as by giving each unique value in the file a shorter representation, giving those values that apear the most in the file shorter representations. 
+ 	This give it a better compression than just randomly giving each unique value a new representation, since one that apears the most could have a larger representation given to it than one that only apears once.
+ 	<br>
+ 	It saves the file by placing a table with a table showing what each value was changed to, and then the stream of replaced values.
+ 	<br>
+ 	<br>
+ 	This algorithm can be done for streaming data by making a small adjustment. Each new value that is read is placed into a list which shows each unique value, and how many times that value has been seen so far. 
+ 	At each stage it then calculates the new values (if needed) and continues using the new value, making note of the change. It can then decompress the file since it knows the change took place, and when. 
+ </p>
+ <h3><a href="http://darkjaguar.99k.org/">Brandons Site.</a></h3>
 </div>
 <div class="tabContent" id="straussCorner">
  <!--     <h2>Strauss's section</h2> -->
