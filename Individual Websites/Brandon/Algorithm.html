@@ -12,10 +12,10 @@
 			</div>
 			<div id="nav">
 				<ul>
-					<li><a href="http://darkjaguar.99k.org/">Home</a></li>
+					<li><a href="./index.html">Home</a></li>
   					<li><a href="./Algorithm.html">Algorithm</a></li>
-  					<li><a href="#">Results</a></li>
-  					<li style="border-right: medium none;"><a href="#">about</a></li>
+  					<li><a href="./Results.html">Results</a></li>
+  					<li style="border-right: medium none;"><a href="./About.html">About</a></li>
 				</ul>
 			</div>
 			<div id="site-content">
@@ -32,6 +32,19 @@
 					 value in the file is replaces to. The program also has to save this table to the file in order for 
 					 the process to be reversable. 
 				</p>
+				<h2 class="h-text-2">Adaptive Huffman Coding</h2>
+				<p class="text-1">
+					Adaptive Huffman coding is very similar to normal Huffman Coding:
+					<br>
+					It allows for the algorithm to work for streaming data, data that it cant read the entire file for the unique values. 
+					This is done by keeping a data set of all unique values, how many times they have been seen already, the initial code 
+					given to that value, and the current code given to the value. This allows you to recompute the codes for all the 
+					unique values each step, to make sure you are using the correct value at each step.
+					<br>
+					The storage is also slightly different, you save the initial codes given to each value, and in the order they were 
+					created. And each replacement is stored as the code it was when the algorithm saw that value. This allows the decompression 
+					algorithm to do the same steps as the compression algorithm did to change back to the origional data.
+				</p>
 			</div>
 			<div id="footer">
 				<!--DO NOT Remove The Footer Links-->
@@ -39,7 +52,10 @@
 					&copy; Copyright 2013. Designed by Brandon James Talbot 
 				</p>
 				<ul class="footer-nav">
-  					<li><a href="#">Home</a></li>
+  					<li><a href="./index.html">Home</a></li>
+  					<li><a href="./Algorithm.html">Algorithm</a></li>
+  					<li><a href="./Results.html">Results</a></li>
+  					<li><a href="./About.html">About</a></li>
 				</ul>
 			</div>
 		</div>
