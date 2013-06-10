@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>CUDA Squeeze: A predictive compression scheme</title>
+    <meta content="">
+    <link rel="stylesheet" type="text/css" href="css/bensTheme.css">
+  </head>
+  <body>
+	  <div id="header">
+		  <table id="headerimages">
+			<tbody>
+				<tr>
+					<td id="logoCol">
+					<img id="logo" src="img/logo.png" alt="Cuda Squeeze logo"/></br>
+					<i id="subtitle">Implementation of a predictive scheme for compression of Radio Telescope Data</i>
+					</td>
+					<td id="skaLogoCol">
+					<a href="http://www.ska.ac.za"><img id="skaLogo" src="img/ska.square.logo.png" alt="SKA Project"></img></a>
+					</td>
+				</tr>
+			</tbody>
+		  </table>
+	  </div>
+	  <div id="links">
+		<table align="center">
+			<tbody>
+				<tr>
+				<td><a class="linkSelected">Overview</a></td>
+				<td><a class="link" href="news.html">News</a></td>
+				<td><a class="link" href="results.html">Results</a></td>
+				<td><a class="link" href="resources.html">Resources</a></td>
+				</tr>
+			</tbody>
+		</table>
+	  </div>
+		<div id="content">
+		<h1>About me</h1>
+		<img src="img/me.jpeg" alt="me" id="me"/><p>Hello! I'm Benjamin Hugo, an honours student in
+		the Department of Computer Science at the University of Cape Town. This is the home of my
+		section of our honours project. I will keep you up to speed on any developments through the 
+		news portal. I'm part of a three man team investigating compression of the Radio Astronomy Data
+		produced by the KAT-7 array. It is our hope that this research will form a good starting point for the
+		future toolsets addressing the big-data storage requirements of the MeerKAT project.</p>
+		<h1>My Team</h1>
+		If you wish to find out more about what my team mates are up to or our project as a whole here are the links:
+		<ul>
+			<li><a href="people.cs.uct.ac.za/~btalbot">Brandon Talbot</a> is investigating Adaptive Huffman Coding.</li>
+			<li><a href="people.cs.uct.ac.za/~hstrauss">Heinrich Strauss</a> is investigating a Zero Length Coding scheme.</li>
+			<li><a href="people.cs.uct.ac.za/~hstrauss/cudasqueeze/">Our project home</a> provides more background information, organisational information and resources.</li>
+		</ul>
+		<h1>Overview</h1>
+		<p>I will be investigating a predictive compression scheme. In such a scheme the streaming data is divided into chunks which can be
+		processed in parallel. The goal is to divide the data in such a way as to exploit dimensional coherency (lets say compressing the values
+		of a particular frequency over several time steps). Since the values will likely not change much (or change relatively slowly over the
+		duration of several steps) the prediction scheme may yield accurate predictions of consequtive values. If this is the case the difference
+		between both mantisa bits and exponent bits of the predicted value and the actual value will result in many leading zero bits, which can 
+		be stored in compressed form (saving the residual bits in uncompressed form). Such a scheme is simple and fast (see my paper litterature survey)
+		and is ideal for scenarios where throughput enjoys preference over good compression ratios.</p>
+		<p>I will be implementing both an optimised CPU version (using both a vectorised instruction set when ever possible, as well as being
+		multithreaded) and a GPU version of the code if time permits.</p>
+		</div>
+	  <div id="footer">
+		  <i id="copyright">Page design by Benjamin Hugo, 2013</i>
+	  </div>
+  </body>
+</html>
