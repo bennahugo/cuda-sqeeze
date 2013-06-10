@@ -1,0 +1,112 @@
+body{
+	background-color:#006CA6;
+	font-family: 'Lucida Grande', Verdana, Arial, Sans-Serif;
+}
+div#header{
+	width: 1024px;
+	margin-left:auto;
+	margin-right:auto;
+	background-color:#FFFFFF;
+	border-top-left-radius: 15px;
+	border-top-right-radius: 15px;
+	padding: 0px 0px 30px 0px;
+} 
+i#subtitle{
+	padding: 0px 0px 0px 50px; 
+}
+div#links{
+	width: 1024px;
+	margin-left:auto;
+	margin-right:auto;
+	background-color:#FFFFFF;
+	text-align:center;
+}
+div#links table tbody tr td{
+	width:200px;
+}
+div#content{
+	background-color:#FFFFFF;
+	width: 1024px;
+	margin-left:auto;
+	margin-right:auto;
+	padding-bottom:30px;
+}
+div#footer{
+	text-align:right;
+	border-bottom-left-radius: 15px;
+	border-bottom-right-radius: 15px;
+	background-color:#FFFFFF;
+	width: 1024px;
+	margin-left:auto;
+	margin-right:auto;
+}
+i#copyright{
+	padding: 0px 20px 0px 0px;
+	font-size:10pt;
+}
+a.linkSelected{
+	color: #ffffff; 
+	background-color: #013f58; 
+	font-weight: bold;
+	text-align: left;
+	width:100%;
+	height:30px;
+	display:block;
+	text-decoration:none;
+	text-align: center;
+}
+a.link { 
+	width:100%;
+	height:30px;
+	display:block;
+	text-decoration:none;   
+	text-align: center;
+	color:#0000ff;  
+	background-color: #AFD8ED;
+}
+a.link:hover {
+	background-color: #8b4f06;
+	color: #ffffff;
+}
+img#logo{
+	width: 400px;
+	padding: 20px 0px 0px 20px; 
+}
+img#skaLogo{
+	width:50px;
+}
+img#me{
+	width:150px;
+	float:left;
+	border-top-left-radius: 10px;
+	border-top-right-radius: 10px;
+	border-bottom-left-radius: 10px;
+	border-bottom-right-radius: 10px;
+}
+table#headerimages{
+	width: 100%;
+}
+td#skaLogoCol{
+	text-align:center;
+}
+td#logoCol{
+	text-align:left;
+}
+h1{
+	padding: 0px 0px 10px 0px;
+	margin: 0px 0px 0px 0px;
+}
+h2{
+	padding: 0px 0px 10px 0px;
+	margin: 0px 0px 0px 0px;
+}
+h3{
+	padding: 0px 0px 10px 0px;
+	margin: 0px 0px 0px 0px;
+}
+h1.newsfeed{
+	text-align: right;
+	color: #8b4f06n ;
+	background-color: #AFD8ED;
+	font-size:12pt;
+}
