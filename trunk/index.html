@@ -33,6 +33,7 @@ CUDA squeeze web site
 <ul id="tabs">
   <li><a href="#synopsis">Project Synopsis</a></li>
   <li><a href="#supervision">Supervision</a></li>
+  <li><a href="#timeline">Timeline</a></li>
   <li><a href="#benCorner">Benjamin's Corner</a></li>
   <li><a href="#brandonCorner">Brandon's Corner</a></li>
   <li><a href="#straussCorner">Strauss' Corner</a></li>
@@ -70,8 +71,7 @@ that SKA requires, while maintaining reasonable compression ratios. We operate a
 </div>
 <div class="tabContent" id="supervision">
   <h1 class="indivHeading1">About our supervisors</h2>
-  <div>
-    <!--  <p class="TODO">TODO: WRITE STUFF HERE ABOUT JAMES, PATRICK AND JASON</p> -->
+  <div>   <!--  <p class="TODO">TODO: WRITE STUFF HERE ABOUT JAMES, PATRICK AND JASON</p> -->
     <h3 class="supervisorTitle">Associate-Professor James Gain</h3>
     <p class="basicText">Professor James Gain completed his Masters at Rhodes University with distinction in 1995. After two years of teaching, he moved on to complete his Doctorate at Cambridge University.</p>
     <p class="basicText">He has been a Senior Lecturer at the University of Cape Town since 2000 and was promoted to Associate-Professor in December 2009.</p>
@@ -83,9 +83,15 @@ that SKA requires, while maintaining reasonable compression ratios. We operate a
     <p class="basicText">Jason has provided valuable insight into the SKA architecture and serves as our external advisor.</p>
     
   </div>
+</div><div class="tabContent" id="timeline">
+  <h1 class="indivHeading1">Project Timeline</h2>
+  <div>
+     <img class="timeline" src="img/ganttchart.png"/>
+ 
+  </div>
 </div>
 <div class="tabContent" id="benCorner">
- <h1 class="indivHeading1">Overview</h1>
+ <h1 class="indivHeading1">Algorithm - Predictive Compression</h1>
  <p>As we stated in the synopsis our goal is to develop 3 algorithms for compressing the 32 bit floating point radio astronomy data
 	  of the Square Kilometer Array (SKA). Although each of the group members are investigating a particular compression scheme, our goal is
 	  to publish our findings jointly in order to establish which of the 3 schemes performs best in terms of the tradeoff between throughput 
@@ -101,8 +107,7 @@ that SKA requires, while maintaining reasonable compression ratios. We operate a
 	  multithreaded) and a GPU version of the code if time permits.</p>
 </div>
 <div class="tabContent" id="brandonCorner">
- <h1>Algorithm</h1>
- <h2>Huffman Coding</h2>
+ <h1 class="indivHeading1">Algorithm - Huffman Coding</h1>
  <p>
  	Huffman coding is a Entropy Coding algorithm, which compresses files by replacing all values in the file with shorter representations of them.
  	<br>
@@ -131,7 +136,7 @@ that SKA requires, while maintaining reasonable compression ratios. We operate a
  <!--     <h2>Strauss's section</h2> -->
   <div>
     <!--     <iframe class="individualpages" src="import/strauss.html"/> -->
-    <h1 class="indivHeading1">Zero-Length Encoding</h1>
+    <h1 class="indivHeading1">Algorithm - Zero-Length Encoding</h1>
     <p class="basicText">The third implemented algorithm will be Zero-Length Encoding, a derivative of Run-Length Encoding, which I will investigate.</p>
     <p class="basicText">Zero-Length Encoding is basically run-length encoding, just performed on the binary representation of data.
 In Zero-Length Encoding you run through the data and replace sections of the binary stream where there are
