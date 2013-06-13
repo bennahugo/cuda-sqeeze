@@ -127,9 +127,9 @@ int stride::getMminTimestampIndex() const
 complexPair<float> stride::getElement(int timeStampIndex, int frequencyIndex, int correlationPairIndex) const
 {
     //validation on arguements:
-    if (timeStampIndex > fmaxTimestampIndex || 
-      frequencyIndex > fmaxFreqIndex || 
-      correlationPairIndex > fmaxCorrelationPairIndex ||
+    if (timeStampIndex > fmaxTimestampIndex - fminTimestampIndex + 1 || 
+      frequencyIndex > fmaxFreqIndex - fminFreqIndex + 1 || 
+      correlationPairIndex > fmaxCorrelationPairIndex - fminCorrelationPairIndex + 1 ||
       timeStampIndex < 0 || frequencyIndex < 0 || correlationPairIndex < 0)
       throw arguementError();
     int diffTimestamp = fmaxTimestampIndex - fminTimestampIndex + 1;
