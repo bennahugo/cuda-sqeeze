@@ -23,7 +23,8 @@
 #include <hdf5.h>
 #include <iostream>
 #include <cstring>
-
+#include "complexPair.h"
+#include "exceptions.h"
 namespace astroReader{
 class stride
 {
@@ -39,6 +40,7 @@ public:
     virtual ~stride();
     virtual stride& operator=(const stride& other);
     void print() const;
+    complexPair<float> getElement(int timeStampIndex, int frequencyIndex, int correlationPairIndex) const;
     int getMaxTimestampIndex() const;
     int getMminTimestampIndex() const; 
     int getMaxFreqIndex() const; 

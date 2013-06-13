@@ -117,4 +117,26 @@ int stride::getMminTimestampIndex() const
   return fminTimestampIndex;
 }
 
+/*
+ * Gets an element from the buffer
+ * @params timeStampIndex the index of the time stamp in question
+ * @params frequencyIndex the index of the frequency in question
+ * @params correlationPairIndex the index of the correlation pair in question
+ * @throws arguementError if one or more of the parameters are out of bounds
+ */
+complexPair<float> stride::getElement(int timeStampIndex, int frequencyIndex, int correlationPairIndex) const
+{
+    //validation on arguements:
+    if (timeStampIndex > fmaxTimestampIndex || 
+      frequencyIndex > fmaxFreqIndex || 
+      correlationPairIndex > fmaxCorrelationPairIndex ||
+      timeStampIndex < 0 || frequencyIndex < 0 || correlationPairIndex < 0)
+      throw arguementError();
+    int diffTimestamp = fmaxTimestampIndex - fminTimestampIndex + 1;
+    int diffFreq = fmaxFreqIndex - fminFreqIndex + 1;
+    int diffCorrelation = fmaxCorrelationPairIndex - fminCorrelationPairIndex + 1;
+    int offset = timeStampIndex*diffFreq*diffCorrelation*2 + frequencyIndex*diffCorrelation*2;
+    
+    return complexPair<float>(fBuffer[offset + correlationPairIndex*2],fBuffer[offset + correlationPairIndex*2 + 1]);
 }
+}//namespace astroReader

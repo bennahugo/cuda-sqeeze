@@ -51,6 +51,7 @@ ENDIF(NOT CMAKE_INSTALL_COMPONENT OR "${CMAKE_INSTALL_COMPONENT}" STREQUAL "Unsp
 IF(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
   INCLUDE("/home/benjamin/projects/CompressionStreamer/build/AstroReader/cmake_install.cmake")
+  INCLUDE("/home/benjamin/projects/CompressionStreamer/build/Compressor/cmake_install.cmake")
 
 ENDIF(NOT CMAKE_INSTALL_LOCAL_ONLY)
 

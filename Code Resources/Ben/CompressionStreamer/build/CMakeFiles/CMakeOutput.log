@@ -295,3 +295,57 @@ make[2]: Leaving directory `/home/benjamin/projects/CompressionStreamer/build/CM
 make[1]: Leaving directory `/home/benjamin/projects/CompressionStreamer/build/CMakeFiles/CMakeTmp'
 
 
+Performing C SOURCE FILE Test OpenMP_FLAG_DETECTED succeded with the following output:
+Change Dir: /home/benjamin/projects/CompressionStreamer/build/CMakeFiles/CMakeTmp
+
+Run Build Command:/usr/bin/make "cmTryCompileExec2507668251/fast"
+make[1]: Entering directory `/home/benjamin/projects/CompressionStreamer/build/CMakeFiles/CMakeTmp'
+/usr/bin/make -f CMakeFiles/cmTryCompileExec2507668251.dir/build.make CMakeFiles/cmTryCompileExec2507668251.dir/build
+make[2]: Entering directory `/home/benjamin/projects/CompressionStreamer/build/CMakeFiles/CMakeTmp'
+/usr/bin/cmake -E cmake_progress_report /home/benjamin/projects/CompressionStreamer/build/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building C object CMakeFiles/cmTryCompileExec2507668251.dir/src.c.o
+/usr/bin/gcc   -DOpenMP_FLAG_DETECTED -fopenmp   -o CMakeFiles/cmTryCompileExec2507668251.dir/src.c.o   -c /home/benjamin/projects/CompressionStreamer/build/CMakeFiles/CMakeTmp/src.c
+Linking C executable cmTryCompileExec2507668251
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec2507668251.dir/link.txt --verbose=1
+/usr/bin/gcc     -DOpenMP_FLAG_DETECTED -fopenmp    CMakeFiles/cmTryCompileExec2507668251.dir/src.c.o  -o cmTryCompileExec2507668251 -rdynamic 
+make[2]: Leaving directory `/home/benjamin/projects/CompressionStreamer/build/CMakeFiles/CMakeTmp'
+make[1]: Leaving directory `/home/benjamin/projects/CompressionStreamer/build/CMakeFiles/CMakeTmp'
+
+Source file was:
+
+#include <omp.h>
+int main() { 
+#ifdef _OPENMP
+  return 0; 
+#else
+  breaks_on_purpose
+#endif
+}
+
+Performing C++ SOURCE FILE Test OpenMP_FLAG_DETECTED succeded with the following output:
+Change Dir: /home/benjamin/projects/CompressionStreamer/build/CMakeFiles/CMakeTmp
+
+Run Build Command:/usr/bin/make "cmTryCompileExec986681470/fast"
+make[1]: Entering directory `/home/benjamin/projects/CompressionStreamer/build/CMakeFiles/CMakeTmp'
+/usr/bin/make -f CMakeFiles/cmTryCompileExec986681470.dir/build.make CMakeFiles/cmTryCompileExec986681470.dir/build
+make[2]: Entering directory `/home/benjamin/projects/CompressionStreamer/build/CMakeFiles/CMakeTmp'
+/usr/bin/cmake -E cmake_progress_report /home/benjamin/projects/CompressionStreamer/build/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building CXX object CMakeFiles/cmTryCompileExec986681470.dir/src.cxx.o
+/usr/bin/c++    -DOpenMP_FLAG_DETECTED -fopenmp   -o CMakeFiles/cmTryCompileExec986681470.dir/src.cxx.o -c /home/benjamin/projects/CompressionStreamer/build/CMakeFiles/CMakeTmp/src.cxx
+Linking CXX executable cmTryCompileExec986681470
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec986681470.dir/link.txt --verbose=1
+/usr/bin/c++      -DOpenMP_FLAG_DETECTED -fopenmp    CMakeFiles/cmTryCompileExec986681470.dir/src.cxx.o  -o cmTryCompileExec986681470 -rdynamic 
+make[2]: Leaving directory `/home/benjamin/projects/CompressionStreamer/build/CMakeFiles/CMakeTmp'
+make[1]: Leaving directory `/home/benjamin/projects/CompressionStreamer/build/CMakeFiles/CMakeTmp'
+
+Source file was:
+
+#include <omp.h>
+int main() { 
+#ifdef _OPENMP
+  return 0; 
+#else
+  breaks_on_purpose
+#endif
+}
+

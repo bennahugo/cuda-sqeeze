@@ -6,6 +6,8 @@
 
 #IncludeRegexTransform: 
 
+/home/benjamin/projects/CompressionStreamer/AstroReader/complexPair.h
+
 /home/benjamin/projects/CompressionStreamer/AstroReader/exceptions.h
 exception
 -
@@ -29,6 +31,10 @@ iostream
 -
 cstring
 -
+complexPair.h
+/home/benjamin/projects/CompressionStreamer/AstroReader/complexPair.h
+exceptions.h
+/home/benjamin/projects/CompressionStreamer/AstroReader/exceptions.h
 
 /home/benjamin/projects/CompressionStreamer/AstroReader/stridefactory.h
 hdf5.h
@@ -41,6 +47,8 @@ file.h
 /home/benjamin/projects/CompressionStreamer/AstroReader/file.h
 
 /home/benjamin/projects/CompressionStreamer/main.cpp
+iostream
+-
 string
 -
 AstroReader/file.h
