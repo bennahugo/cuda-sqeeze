@@ -42,7 +42,7 @@ public:
     void print() const;
     complexPair<float> getElement(int timeStampIndex, int frequencyIndex, int correlationPairIndex) const;
     int getMaxTimestampIndex() const;
-    int getMminTimestampIndex() const; 
+    int getMinTimestampIndex() const; 
     int getMaxFreqIndex() const; 
     int getMinFreqIndex() const; 
     int getMaxCorrelationPairIndex() const;
