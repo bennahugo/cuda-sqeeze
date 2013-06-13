@@ -1,6 +1,6 @@
 /*
-    <one line to give the program's name and a brief idea of what it does.>
-    Copyright (C) 2013  benjamin <email>
+    MeerKAT HDF5 Reader File Handle
+    Copyright (C) 2013  benjamin bennahugo@aol.com
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
