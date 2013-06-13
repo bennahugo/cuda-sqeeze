@@ -24,3 +24,12 @@ CMakeFiles/compressionstreamer.dir/main.cpp.o
  /home/benjamin/projects/CompressionStreamer/AstroReader/stride.h
  /home/benjamin/projects/CompressionStreamer/AstroReader/stridefactory.h
  /home/benjamin/projects/CompressionStreamer/main.cpp
+ /home/benjamin/projects/CompressionStreamer/streamcollector.h
+CMakeFiles/compressionstreamer.dir/streamcollector.cpp.o
+ /home/benjamin/projects/CompressionStreamer/AstroReader/complexPair.h
+ /home/benjamin/projects/CompressionStreamer/AstroReader/exceptions.h
+ /home/benjamin/projects/CompressionStreamer/AstroReader/file.h
+ /home/benjamin/projects/CompressionStreamer/AstroReader/stride.h
+ /home/benjamin/projects/CompressionStreamer/AstroReader/stridefactory.h
+ /home/benjamin/projects/CompressionStreamer/streamcollector.cpp
+ /home/benjamin/projects/CompressionStreamer/streamcollector.h

@@ -8,6 +8,7 @@ SET(CMAKE_DEPENDS_CHECK_CXX
   "/home/benjamin/projects/CompressionStreamer/AstroReader/stride.cpp" "/home/benjamin/projects/CompressionStreamer/build/CMakeFiles/compressionstreamer.dir/AstroReader/stride.cpp.o"
   "/home/benjamin/projects/CompressionStreamer/AstroReader/stridefactory.cpp" "/home/benjamin/projects/CompressionStreamer/build/CMakeFiles/compressionstreamer.dir/AstroReader/stridefactory.cpp.o"
   "/home/benjamin/projects/CompressionStreamer/main.cpp" "/home/benjamin/projects/CompressionStreamer/build/CMakeFiles/compressionstreamer.dir/main.cpp.o"
+  "/home/benjamin/projects/CompressionStreamer/streamcollector.cpp" "/home/benjamin/projects/CompressionStreamer/build/CMakeFiles/compressionstreamer.dir/streamcollector.cpp.o"
   )
 SET(CMAKE_CXX_COMPILER_ID "GNU")
 

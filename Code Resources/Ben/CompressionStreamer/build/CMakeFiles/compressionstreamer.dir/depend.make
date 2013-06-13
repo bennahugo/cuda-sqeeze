@@ -23,4 +23,13 @@ CMakeFiles/compressionstreamer.dir/main.cpp.o: ../AstroReader/file.h
 CMakeFiles/compressionstreamer.dir/main.cpp.o: ../AstroReader/stride.h
 CMakeFiles/compressionstreamer.dir/main.cpp.o: ../AstroReader/stridefactory.h
 CMakeFiles/compressionstreamer.dir/main.cpp.o: ../main.cpp
+CMakeFiles/compressionstreamer.dir/main.cpp.o: ../streamcollector.h
+
+CMakeFiles/compressionstreamer.dir/streamcollector.cpp.o: ../AstroReader/complexPair.h
+CMakeFiles/compressionstreamer.dir/streamcollector.cpp.o: ../AstroReader/exceptions.h
+CMakeFiles/compressionstreamer.dir/streamcollector.cpp.o: ../AstroReader/file.h
+CMakeFiles/compressionstreamer.dir/streamcollector.cpp.o: ../AstroReader/stride.h
+CMakeFiles/compressionstreamer.dir/streamcollector.cpp.o: ../AstroReader/stridefactory.h
+CMakeFiles/compressionstreamer.dir/streamcollector.cpp.o: ../streamcollector.cpp
+CMakeFiles/compressionstreamer.dir/streamcollector.cpp.o: ../streamcollector.h
 

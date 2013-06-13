@@ -248,6 +248,30 @@ main.cpp.s:
 	$(MAKE) -f CMakeFiles/compressionstreamer.dir/build.make CMakeFiles/compressionstreamer.dir/main.cpp.s
 .PHONY : main.cpp.s
 
+streamcollector.o: streamcollector.cpp.o
+.PHONY : streamcollector.o
+
+# target to build an object file
+streamcollector.cpp.o:
+	$(MAKE) -f CMakeFiles/compressionstreamer.dir/build.make CMakeFiles/compressionstreamer.dir/streamcollector.cpp.o
+.PHONY : streamcollector.cpp.o
+
+streamcollector.i: streamcollector.cpp.i
+.PHONY : streamcollector.i
+
+# target to preprocess a source file
+streamcollector.cpp.i:
+	$(MAKE) -f CMakeFiles/compressionstreamer.dir/build.make CMakeFiles/compressionstreamer.dir/streamcollector.cpp.i
+.PHONY : streamcollector.cpp.i
+
+streamcollector.s: streamcollector.cpp.s
+.PHONY : streamcollector.s
+
+# target to generate assembly for a file
+streamcollector.cpp.s:
+	$(MAKE) -f CMakeFiles/compressionstreamer.dir/build.make CMakeFiles/compressionstreamer.dir/streamcollector.cpp.s
+.PHONY : streamcollector.cpp.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -273,6 +297,9 @@ help:
 	@echo "... main.o"
 	@echo "... main.i"
 	@echo "... main.s"
+	@echo "... streamcollector.o"
+	@echo "... streamcollector.i"
+	@echo "... streamcollector.s"
 .PHONY : help
 
 
