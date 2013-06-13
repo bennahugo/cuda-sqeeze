@@ -112,7 +112,7 @@ int stride::getMinFreqIndex() const
 /*
  * Accessor for minimum time stamp index
  */
-int stride::getMminTimestampIndex() const
+int stride::getMinTimestampIndex() const
 {
   return fminTimestampIndex;
 }
