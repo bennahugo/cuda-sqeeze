@@ -79,42 +79,42 @@ void stride::print() const{
  */
 int stride::getMaxCorrelationPairIndex() const
 {
-
+  return fmaxCorrelationPairIndex;
 }
 /*
  * Accessor for maximum frequency index
  */
 int stride::getMaxFreqIndex() const
 {
-
+  return fmaxFreqIndex;
 }
 /*
  * Accessor for maximum time stamp index
  */
 int stride::getMaxTimestampIndex() const
 {
-
+  return fmaxTimestampIndex;
 }
 /*
  * Accessor for minimum correlation pair index
  */
 int stride::getMinCorrelationPairIndex() const
 {
-
+  return fminCorrelationPairIndex;
 }
 /*
  * Accessor for minimum frequency index
  */
 int stride::getMinFreqIndex() const
 {
-
+  return fminFreqIndex;
 }
 /*
  * Accessor for minimum time stamp index
  */
 int stride::getMminTimestampIndex() const
 {
-
+  return fminTimestampIndex;
 }
 
 }
