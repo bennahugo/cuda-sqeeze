@@ -103,6 +103,21 @@ AstroReader/preinstall:
 .PHONY : AstroReader/preinstall
 
 #=============================================================================
+# Directory level rules for directory Compressor
+
+# Convenience name for "all" pass in the directory.
+Compressor/all:
+.PHONY : Compressor/all
+
+# Convenience name for "clean" pass in the directory.
+Compressor/clean:
+.PHONY : Compressor/clean
+
+# Convenience name for "preinstall" pass in the directory.
+Compressor/preinstall:
+.PHONY : Compressor/preinstall
+
+#=============================================================================
 # Special targets to cleanup operation of make.
 
 # Special rule to run CMake to check the build system integrity.

@@ -9,6 +9,7 @@ SET(CMAKE_MAKEFILE_DEPENDS
   "CMakeCache.txt"
   "../AstroReader/CMakeLists.txt"
   "../CMakeLists.txt"
+  "../Compressor/CMakeLists.txt"
   "CMakeFiles/CMakeCCompiler.cmake"
   "CMakeFiles/CMakeCXXCompiler.cmake"
   "CMakeFiles/CMakeSystem.cmake"
@@ -16,10 +17,14 @@ SET(CMAKE_MAKEFILE_DEPENDS
   "/usr/share/cmake-2.8/Modules/CMakeCXXInformation.cmake"
   "/usr/share/cmake-2.8/Modules/CMakeCommonLanguageInclude.cmake"
   "/usr/share/cmake-2.8/Modules/CMakeGenericSystem.cmake"
+  "/usr/share/cmake-2.8/Modules/CMakeParseArguments.cmake"
   "/usr/share/cmake-2.8/Modules/CMakeSystemSpecificInformation.cmake"
   "/usr/share/cmake-2.8/Modules/Compiler/GNU-C.cmake"
   "/usr/share/cmake-2.8/Modules/Compiler/GNU-CXX.cmake"
   "/usr/share/cmake-2.8/Modules/Compiler/GNU.cmake"
+  "/usr/share/cmake-2.8/Modules/FindOpenMP.cmake"
+  "/usr/share/cmake-2.8/Modules/FindPackageHandleStandardArgs.cmake"
+  "/usr/share/cmake-2.8/Modules/FindPackageMessage.cmake"
   "/usr/share/cmake-2.8/Modules/Platform/Linux-GNU-C.cmake"
   "/usr/share/cmake-2.8/Modules/Platform/Linux-GNU-CXX.cmake"
   "/usr/share/cmake-2.8/Modules/Platform/Linux-GNU.cmake"
@@ -37,6 +42,7 @@ SET(CMAKE_MAKEFILE_OUTPUTS
 SET(CMAKE_MAKEFILE_PRODUCTS
   "CMakeFiles/CMakeDirectoryInformation.cmake"
   "AstroReader/CMakeFiles/CMakeDirectoryInformation.cmake"
+  "Compressor/CMakeFiles/CMakeDirectoryInformation.cmake"
   )
 
 # Dependency information for all targets:

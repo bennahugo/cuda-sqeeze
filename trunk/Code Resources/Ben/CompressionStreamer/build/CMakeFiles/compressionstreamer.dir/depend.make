@@ -5,15 +5,19 @@ CMakeFiles/compressionstreamer.dir/AstroReader/file.cpp.o: ../AstroReader/except
 CMakeFiles/compressionstreamer.dir/AstroReader/file.cpp.o: ../AstroReader/file.cpp
 CMakeFiles/compressionstreamer.dir/AstroReader/file.cpp.o: ../AstroReader/file.h
 
+CMakeFiles/compressionstreamer.dir/AstroReader/stride.cpp.o: ../AstroReader/complexPair.h
+CMakeFiles/compressionstreamer.dir/AstroReader/stride.cpp.o: ../AstroReader/exceptions.h
 CMakeFiles/compressionstreamer.dir/AstroReader/stride.cpp.o: ../AstroReader/stride.cpp
 CMakeFiles/compressionstreamer.dir/AstroReader/stride.cpp.o: ../AstroReader/stride.h
 
+CMakeFiles/compressionstreamer.dir/AstroReader/stridefactory.cpp.o: ../AstroReader/complexPair.h
 CMakeFiles/compressionstreamer.dir/AstroReader/stridefactory.cpp.o: ../AstroReader/exceptions.h
 CMakeFiles/compressionstreamer.dir/AstroReader/stridefactory.cpp.o: ../AstroReader/file.h
 CMakeFiles/compressionstreamer.dir/AstroReader/stridefactory.cpp.o: ../AstroReader/stride.h
 CMakeFiles/compressionstreamer.dir/AstroReader/stridefactory.cpp.o: ../AstroReader/stridefactory.cpp
 CMakeFiles/compressionstreamer.dir/AstroReader/stridefactory.cpp.o: ../AstroReader/stridefactory.h
 
+CMakeFiles/compressionstreamer.dir/main.cpp.o: ../AstroReader/complexPair.h
 CMakeFiles/compressionstreamer.dir/main.cpp.o: ../AstroReader/exceptions.h
 CMakeFiles/compressionstreamer.dir/main.cpp.o: ../AstroReader/file.h
 CMakeFiles/compressionstreamer.dir/main.cpp.o: ../AstroReader/stride.h
