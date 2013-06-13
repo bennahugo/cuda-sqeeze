@@ -46,7 +46,7 @@ file::file(std::string filename):fShouldCloseFile(true)
 /*
  * Copy constructor
  */
-file::file(const file& other):fShouldCloseFile(false),fFileHandle(other.fFileHandle)
+file::file(const file& other):fDimCount(other.fDimCount),fShouldCloseFile(false),fFileHandle(other.fFileHandle)
 {
   fDimSizes = new hsize_t[fDimCount];
   memcpy(fDimSizes, other.fDimSizes,fDimCount*sizeof(hsize_t));

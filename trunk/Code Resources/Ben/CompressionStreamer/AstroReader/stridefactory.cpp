@@ -25,7 +25,8 @@ stride strideFactory::createStride(const file & astroFile, int max_timestamp_ind
     if (max_timestamp_index >= astroFile.fDimSizes[0] ||
       max_freq_index >= astroFile.fDimSizes[1] ||
       max_correlation_pair_index >= astroFile.fDimSizes[2] ||
-      min_correlation_pair_index < 0 || min_freq_index < 0 || min_timestamp_index < 0)
+      min_correlation_pair_index < 0 || min_freq_index < 0 || min_timestamp_index < 0 ||
+      max_correlation_pair_index < 0 || max_freq_index < 0 || max_timestamp_index < 0)
       throw arguementError();
     
     //define stride:

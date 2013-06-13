@@ -49,9 +49,32 @@ include CMakeFiles/compressionstreamer.dir/progress.make
 # Include the compile flags for this target's objects.
 include CMakeFiles/compressionstreamer.dir/flags.make
 
+CMakeFiles/compressionstreamer.dir/streamcollector.cpp.o: CMakeFiles/compressionstreamer.dir/flags.make
+CMakeFiles/compressionstreamer.dir/streamcollector.cpp.o: ../streamcollector.cpp
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/benjamin/projects/CompressionStreamer/build/CMakeFiles $(CMAKE_PROGRESS_1)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building CXX object CMakeFiles/compressionstreamer.dir/streamcollector.cpp.o"
+	/usr/bin/c++   $(CXX_DEFINES) $(CXX_FLAGS) -o CMakeFiles/compressionstreamer.dir/streamcollector.cpp.o -c /home/benjamin/projects/CompressionStreamer/streamcollector.cpp
+
+CMakeFiles/compressionstreamer.dir/streamcollector.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/compressionstreamer.dir/streamcollector.cpp.i"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_FLAGS) -E /home/benjamin/projects/CompressionStreamer/streamcollector.cpp > CMakeFiles/compressionstreamer.dir/streamcollector.cpp.i
+
+CMakeFiles/compressionstreamer.dir/streamcollector.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/compressionstreamer.dir/streamcollector.cpp.s"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_FLAGS) -S /home/benjamin/projects/CompressionStreamer/streamcollector.cpp -o CMakeFiles/compressionstreamer.dir/streamcollector.cpp.s
+
+CMakeFiles/compressionstreamer.dir/streamcollector.cpp.o.requires:
+.PHONY : CMakeFiles/compressionstreamer.dir/streamcollector.cpp.o.requires
+
+CMakeFiles/compressionstreamer.dir/streamcollector.cpp.o.provides: CMakeFiles/compressionstreamer.dir/streamcollector.cpp.o.requires
+	$(MAKE) -f CMakeFiles/compressionstreamer.dir/build.make CMakeFiles/compressionstreamer.dir/streamcollector.cpp.o.provides.build
+.PHONY : CMakeFiles/compressionstreamer.dir/streamcollector.cpp.o.provides
+
+CMakeFiles/compressionstreamer.dir/streamcollector.cpp.o.provides.build: CMakeFiles/compressionstreamer.dir/streamcollector.cpp.o
+
 CMakeFiles/compressionstreamer.dir/AstroReader/stride.cpp.o: CMakeFiles/compressionstreamer.dir/flags.make
 CMakeFiles/compressionstreamer.dir/AstroReader/stride.cpp.o: ../AstroReader/stride.cpp
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/benjamin/projects/CompressionStreamer/build/CMakeFiles $(CMAKE_PROGRESS_1)
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/benjamin/projects/CompressionStreamer/build/CMakeFiles $(CMAKE_PROGRESS_2)
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building CXX object CMakeFiles/compressionstreamer.dir/AstroReader/stride.cpp.o"
 	/usr/bin/c++   $(CXX_DEFINES) $(CXX_FLAGS) -o CMakeFiles/compressionstreamer.dir/AstroReader/stride.cpp.o -c /home/benjamin/projects/CompressionStreamer/AstroReader/stride.cpp
 
@@ -74,7 +97,7 @@ CMakeFiles/compressionstreamer.dir/AstroReader/stride.cpp.o.provides.build: CMak
 
 CMakeFiles/compressionstreamer.dir/AstroReader/file.cpp.o: CMakeFiles/compressionstreamer.dir/flags.make
 CMakeFiles/compressionstreamer.dir/AstroReader/file.cpp.o: ../AstroReader/file.cpp
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/benjamin/projects/CompressionStreamer/build/CMakeFiles $(CMAKE_PROGRESS_2)
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/benjamin/projects/CompressionStreamer/build/CMakeFiles $(CMAKE_PROGRESS_3)
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building CXX object CMakeFiles/compressionstreamer.dir/AstroReader/file.cpp.o"
 	/usr/bin/c++   $(CXX_DEFINES) $(CXX_FLAGS) -o CMakeFiles/compressionstreamer.dir/AstroReader/file.cpp.o -c /home/benjamin/projects/CompressionStreamer/AstroReader/file.cpp
 
@@ -97,7 +120,7 @@ CMakeFiles/compressionstreamer.dir/AstroReader/file.cpp.o.provides.build: CMakeF
 
 CMakeFiles/compressionstreamer.dir/AstroReader/stridefactory.cpp.o: CMakeFiles/compressionstreamer.dir/flags.make
 CMakeFiles/compressionstreamer.dir/AstroReader/stridefactory.cpp.o: ../AstroReader/stridefactory.cpp
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/benjamin/projects/CompressionStreamer/build/CMakeFiles $(CMAKE_PROGRESS_3)
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/benjamin/projects/CompressionStreamer/build/CMakeFiles $(CMAKE_PROGRESS_4)
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building CXX object CMakeFiles/compressionstreamer.dir/AstroReader/stridefactory.cpp.o"
 	/usr/bin/c++   $(CXX_DEFINES) $(CXX_FLAGS) -o CMakeFiles/compressionstreamer.dir/AstroReader/stridefactory.cpp.o -c /home/benjamin/projects/CompressionStreamer/AstroReader/stridefactory.cpp
 
@@ -120,7 +143,7 @@ CMakeFiles/compressionstreamer.dir/AstroReader/stridefactory.cpp.o.provides.buil
 
 CMakeFiles/compressionstreamer.dir/main.cpp.o: CMakeFiles/compressionstreamer.dir/flags.make
 CMakeFiles/compressionstreamer.dir/main.cpp.o: ../main.cpp
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/benjamin/projects/CompressionStreamer/build/CMakeFiles $(CMAKE_PROGRESS_4)
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/benjamin/projects/CompressionStreamer/build/CMakeFiles $(CMAKE_PROGRESS_5)
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building CXX object CMakeFiles/compressionstreamer.dir/main.cpp.o"
 	/usr/bin/c++   $(CXX_DEFINES) $(CXX_FLAGS) -o CMakeFiles/compressionstreamer.dir/main.cpp.o -c /home/benjamin/projects/CompressionStreamer/main.cpp
 
@@ -143,6 +166,7 @@ CMakeFiles/compressionstreamer.dir/main.cpp.o.provides.build: CMakeFiles/compres
 
 # Object files for target compressionstreamer
 compressionstreamer_OBJECTS = \
+"CMakeFiles/compressionstreamer.dir/streamcollector.cpp.o" \
 "CMakeFiles/compressionstreamer.dir/AstroReader/stride.cpp.o" \
 "CMakeFiles/compressionstreamer.dir/AstroReader/file.cpp.o" \
 "CMakeFiles/compressionstreamer.dir/AstroReader/stridefactory.cpp.o" \
@@ -151,6 +175,7 @@ compressionstreamer_OBJECTS = \
 # External object files for target compressionstreamer
 compressionstreamer_EXTERNAL_OBJECTS =
 
+compressionstreamer: CMakeFiles/compressionstreamer.dir/streamcollector.cpp.o
 compressionstreamer: CMakeFiles/compressionstreamer.dir/AstroReader/stride.cpp.o
 compressionstreamer: CMakeFiles/compressionstreamer.dir/AstroReader/file.cpp.o
 compressionstreamer: CMakeFiles/compressionstreamer.dir/AstroReader/stridefactory.cpp.o
@@ -164,6 +189,7 @@ compressionstreamer: CMakeFiles/compressionstreamer.dir/link.txt
 CMakeFiles/compressionstreamer.dir/build: compressionstreamer
 .PHONY : CMakeFiles/compressionstreamer.dir/build
 
+CMakeFiles/compressionstreamer.dir/requires: CMakeFiles/compressionstreamer.dir/streamcollector.cpp.o.requires
 CMakeFiles/compressionstreamer.dir/requires: CMakeFiles/compressionstreamer.dir/AstroReader/stride.cpp.o.requires
 CMakeFiles/compressionstreamer.dir/requires: CMakeFiles/compressionstreamer.dir/AstroReader/file.cpp.o.requires
 CMakeFiles/compressionstreamer.dir/requires: CMakeFiles/compressionstreamer.dir/AstroReader/stridefactory.cpp.o.requires

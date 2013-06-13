@@ -1,4 +1,5 @@
 FILE(REMOVE_RECURSE
+  "CMakeFiles/compressionstreamer.dir/streamcollector.cpp.o"
   "CMakeFiles/compressionstreamer.dir/AstroReader/stride.cpp.o"
   "CMakeFiles/compressionstreamer.dir/AstroReader/file.cpp.o"
   "CMakeFiles/compressionstreamer.dir/AstroReader/stridefactory.cpp.o"

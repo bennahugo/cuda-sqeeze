@@ -57,4 +57,22 @@ AstroReader/stride.h
 /home/benjamin/projects/CompressionStreamer/AstroReader/stride.h
 AstroReader/stridefactory.h
 /home/benjamin/projects/CompressionStreamer/AstroReader/stridefactory.h
+streamcollector.h
+/home/benjamin/projects/CompressionStreamer/streamcollector.h
+cstring
+-
+
+/home/benjamin/projects/CompressionStreamer/streamcollector.cpp
+streamcollector.h
+/home/benjamin/projects/CompressionStreamer/streamcollector.h
+
+/home/benjamin/projects/CompressionStreamer/streamcollector.h
+AstroReader/file.h
+/home/benjamin/projects/CompressionStreamer/AstroReader/file.h
+AstroReader/stride.h
+/home/benjamin/projects/CompressionStreamer/AstroReader/stride.h
+AstroReader/stridefactory.h
+/home/benjamin/projects/CompressionStreamer/AstroReader/stridefactory.h
+assert.h
+-
 
