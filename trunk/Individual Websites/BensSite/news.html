@@ -35,6 +35,17 @@
 	  </div>
 		<div id="content">
 		<h1>News</h1>
+		<h1 class="newsfeed">18 June 2013</h1>
+		<p>From preliminary observations of the 32 bit floating point MeerKAT data it seems that a predictive algorithm
+		will result in Leading Zero Counts of about 12-13 bits (for the most part). This is not even two whole bytes! In light of
+		this I've adjusted the scheme to pack bit and not byte residuals as described in the 64 bit schemes that I've investigated 
+		earlier.</p>
+		<p>To parallise this packing scheme (for bits and bytes alike) it is necessary to compute a prefix sum to calculate the starting 
+		positions of each of the values as suggested by O'Neil et al. in their paper on a fast CUDA 64 bit compression scheme. Guy E. Blelloch
+		(1990) suggests a parallel algorithm for achieving this. The algorithm requires that the array it operates on is padded up to a power of
+		two because it uses a binary tree representation (and associated array indices in powers of two). I've implemented this scheme for
+		the CPU version. The GPU version requires more work (specifically to avoid bank conflicts and processing over multiple blocks), but is 
+		fully described in the book GPU Gems 3.</p>
 		<h1 class="newsfeed">10 June 2013</h1>
 		<p>First iteration of the website is now online. Algorithm development also starts today...</p>
 		</div>
