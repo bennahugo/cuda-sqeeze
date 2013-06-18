@@ -61,10 +61,8 @@ streamcollector.h
 /home/benjamin/projects/CompressionStreamer/streamcollector.h
 cstring
 -
-
-/home/benjamin/projects/CompressionStreamer/streamcollector.cpp
-streamcollector.h
-/home/benjamin/projects/CompressionStreamer/streamcollector.h
+math.h
+-
 
 /home/benjamin/projects/CompressionStreamer/streamcollector.h
 AstroReader/file.h
