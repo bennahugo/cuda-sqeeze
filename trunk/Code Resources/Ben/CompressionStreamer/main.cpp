@@ -1,115 +1,76 @@
 #include <iostream>
 #include <string>
+#include <cstring>
+#include <math.h>
+#include <omp.h>
+#include <assert.h>
 #include "AstroReader/file.h"
 #include "AstroReader/stride.h"
 #include "AstroReader/stridefactory.h"
 #include "Compressor/cpuCode.h"
-#include "streamcollector.h"
-#include <cstring>
-#include <math.h>
-#include <omp.h>
+#include "Timer.h"
 
-#define FILENAME "/media/OS/SKA_DATA/kat7_data/1369858495.h5"
+
+#define FILENAME "/media/74A5-DB52/1370275467.h5"
+#define MAX_READ_BUFFER_IN_MB 1024
 void printBinaryRepresentation(void * data, int sizeInBytes);
-/*void xorArray(void * out, void * data, void * data2, int sizeInBytes);
 void processStride(const astroReader::stride & data);
-void createBitCountArray(float * data, int countData, int ignoreNumSignificantBits, int maxCount,  int * out);
-void createPrefixSumArray(int * counts, int numElements, int * out);
-void bitsPack(float * data,int firstElementCount, int lastElementCount, 
-	      int * startingIndexes, int * out, int countData, int countOut);
-int numberOfBytesNeededToCompress(int * startingIndexes,int countData, int lastCount);
-void createParallelPrefixSum(int * counts, int numElements);*/
+void compressCallback(uint64_t compressedResidualsIntCount, uint32_t * compressedResiduals,
+		       uint64_t compressedPrefixIntCount, uint32_t * compressedPrefixes);
+unsigned int accSize = 0;
 
+int main(int argc, char **argv) {
+    using namespace std;
+    astroReader::file f(string(FILENAME));
+    cout << "File dimensions: ";
+    for (int i = 0; i < f.getDimensionCount(); ++i)
+      cout << f.getDimensionSize(i) << ((i == f.getDimensionCount() -1) ? "\n" : " x ");
+    
+    //Read in chunks:
+    long maxBlockSizeBytes = MAX_READ_BUFFER_IN_MB*1024*1024;
+    long pageSize = (f.getDimensionSize(1)-1)*(f.getDimensionSize(2)-1)*2*sizeof(float);
+    long fileSize = (f.getDimensionSize(0)-1)*pageSize;
+    assert(pageSize < maxBlockSizeBytes);
+    int numReads = ceil(fileSize / (float)maxBlockSizeBytes);
+    int numPagesPerRead = fileSize / numReads / pageSize;
+    for (int i = 0; i < numReads; ++i){
+      astroReader::stride data = astroReader::strideFactory::createStride(f,
+									  (i+1)*numPagesPerRead  > f.getDimensionSize(0)-1 ? f.getDimensionSize(0)-1 : (i+1)*numPagesPerRead,
+									  i*numPagesPerRead > f.getDimensionSize(0)-1 ? f.getDimensionSize(0)-1 : i*numPagesPerRead,
+									  f.getDimensionSize(1)-1,0,
+									  f.getDimensionSize(2)-1,0);
+      processStride(data);
+    }
+    return 0;
+}
+int callbackcount = 0;
 void compressCallback(uint64_t compressedResidualsIntCount, uint32_t * compressedResiduals,
 		       uint64_t compressedPrefixIntCount, uint32_t * compressedPrefixes){
   using namespace std;
-  
-  cout << "COMPRESSED PREFIXES:" << endl;
+  accSize += compressedResidualsIntCount+compressedPrefixIntCount;
+  /*cout << "COMPRESSED PREFIXES:" << endl;
     for (uint64_t i = 0; i < compressedPrefixIntCount; ++i)
       printBinaryRepresentation(&(compressedPrefixes[i]),sizeof(uint32_t));
   cout << "COMPRESSED RESIDUALS:" << endl;
     for (uint64_t i = 0; i < compressedResidualsIntCount; ++i)
-      printBinaryRepresentation(&(compressedResiduals[i]),sizeof(uint32_t));
+      printBinaryRepresentation(&(compressedResiduals[i]),sizeof(uint32_t));*/
 }
 
-void parallelPrefixSum(uint32_t * counts, uint32_t numElements) {
-    //up-sweep:
-    uint64_t upperBound = (uint64_t)log2(numElements)-1;
-    for (uint64_t d = 0; d <= upperBound; ++d) {
-        uint64_t twoTodPlus1 = (uint64_t)pow(2,d+1);
-        #pragma omp parallel for shared(twoTodPlus1)
-        for (uint64_t i = 0; i < numElements; i += twoTodPlus1) {
-            counts[i + twoTodPlus1 - 1] += counts[i + twoTodPlus1/2 - 1];
-        }
-    }
-    //clear:
-    counts[numElements-1] = 0;
-    //down-sweep:
-    for (uint64_t d=upperBound; d >= 0; --d) {
-        uint64_t twoTodPlus1 = (uint64_t)pow(2,d+1);
-        #pragma omp parallel for shared(twoTodPlus1)
-        for (uint64_t i = 0; i < numElements; i += twoTodPlus1) {
-            uint32_t t = counts[i + twoTodPlus1/2 - 1];
-            counts[i + twoTodPlus1/2 - 1] = counts[i + twoTodPlus1 - 1];
-            counts[i + twoTodPlus1 - 1] += t;
-        }
-       if (d == 0) break;
-    }
-}
-
-
-int main(int argc, char **argv) {
-    using namespace std;
-    /*astroReader::file f(string(FILENAME));
-    cout << "File dimensions: ";
-    for (int i = 0; i < f.getDimensionCount(); ++i)
-      cout << f.getDimensionSize(i) << ((i == f.getDimensionCount() -1) ? "\n" : " x ");
-    streamCollector::chunkedRead(f,1024,2,processStride);
-    */
-    
-    //astroReader::stride data = astroReader::strideFactory::createStride(f,80,0,50,0,10,0); 
-    //data.print();
-    /*complexPair<float> e1 = data.getElement(0,0,0);
-    complexPair<float> e2 = data.getElement(1,0,0);
-    cout << e1.r << "   " << e2.r << endl;
-    float t = 0;
-    xorArray(&t,&e1.r,&e2.r,sizeof(float));
-    printBinaryRepresentation(&e1.r, sizeof(float));
-    printBinaryRepresentation(&e2.r, sizeof(float));
-    printBinaryRepresentation(&t, sizeof(float));*/
-    
-    /*for (int t = 0; t < data.getMaxTimestampIndex() - data.getMinTimestampIndex(); ++t)
-      for (int f = 0; f <= data.getMaxFreqIndex() - data.getMinFreqIndex(); ++f)
-	for (int c = 0; c <= data.getMaxCorrelationPairIndex() - data.getMinCorrelationPairIndex(); ++c){
-	  complexPair<float> e1 = data.getElement(t,f,c);
-	  complexPair<float> e2 = data.getElement(t+1,f,c);
-	  float t = 0;
-	  float t1 = 0;
-	  xorArray(&t,&e1.r,&e2.r,sizeof(float));
-	  xorArray(&t1,&e1.i,&e2.i,sizeof(float));
-	  printBinaryRepresentation(&t, sizeof(float));
-	  printBinaryRepresentation(&t1, sizeof(float));
-	}*/
-    int testCount = 10;
-    float data[10] = {-2.532f,0,0,0,2.532f,2.532f,2.532f,2.532f,2.532f,2.532f};
-    float data1[10] = {-2.632f,0,0,0,2.632f,2.632f,2.632f,2.632f,2.632f,2.632f};
-    for (int i = 0; i < testCount; ++i){
-      uint32_t t = ((uint32_t *)&data[0])[i] ^ ((uint32_t *)&data1[0])[i];
-      printBinaryRepresentation(&t, sizeof(uint32_t));
-    }
-    cpuCode::initCompressor(data,testCount);
-    cpuCode::compressData(data1,testCount,compressCallback);
-    cpuCode::releaseResources();
-    return 0;
-}
 void processStride(const astroReader::stride & data){
-  //TODO: DO STUFF WITH THE STRIDES OF READ DATA
-  //data.print();
-  /*for (int t = 0; t < data.getMaxTimestampIndex() - data.getMinTimestampIndex(); ++t)
-      for (int f = 0; f <= data.getMaxFreqIndex() - data.getMinFreqIndex(); ++f)
-	  for (int c = 0; c <= data.getMaxCorrelationPairIndex() - data.getMinCorrelationPairIndex(); ++c){
-	   
-	  }*/
+    uint32_t tsSize = data.getTimeStampSize();
+    float * ts = new float[tsSize];
+    data.getTimeStampData(0,ts);
+    cpuCode::compressor::initCompressor(ts,tsSize);
+    accSize += tsSize+1;
+    Timer::tic();
+    for (int t = 1; t <= data.getMaxTimestampIndex() - data.getMinTimestampIndex(); ++t) {
+        data.getTimeStampData(t,ts);
+        cpuCode::compressor::compressData(ts,tsSize,compressCallback);
+    }
+    delete[] ts;
+    std::cout << "COMPRESSION RATIO: " << (accSize / (float) (tsSize*(data.getMaxTimestampIndex()-data.getMinTimestampIndex()+1))) << std::endl;
+    accSize = 0;
+    std::cout << "COMPRESSED IN " << Timer::toc() << " seconds" << std::endl;
 }
 
 void printBinaryRepresentation(void * data, int sizeInBytes){

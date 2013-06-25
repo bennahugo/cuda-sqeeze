@@ -41,6 +41,8 @@ public:
     virtual stride& operator=(const stride& other);
     void print() const;
     complexPair<float> getElement(int timeStampIndex, int frequencyIndex, int correlationPairIndex) const;
+    void getTimeStampData(int timeStampIndex, float * buffer) const;
+    int getTimeStampSize() const;
     int getMaxTimestampIndex() const;
     int getMinTimestampIndex() const; 
     int getMaxFreqIndex() const; 

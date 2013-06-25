@@ -31,11 +31,18 @@
 #include "exceptions.h"
 
 namespace cpuCode{
-  void initCompressor(const float * iv, uint64_t ivLength);
-  void compressData(const float * data, uint64_t elementCount,
-			  void (*callBack)(uint64_t compressedResidualsIntCount, uint32_t * compressedResiduals,
-			    uint64_t compressedPrefixIntCount, uint32_t * compressedPrefixes));
-  void releaseResources();
+  namespace compressor{
+    void initCompressor(const float * iv, uint64_t ivLength);
+    void compressData(const float * data, uint64_t elementCount,
+			    void (*callBack)(uint64_t compressedResidualsIntCount, uint32_t * compressedResiduals,
+			      uint64_t compressedPrefixIntCount, uint32_t * compressedPrefixes));
+    void releaseResources();
+  }
+  namespace decompressor{
+    void initDecompressor(const float * iv, uint64_t ivLength);
+    //void decompressData(const uint32_t * compressedResiduals, const uint32_t * compressedPrefixes, 
+    void releaseResources();
+  }
 }
 
 #endif // CPUCODE_H
