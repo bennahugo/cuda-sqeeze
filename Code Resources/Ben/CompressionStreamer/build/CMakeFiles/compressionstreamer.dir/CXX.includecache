@@ -6,13 +6,13 @@
 
 #IncludeRegexTransform: 
 
-/home/benjamin/projects/CompressionStreamer/AstroReader/complexPair.h
+/home/bhugo/projects/CompressionStreamer/AstroReader/complexPair.h
 
-/home/benjamin/projects/CompressionStreamer/AstroReader/exceptions.h
+/home/bhugo/projects/CompressionStreamer/AstroReader/exceptions.h
 exception
 -
 
-/home/benjamin/projects/CompressionStreamer/AstroReader/file.h
+/home/bhugo/projects/CompressionStreamer/AstroReader/file.h
 hdf5.h
 -
 string
@@ -22,9 +22,9 @@ iostream
 cstring
 -
 exceptions.h
-/home/benjamin/projects/CompressionStreamer/AstroReader/exceptions.h
+/home/bhugo/projects/CompressionStreamer/AstroReader/exceptions.h
 
-/home/benjamin/projects/CompressionStreamer/AstroReader/stride.h
+/home/bhugo/projects/CompressionStreamer/AstroReader/stride.h
 hdf5.h
 -
 iostream
@@ -32,45 +32,65 @@ iostream
 cstring
 -
 complexPair.h
-/home/benjamin/projects/CompressionStreamer/AstroReader/complexPair.h
+/home/bhugo/projects/CompressionStreamer/AstroReader/complexPair.h
 exceptions.h
-/home/benjamin/projects/CompressionStreamer/AstroReader/exceptions.h
+/home/bhugo/projects/CompressionStreamer/AstroReader/exceptions.h
 
-/home/benjamin/projects/CompressionStreamer/AstroReader/stridefactory.h
+/home/bhugo/projects/CompressionStreamer/AstroReader/stridefactory.h
 hdf5.h
 -
 exceptions.h
-/home/benjamin/projects/CompressionStreamer/AstroReader/exceptions.h
+/home/bhugo/projects/CompressionStreamer/AstroReader/exceptions.h
 stride.h
-/home/benjamin/projects/CompressionStreamer/AstroReader/stride.h
+/home/bhugo/projects/CompressionStreamer/AstroReader/stride.h
 file.h
-/home/benjamin/projects/CompressionStreamer/AstroReader/file.h
+/home/bhugo/projects/CompressionStreamer/AstroReader/file.h
 
-/home/benjamin/projects/CompressionStreamer/main.cpp
+/home/bhugo/projects/CompressionStreamer/Compressor/cpuCode.h
+cstdlib
+-
+cstring
+-
+stdint.h
+-
+math.h
+-
+omp.h
+-
+iostream
+-
+exceptions.h
+/home/bhugo/projects/CompressionStreamer/Compressor/exceptions.h
+
+/home/bhugo/projects/CompressionStreamer/main.cpp
 iostream
 -
 string
 -
 AstroReader/file.h
-/home/benjamin/projects/CompressionStreamer/AstroReader/file.h
+/home/bhugo/projects/CompressionStreamer/AstroReader/file.h
 AstroReader/stride.h
-/home/benjamin/projects/CompressionStreamer/AstroReader/stride.h
+/home/bhugo/projects/CompressionStreamer/AstroReader/stride.h
 AstroReader/stridefactory.h
-/home/benjamin/projects/CompressionStreamer/AstroReader/stridefactory.h
+/home/bhugo/projects/CompressionStreamer/AstroReader/stridefactory.h
+Compressor/cpuCode.h
+/home/bhugo/projects/CompressionStreamer/Compressor/cpuCode.h
 streamcollector.h
-/home/benjamin/projects/CompressionStreamer/streamcollector.h
+/home/bhugo/projects/CompressionStreamer/streamcollector.h
 cstring
 -
 math.h
 -
+omp.h
+-
 
-/home/benjamin/projects/CompressionStreamer/streamcollector.h
+/home/bhugo/projects/CompressionStreamer/streamcollector.h
 AstroReader/file.h
-/home/benjamin/projects/CompressionStreamer/AstroReader/file.h
+/home/bhugo/projects/CompressionStreamer/AstroReader/file.h
 AstroReader/stride.h
-/home/benjamin/projects/CompressionStreamer/AstroReader/stride.h
+/home/bhugo/projects/CompressionStreamer/AstroReader/stride.h
 AstroReader/stridefactory.h
-/home/benjamin/projects/CompressionStreamer/AstroReader/stridefactory.h
+/home/bhugo/projects/CompressionStreamer/AstroReader/stridefactory.h
 assert.h
 -
 

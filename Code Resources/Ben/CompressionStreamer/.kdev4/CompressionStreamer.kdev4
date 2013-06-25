@@ -2,9 +2,9 @@
 BuildItems=@Variant(\x00\x00\x00\t\x00\x00\x00\x00\x01\x00\x00\x00\x0b\x00\x00\x00\x00\x01\x00\x00\x00&\x00C\x00o\x00m\x00p\x00r\x00e\x00s\x00s\x00i\x00o\x00n\x00S\x00t\x00r\x00e\x00a\x00m\x00e\x00r)
 
 [CMake]
-Build Directory Count=1
+Build Directory Count=2
 CMakeDir=/usr/share/cmake-2.8/Modules
-Current Build Directory Index=0
+Current Build Directory Index=1
 ProjectRootRelative=./
 
 [CMake][CMake Build Directory 0]
@@ -14,6 +14,35 @@ CMake Binary=file:///usr/bin/cmake
 Environment Profile=
 Extra Arguments=
 Install Directory=file:///usr/local
+
+[CMake][CMake Build Directory 1]
+Build Directory Path=file:///home/bhugo/projects/CompressionStreamer/build
+Build Type=Debug
+CMake Binary=file:///usr/bin/cmake
+Environment Profile=
+Extra Arguments=
+Install Directory=file:///usr/local
+
+[Launch]
+Launch Configurations=Launch Configuration 0
+
+[Launch][Launch Configuration 0]
+Configured Launch Modes=execute
+Configured Launchers=nativeAppLauncher
+Name=New Native Application Configuration
+Type=Native Application
+
+[Launch][Launch Configuration 0][Data]
+Arguments=
+Dependencies=@Variant(\x00\x00\x00\t\x00\x00\x00\x00\x00)
+Dependency Action=Nothing
+EnvironmentGroup=default
+Executable=
+External Terminal=konsole --noclose --workdir %workdir -e %exe
+Project Target=CompressionStreamer,compressionstreamer
+Use External Terminal=false
+Working Directory=
+isExecutable=false
 
 [Project]
 VersionControlSupport=kdevsubversion
