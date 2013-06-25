@@ -4,11 +4,12 @@ SET(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 SET(CMAKE_DEPENDS_CHECK_CXX
-  "/home/benjamin/projects/CompressionStreamer/AstroReader/file.cpp" "/home/benjamin/projects/CompressionStreamer/build/CMakeFiles/compressionstreamer.dir/AstroReader/file.cpp.o"
-  "/home/benjamin/projects/CompressionStreamer/AstroReader/stride.cpp" "/home/benjamin/projects/CompressionStreamer/build/CMakeFiles/compressionstreamer.dir/AstroReader/stride.cpp.o"
-  "/home/benjamin/projects/CompressionStreamer/AstroReader/stridefactory.cpp" "/home/benjamin/projects/CompressionStreamer/build/CMakeFiles/compressionstreamer.dir/AstroReader/stridefactory.cpp.o"
-  "/home/benjamin/projects/CompressionStreamer/main.cpp" "/home/benjamin/projects/CompressionStreamer/build/CMakeFiles/compressionstreamer.dir/main.cpp.o"
-  "/home/benjamin/projects/CompressionStreamer/streamcollector.cpp" "/home/benjamin/projects/CompressionStreamer/build/CMakeFiles/compressionstreamer.dir/streamcollector.cpp.o"
+  "/home/bhugo/projects/CompressionStreamer/AstroReader/file.cpp" "/home/bhugo/projects/CompressionStreamer/build/CMakeFiles/compressionstreamer.dir/AstroReader/file.cpp.o"
+  "/home/bhugo/projects/CompressionStreamer/AstroReader/stride.cpp" "/home/bhugo/projects/CompressionStreamer/build/CMakeFiles/compressionstreamer.dir/AstroReader/stride.cpp.o"
+  "/home/bhugo/projects/CompressionStreamer/AstroReader/stridefactory.cpp" "/home/bhugo/projects/CompressionStreamer/build/CMakeFiles/compressionstreamer.dir/AstroReader/stridefactory.cpp.o"
+  "/home/bhugo/projects/CompressionStreamer/Compressor/cpuCode.cpp" "/home/bhugo/projects/CompressionStreamer/build/CMakeFiles/compressionstreamer.dir/Compressor/cpuCode.cpp.o"
+  "/home/bhugo/projects/CompressionStreamer/main.cpp" "/home/bhugo/projects/CompressionStreamer/build/CMakeFiles/compressionstreamer.dir/main.cpp.o"
+  "/home/bhugo/projects/CompressionStreamer/streamcollector.cpp" "/home/bhugo/projects/CompressionStreamer/build/CMakeFiles/compressionstreamer.dir/streamcollector.cpp.o"
   )
 SET(CMAKE_CXX_COMPILER_ID "GNU")
 

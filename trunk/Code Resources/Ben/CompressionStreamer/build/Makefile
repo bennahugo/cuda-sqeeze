@@ -39,10 +39,10 @@ RM = /usr/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/benjamin/projects/CompressionStreamer
+CMAKE_SOURCE_DIR = /home/bhugo/projects/CompressionStreamer
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/benjamin/projects/CompressionStreamer/build
+CMAKE_BINARY_DIR = /home/bhugo/projects/CompressionStreamer/build
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -110,9 +110,9 @@ rebuild_cache/fast: rebuild_cache
 
 # The main all target
 all: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/benjamin/projects/CompressionStreamer/build/CMakeFiles /home/benjamin/projects/CompressionStreamer/build/CMakeFiles/progress.marks
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/bhugo/projects/CompressionStreamer/build/CMakeFiles /home/bhugo/projects/CompressionStreamer/build/CMakeFiles/progress.marks
 	$(MAKE) -f CMakeFiles/Makefile2 all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/benjamin/projects/CompressionStreamer/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/bhugo/projects/CompressionStreamer/build/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
@@ -224,6 +224,30 @@ AstroReader/stridefactory.cpp.s:
 	$(MAKE) -f CMakeFiles/compressionstreamer.dir/build.make CMakeFiles/compressionstreamer.dir/AstroReader/stridefactory.cpp.s
 .PHONY : AstroReader/stridefactory.cpp.s
 
+Compressor/cpuCode.o: Compressor/cpuCode.cpp.o
+.PHONY : Compressor/cpuCode.o
+
+# target to build an object file
+Compressor/cpuCode.cpp.o:
+	$(MAKE) -f CMakeFiles/compressionstreamer.dir/build.make CMakeFiles/compressionstreamer.dir/Compressor/cpuCode.cpp.o
+.PHONY : Compressor/cpuCode.cpp.o
+
+Compressor/cpuCode.i: Compressor/cpuCode.cpp.i
+.PHONY : Compressor/cpuCode.i
+
+# target to preprocess a source file
+Compressor/cpuCode.cpp.i:
+	$(MAKE) -f CMakeFiles/compressionstreamer.dir/build.make CMakeFiles/compressionstreamer.dir/Compressor/cpuCode.cpp.i
+.PHONY : Compressor/cpuCode.cpp.i
+
+Compressor/cpuCode.s: Compressor/cpuCode.cpp.s
+.PHONY : Compressor/cpuCode.s
+
+# target to generate assembly for a file
+Compressor/cpuCode.cpp.s:
+	$(MAKE) -f CMakeFiles/compressionstreamer.dir/build.make CMakeFiles/compressionstreamer.dir/Compressor/cpuCode.cpp.s
+.PHONY : Compressor/cpuCode.cpp.s
+
 main.o: main.cpp.o
 .PHONY : main.o
 
@@ -294,6 +318,9 @@ help:
 	@echo "... AstroReader/stridefactory.o"
 	@echo "... AstroReader/stridefactory.i"
 	@echo "... AstroReader/stridefactory.s"
+	@echo "... Compressor/cpuCode.o"
+	@echo "... Compressor/cpuCode.i"
+	@echo "... Compressor/cpuCode.s"
 	@echo "... main.o"
 	@echo "... main.i"
 	@echo "... main.s"

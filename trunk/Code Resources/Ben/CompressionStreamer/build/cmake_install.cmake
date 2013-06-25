@@ -1,4 +1,4 @@
-# Install script for directory: /home/benjamin/projects/CompressionStreamer
+# Install script for directory: /home/bhugo/projects/CompressionStreamer
 
 # Set the install prefix
 IF(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -39,7 +39,7 @@ IF(NOT CMAKE_INSTALL_COMPONENT OR "${CMAKE_INSTALL_COMPONENT}" STREQUAL "Unspeci
          FILE "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/bin/compressionstreamer"
          RPATH "")
   ENDIF()
-  FILE(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/bin" TYPE EXECUTABLE FILES "/home/benjamin/projects/CompressionStreamer/build/compressionstreamer")
+  FILE(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/bin" TYPE EXECUTABLE FILES "/home/bhugo/projects/CompressionStreamer/build/compressionstreamer")
   IF(EXISTS "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/bin/compressionstreamer" AND
      NOT IS_SYMLINK "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/bin/compressionstreamer")
     IF(CMAKE_INSTALL_DO_STRIP)
@@ -50,8 +50,8 @@ ENDIF(NOT CMAKE_INSTALL_COMPONENT OR "${CMAKE_INSTALL_COMPONENT}" STREQUAL "Unsp
 
 IF(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
-  INCLUDE("/home/benjamin/projects/CompressionStreamer/build/AstroReader/cmake_install.cmake")
-  INCLUDE("/home/benjamin/projects/CompressionStreamer/build/Compressor/cmake_install.cmake")
+  INCLUDE("/home/bhugo/projects/CompressionStreamer/build/AstroReader/cmake_install.cmake")
+  INCLUDE("/home/bhugo/projects/CompressionStreamer/build/Compressor/cmake_install.cmake")
 
 ENDIF(NOT CMAKE_INSTALL_LOCAL_ONLY)
 
@@ -61,7 +61,7 @@ ELSE(CMAKE_INSTALL_COMPONENT)
   SET(CMAKE_INSTALL_MANIFEST "install_manifest.txt")
 ENDIF(CMAKE_INSTALL_COMPONENT)
 
-FILE(WRITE "/home/benjamin/projects/CompressionStreamer/build/${CMAKE_INSTALL_MANIFEST}" "")
+FILE(WRITE "/home/bhugo/projects/CompressionStreamer/build/${CMAKE_INSTALL_MANIFEST}" "")
 FOREACH(file ${CMAKE_INSTALL_MANIFEST_FILES})
-  FILE(APPEND "/home/benjamin/projects/CompressionStreamer/build/${CMAKE_INSTALL_MANIFEST}" "${file}\n")
+  FILE(APPEND "/home/bhugo/projects/CompressionStreamer/build/${CMAKE_INSTALL_MANIFEST}" "${file}\n")
 ENDFOREACH(file)

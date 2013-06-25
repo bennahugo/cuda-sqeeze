@@ -2,7 +2,7 @@ project(compressionstreamer)
 
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8 FATAL_ERROR)
 
-add_executable(compressionstreamer streamcollector.cpp AstroReader/stride.cpp AstroReader/file.cpp AstroReader/stridefactory.cpp main.cpp)
+add_executable(compressionstreamer Compressor/cpuCode.cpp streamcollector.cpp AstroReader/stride.cpp AstroReader/file.cpp AstroReader/stridefactory.cpp main.cpp)
 
 install(TARGETS compressionstreamer RUNTIME DESTINATION bin)
 
