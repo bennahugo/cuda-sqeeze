@@ -11,12 +11,14 @@
 #include "Timer.h"
 
 
-#define FILENAME "/media/74A5-DB52/1370275467.h5"
+#define FILENAME "/media/OS/SKA_DATA/kat7_data/1369853370.h5"
 #define MAX_READ_BUFFER_IN_MB 1024
+void usedBitCountTest(uint32_t * data, int countData, int maxLeadingZeroCount, uint32_t * out);
 void printBinaryRepresentation(void * data, int sizeInBytes);
 void processStride(const astroReader::stride & data);
-void compressCallback(uint64_t compressedResidualsIntCount, uint32_t * compressedResiduals,
-		       uint64_t compressedPrefixIntCount, uint32_t * compressedPrefixes);
+void compressCallback(uint32_t compressedResidualsIntCount, uint32_t * compressedResiduals,
+		       uint32_t compressedPrefixIntCount, uint32_t * compressedPrefixes);
+
 unsigned int accSize = 0;
 
 int main(int argc, char **argv) {
@@ -41,19 +43,29 @@ int main(int argc, char **argv) {
 									  f.getDimensionSize(2)-1,0);
       processStride(data);
     }
+//     float data1[5] = {2.43f,0.245f,0.249f,0.409f,3.092};
+//     float data2[5] = {2.83f,0.125f,0.289f,0.415f,4.092};
+//     for (int i = 0; i < 5; ++i){
+//       uint32_t t = ((uint32_t*)&data1[0])[i] ^ ((uint32_t*)&data2[0])[i];
+//       printBinaryRepresentation(&t,sizeof(uint32_t));
+//     }
+//     cpuCode::compressor::initCompressor((float *)&data1,5);
+//     cpuCode::compressor::compressData((float *)&data2,5,compressCallback);
+//     cpuCode::compressor::releaseResources();
     return 0;
 }
 int callbackcount = 0;
-void compressCallback(uint64_t compressedResidualsIntCount, uint32_t * compressedResiduals,
-		       uint64_t compressedPrefixIntCount, uint32_t * compressedPrefixes){
+void compressCallback(uint32_t compressedResidualsIntCount, uint32_t * compressedResiduals,
+		       uint32_t compressedPrefixIntCount, uint32_t * compressedPrefixes){
   using namespace std;
   accSize += compressedResidualsIntCount+compressedPrefixIntCount;
-  /*cout << "COMPRESSED PREFIXES:" << endl;
-    for (uint64_t i = 0; i < compressedPrefixIntCount; ++i)
-      printBinaryRepresentation(&(compressedPrefixes[i]),sizeof(uint32_t));
-  cout << "COMPRESSED RESIDUALS:" << endl;
-    for (uint64_t i = 0; i < compressedResidualsIntCount; ++i)
-      printBinaryRepresentation(&(compressedResiduals[i]),sizeof(uint32_t));*/
+  //cout << ++callbackcount << ':' <<  compressedResidualsIntCount << ',' << compressedPrefixIntCount << endl;
+//   cout << "COMPRESSED PREFIXES:" << endl;
+//     for (uint64_t i = 0; i < compressedPrefixIntCount; ++i)
+//       printBinaryRepresentation(&(compressedPrefixes[i]),sizeof(uint32_t));
+//   cout << "COMPRESSED RESIDUALS:" << endl;
+//     for (uint64_t i = 0; i < compressedResidualsIntCount; ++i)
+//       printBinaryRepresentation(&(compressedResiduals[i]),sizeof(uint32_t));
 }
 
 void processStride(const astroReader::stride & data){
@@ -62,15 +74,22 @@ void processStride(const astroReader::stride & data){
     data.getTimeStampData(0,ts);
     cpuCode::compressor::initCompressor(ts,tsSize);
     accSize += tsSize+1;
+    double origSize = tsSize;
+    std::cout << "Original Timestamp Size:  " << origSize << std::endl;
     Timer::tic();
     for (int t = 1; t <= data.getMaxTimestampIndex() - data.getMinTimestampIndex(); ++t) {
         data.getTimeStampData(t,ts);
         cpuCode::compressor::compressData(ts,tsSize,compressCallback);
+	origSize += tsSize;
     }
+    double delta = Timer::toc();
+    double ratio = (accSize / origSize);
     delete[] ts;
-    std::cout << "COMPRESSION RATIO: " << (accSize / (float) (tsSize*(data.getMaxTimestampIndex()-data.getMinTimestampIndex()+1))) << std::endl;
+    std::cout << "COMPRESSION RATIO: " << ratio << std::endl;
     accSize = 0;
-    std::cout << "COMPRESSED IN " << Timer::toc() << " seconds" << std::endl;
+    
+    std::cout << "COMPRESSED IN " << delta << " seconds" << std::endl;
+    std::cout << "THROUGHPUT: " << origSize*sizeof(float)/1024.0f/1024.0f/1024.0f/delta << "GB/s" << std::endl;
 }
 
 void printBinaryRepresentation(void * data, int sizeInBytes){

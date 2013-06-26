@@ -39,10 +39,10 @@ RM = /usr/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/bhugo/projects/CompressionStreamer
+CMAKE_SOURCE_DIR = /home/benjamin/projects/CompressionStreamer
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/bhugo/projects/CompressionStreamer/build
+CMAKE_BINARY_DIR = /home/benjamin/projects/CompressionStreamer/build
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -110,9 +110,9 @@ rebuild_cache/fast: rebuild_cache
 
 # The main all target
 all: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/bhugo/projects/CompressionStreamer/build/CMakeFiles /home/bhugo/projects/CompressionStreamer/build/CMakeFiles/progress.marks
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/benjamin/projects/CompressionStreamer/build/CMakeFiles /home/benjamin/projects/CompressionStreamer/build/CMakeFiles/progress.marks
 	$(MAKE) -f CMakeFiles/Makefile2 all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/bhugo/projects/CompressionStreamer/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/benjamin/projects/CompressionStreamer/build/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
@@ -248,6 +248,30 @@ Compressor/cpuCode.cpp.s:
 	$(MAKE) -f CMakeFiles/compressionstreamer.dir/build.make CMakeFiles/compressionstreamer.dir/Compressor/cpuCode.cpp.s
 .PHONY : Compressor/cpuCode.cpp.s
 
+Timer.o: Timer.cpp.o
+.PHONY : Timer.o
+
+# target to build an object file
+Timer.cpp.o:
+	$(MAKE) -f CMakeFiles/compressionstreamer.dir/build.make CMakeFiles/compressionstreamer.dir/Timer.cpp.o
+.PHONY : Timer.cpp.o
+
+Timer.i: Timer.cpp.i
+.PHONY : Timer.i
+
+# target to preprocess a source file
+Timer.cpp.i:
+	$(MAKE) -f CMakeFiles/compressionstreamer.dir/build.make CMakeFiles/compressionstreamer.dir/Timer.cpp.i
+.PHONY : Timer.cpp.i
+
+Timer.s: Timer.cpp.s
+.PHONY : Timer.s
+
+# target to generate assembly for a file
+Timer.cpp.s:
+	$(MAKE) -f CMakeFiles/compressionstreamer.dir/build.make CMakeFiles/compressionstreamer.dir/Timer.cpp.s
+.PHONY : Timer.cpp.s
+
 main.o: main.cpp.o
 .PHONY : main.o
 
@@ -271,30 +295,6 @@ main.s: main.cpp.s
 main.cpp.s:
 	$(MAKE) -f CMakeFiles/compressionstreamer.dir/build.make CMakeFiles/compressionstreamer.dir/main.cpp.s
 .PHONY : main.cpp.s
-
-streamcollector.o: streamcollector.cpp.o
-.PHONY : streamcollector.o
-
-# target to build an object file
-streamcollector.cpp.o:
-	$(MAKE) -f CMakeFiles/compressionstreamer.dir/build.make CMakeFiles/compressionstreamer.dir/streamcollector.cpp.o
-.PHONY : streamcollector.cpp.o
-
-streamcollector.i: streamcollector.cpp.i
-.PHONY : streamcollector.i
-
-# target to preprocess a source file
-streamcollector.cpp.i:
-	$(MAKE) -f CMakeFiles/compressionstreamer.dir/build.make CMakeFiles/compressionstreamer.dir/streamcollector.cpp.i
-.PHONY : streamcollector.cpp.i
-
-streamcollector.s: streamcollector.cpp.s
-.PHONY : streamcollector.s
-
-# target to generate assembly for a file
-streamcollector.cpp.s:
-	$(MAKE) -f CMakeFiles/compressionstreamer.dir/build.make CMakeFiles/compressionstreamer.dir/streamcollector.cpp.s
-.PHONY : streamcollector.cpp.s
 
 # Help Target
 help:
@@ -321,12 +321,12 @@ help:
 	@echo "... Compressor/cpuCode.o"
 	@echo "... Compressor/cpuCode.i"
 	@echo "... Compressor/cpuCode.s"
+	@echo "... Timer.o"
+	@echo "... Timer.i"
+	@echo "... Timer.s"
 	@echo "... main.o"
 	@echo "... main.i"
 	@echo "... main.s"
-	@echo "... streamcollector.o"
-	@echo "... streamcollector.i"
-	@echo "... streamcollector.s"
 .PHONY : help
 
 

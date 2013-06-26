@@ -17,24 +17,21 @@ CMakeFiles/compressionstreamer.dir/AstroReader/stridefactory.cpp.o: ../AstroRead
 CMakeFiles/compressionstreamer.dir/AstroReader/stridefactory.cpp.o: ../AstroReader/stridefactory.cpp
 CMakeFiles/compressionstreamer.dir/AstroReader/stridefactory.cpp.o: ../AstroReader/stridefactory.h
 
+CMakeFiles/compressionstreamer.dir/Compressor/cpuCode.cpp.o: ../Compressor/../Timer.h
 CMakeFiles/compressionstreamer.dir/Compressor/cpuCode.cpp.o: ../Compressor/cpuCode.cpp
 CMakeFiles/compressionstreamer.dir/Compressor/cpuCode.cpp.o: ../Compressor/cpuCode.h
 CMakeFiles/compressionstreamer.dir/Compressor/cpuCode.cpp.o: ../Compressor/exceptions.h
+
+CMakeFiles/compressionstreamer.dir/Timer.cpp.o: ../Timer.cpp
+CMakeFiles/compressionstreamer.dir/Timer.cpp.o: ../Timer.h
 
 CMakeFiles/compressionstreamer.dir/main.cpp.o: ../AstroReader/complexPair.h
 CMakeFiles/compressionstreamer.dir/main.cpp.o: ../AstroReader/exceptions.h
 CMakeFiles/compressionstreamer.dir/main.cpp.o: ../AstroReader/file.h
 CMakeFiles/compressionstreamer.dir/main.cpp.o: ../AstroReader/stride.h
 CMakeFiles/compressionstreamer.dir/main.cpp.o: ../AstroReader/stridefactory.h
+CMakeFiles/compressionstreamer.dir/main.cpp.o: ../Compressor/../Timer.h
 CMakeFiles/compressionstreamer.dir/main.cpp.o: ../Compressor/cpuCode.h
+CMakeFiles/compressionstreamer.dir/main.cpp.o: ../Timer.h
 CMakeFiles/compressionstreamer.dir/main.cpp.o: ../main.cpp
-CMakeFiles/compressionstreamer.dir/main.cpp.o: ../streamcollector.h
-
-CMakeFiles/compressionstreamer.dir/streamcollector.cpp.o: ../AstroReader/complexPair.h
-CMakeFiles/compressionstreamer.dir/streamcollector.cpp.o: ../AstroReader/exceptions.h
-CMakeFiles/compressionstreamer.dir/streamcollector.cpp.o: ../AstroReader/file.h
-CMakeFiles/compressionstreamer.dir/streamcollector.cpp.o: ../AstroReader/stride.h
-CMakeFiles/compressionstreamer.dir/streamcollector.cpp.o: ../AstroReader/stridefactory.h
-CMakeFiles/compressionstreamer.dir/streamcollector.cpp.o: ../streamcollector.cpp
-CMakeFiles/compressionstreamer.dir/streamcollector.cpp.o: ../streamcollector.h
 

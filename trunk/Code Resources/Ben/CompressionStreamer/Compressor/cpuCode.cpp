@@ -23,42 +23,67 @@ uint64_t _compressorIVLength = -1;
 uint32_t * _decompressorIV = NULL; 
 uint64_t _decompressorIVLength = -1;
 
-void usedBitCount(uint32_t * data, int countData, int ignoreNumSignificantBits, int maxLeadingZeroCount, uint32_t * out){
-  for (int i = 0; i < countData; ++i){
-    int b = 31;
-    int counter = 0; 
-    for (b = 31 - ignoreNumSignificantBits; b >= (32 - maxLeadingZeroCount); --b){ 
-      if (!(0x1 << b & ((int*)&data[0])[i]))
-	++counter;
-      else
-	break;
-    }
-    out[i] = 32-(counter + ignoreNumSignificantBits);
-  }
+static const unsigned char LogTable256[256] = 
+{
+#define LT(n) n, n, n, n, n, n, n, n, n, n, n, n, n, n, n, n
+    -1, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3,
+    LT(4), LT(5), LT(5), LT(6), LT(6), LT(6), LT(6),
+    LT(7), LT(7), LT(7), LT(7), LT(7), LT(7), LT(7), LT(7)
+};
+inline uint32_t binaryLog32(uint32_t v){
+  unsigned int t, tt; // temporaries
+  if (tt = v >> 16)
+    return (t = tt >> 8) ? 24 + LogTable256[t] : 16 + LogTable256[tt];
+  else
+    return (t = v >> 8) ? 8 + LogTable256[t] : LogTable256[v];
 }
 
 void createParallelPrefixSum(uint32_t * counts, uint32_t numElements) {
-    //up-sweep:
-    uint64_t upperBound = (uint64_t)log2(numElements)-1;
-    for (uint64_t d = 0; d <= upperBound; ++d) {
-        uint64_t twoTodPlus1 = (uint64_t)pow(2,d+1);
-        #pragma omp parallel for shared(twoTodPlus1)
-        for (uint64_t i = 0; i < numElements; i += twoTodPlus1) {
-            counts[i + twoTodPlus1 - 1] += counts[i + twoTodPlus1/2 - 1];
+    int parallelLength = 1 << binaryLog32(numElements);
+    if (parallelLength > 1) {
+        uint32_t lastCount = counts[parallelLength-1];
+        //up-sweep:
+        uint32_t upperBound = (uint64_t)binaryLog32(parallelLength)-1;
+        for (uint32_t d = 0; d <= upperBound; ++d) {
+            uint32_t twoTodPlus1 = 1 << d+1;
+            #pragma omp parallel for shared(twoTodPlus1)
+            for (uint64_t i = 0; i < parallelLength; i += twoTodPlus1) {
+                counts[i + twoTodPlus1 - 1] += counts[i + (twoTodPlus1 >> 1) - 1];
+            }
         }
-    }
-    //clear:
-    counts[numElements-1] = 0;
-    //down-sweep:
-    for (uint64_t d=upperBound; d >= 0; --d) {
-        uint64_t twoTodPlus1 = (uint64_t)pow(2,d+1);
-        #pragma omp parallel for shared(twoTodPlus1)
-        for (uint64_t i = 0; i < numElements; i += twoTodPlus1) {
-            uint32_t t = counts[i + twoTodPlus1/2 - 1];
-            counts[i + twoTodPlus1/2 - 1] = counts[i + twoTodPlus1 - 1];
-            counts[i + twoTodPlus1 - 1] += t;
+        //clear:
+        counts[parallelLength-1] = 0;
+        //down-sweep:
+        for (uint32_t d=upperBound; d >= 0; --d) {
+            uint32_t twoTodPlus1 = 1 << d+1;
+            #pragma omp parallel for shared(twoTodPlus1)
+            for (uint32_t i = 0; i < parallelLength; i += twoTodPlus1) {
+                uint32_t t = counts[i + (twoTodPlus1 >> 1) - 1];
+                counts[i + (twoTodPlus1 >> 1) - 1] = counts[i + twoTodPlus1 - 1];
+                counts[i + twoTodPlus1 - 1] += t;
+            }
+            if (d == 0) break;
         }
-       if (d == 0) break;
+        int serialLength = numElements - parallelLength;
+        if (serialLength > 0) {
+            int sum = counts[parallelLength-1]+lastCount;
+            for (int i = parallelLength; i < parallelLength+serialLength; ++i) {
+                int prevSum = sum;
+                sum += counts[i];
+                counts[i] = prevSum;
+            }
+        }
+    } else {
+        int serialLength = numElements - parallelLength;
+        if (serialLength > 0) {
+            int sum = counts[0];
+            for (int i = parallelLength; i < serialLength; ++i) {
+                int prevSum = sum;
+                sum += counts[i];
+                counts[i] = prevSum;
+            }
+            counts[0] = 0;
+        }
     }
 }
 
@@ -71,6 +96,7 @@ void cpuCode::compressor::initCompressor(const float* iv, uint64_t ivLength){
   memcpy(_compressorIV,iv,ivLength*sizeof(float));
   _compressorIVLength = ivLength;
 }
+
 void cpuCode::compressor::releaseResources(){
   if (_compressorIV != NULL){
     delete[] _compressorIV;
@@ -78,96 +104,83 @@ void cpuCode::compressor::releaseResources(){
     _compressorIVLength = -1;
   }
 }
-void cpuCode::compressor::compressData(const float * data, uint64_t elementCount,
-			  void (*callBack)(uint64_t compressedResidualsIntCount, uint32_t * compressedResiduals,
-			    uint64_t compressedPrefixIntCount, uint32_t * compressedPrefixes)){
+
+void cpuCode::compressor::compressData(const float * data, uint32_t elementCount,
+			  void (*callBack)(uint32_t compressedResidualsIntCount, uint32_t * compressedResiduals,
+			    uint32_t compressedPrefixIntCount, uint32_t * compressedPrefixes)){
     if (_compressorIV == NULL || _compressorIVLength != elementCount)
         throw invalidInitializationException();
 
-    uint8_t storageIndiceCapacity = 8*sizeof(uint32_t);
+    uint32_t storageIndiceCapacity = 8*sizeof(uint32_t);
     
     /*
-     * Create difference array
+     * create storage for counts and prefixes:
+     */
+    uint8_t bitCountForRepresentation = 4;
+    uint32_t sizeOfPrefixArray = (elementCount * bitCountForRepresentation) / storageIndiceCapacity +
+      ((elementCount * bitCountForRepresentation) % storageIndiceCapacity != 0 ? 1 : 0);
+    uint32_t * arrPrefix = new uint32_t[sizeOfPrefixArray](); //default initialize
+    uint32_t * arrIndexes = new uint32_t[elementCount](); //default initialize
+    
+    /*
+     * Create difference array, count used bits (up to 15 leading zero bits) and save prefixes
      */
     #pragma omp parallel for shared(_compressorIV)
-    for (uint64_t i = 0; i < elementCount; ++i){
+    for (uint32_t i = 0; i < elementCount; ++i){
       _compressorIV[i] ^= ((uint32_t *)&data[0])[i];
+      arrIndexes[i] = fmax(17,(binaryLog32(_compressorIV[i]) + 1) & 0x3f); // &0x3f to mask out log2(0) + 1
+      
+      //store the 4-bit leading zero count (32 - used bits)
+      uint8_t prefix =  (storageIndiceCapacity-arrIndexes[i]);
+      //compact prefixes:
+      uint32_t startingIndex = (i*bitCountForRepresentation) / storageIndiceCapacity;
+      uint8_t lshiftAmount = (storageIndiceCapacity - bitCountForRepresentation);
+      uint8_t rshiftAmount = (i*bitCountForRepresentation) % storageIndiceCapacity;
+      uint8_t writtenBits = storageIndiceCapacity - lshiftAmount - fmax(lshiftAmount - rshiftAmount,0);
+      #pragma omp atomic
+      arrPrefix[startingIndex] |=
+          ((prefix << lshiftAmount) >> rshiftAmount);
+      if (bitCountForRepresentation - lshiftAmount - writtenBits > 0)
+         #pragma omp atomic
+         arrPrefix[startingIndex+1] |=
+            (prefix << (lshiftAmount + writtenBits));
     }
     
-    /*
-     * count leading zeros (ignore sign bit). Count up to 15 zeros (this needs 4 bits to store):
-     */
-    //the parallel prefix sum requires the size of the count array to be a power of 2:
-    uint64_t indicesArraySize = (uint64_t)pow(2,ceil(log2(elementCount)));	
-    uint32_t * arrIndexes = new uint32_t[indicesArraySize];
-    //init array:
-    for (int i = 0; i < indicesArraySize; ++i)
-      arrIndexes[i] = 0;
-    usedBitCount(_compressorIV, elementCount, 0, 15, arrIndexes);
     //save the first and last used bit counts, because they will be lost when the prefix sum is computed:
     uint8_t firstCount = arrIndexes[0];
     uint8_t lastCount = arrIndexes[elementCount - 1];
-
-    /*
-     * create storage for prefixes:
-     */
-    uint64_t sizeOfPrefixArray = ceil((elementCount * 4) / (float) storageIndiceCapacity);
-    uint32_t * arrPrefix = new uint32_t[sizeOfPrefixArray];
-    //init array:
-    for (int i = 0; i < sizeOfPrefixArray; ++i)
-      arrPrefix[i] = 0;
-    /*
-     * create compressed prefix array:
-     */
-    #pragma omp parallel for shared(arrPrefix)
-    for (uint64_t i = 0; i < elementCount; ++i) {
-        //store sign bit of the original data (shifted up) and then the 4 bits leading zero count (32 - used bits)
-        uint8_t prefix = /*((((uint32_t*) &data[0])[i] >> storageIndiceCapacity - 1) << 4) |*/ (storageIndiceCapacity-arrIndexes[i]);
-        //compact prefixes:
-        int startingIndex = (i*4) / storageIndiceCapacity;
-        int lshiftAmount = (storageIndiceCapacity - 4);
-        int rshiftAmount = (i*4) % storageIndiceCapacity;
-        int writtenBits = storageIndiceCapacity - fmax(lshiftAmount,rshiftAmount);
-        #pragma omp atomic
-        arrPrefix[startingIndex] |=
-            ((prefix << lshiftAmount) >> rshiftAmount);
-        if (4 - lshiftAmount - writtenBits > 0)
-            #pragma omp atomic
-            arrPrefix[startingIndex+1] |=
-                (prefix << (lshiftAmount + writtenBits));
-    }
+    
     /*
      * create prefix sum (these are the starting (bit) indexes of the values):
      */
-     createParallelPrefixSum(arrIndexes, indicesArraySize);
+     createParallelPrefixSum(arrIndexes, elementCount);
      
     /*
      * create storage for residuals:
      */
-    uint64_t sizeOfResidualArray = ceil((arrIndexes[elementCount-1] + lastCount) / (float) storageIndiceCapacity);
-    uint32_t * arrResiduals = new uint32_t[sizeOfResidualArray];
-    //init array:
-    for (int i = 0; i < sizeOfResidualArray; ++i)
-      arrResiduals[i] = 0;
+    uint32_t sizeOfResidualArray = (arrIndexes[elementCount-1] + lastCount) / storageIndiceCapacity + 
+       ((arrIndexes[elementCount-1] + lastCount) % storageIndiceCapacity != 0 ? 1 : 0);
+    uint32_t * arrResiduals = new uint32_t[sizeOfResidualArray](); //default initialize
+    
     /*
      * save residuals:
      */
     arrIndexes[0] = firstCount;
     //deal with the special case of the first element:
     {
-        int startingIndex = 0;
-        int lshiftAmount = (storageIndiceCapacity - firstCount);
-	int rshiftAmount = 0 % storageIndiceCapacity;
-        int writtenBits = storageIndiceCapacity - lshiftAmount - fmax(rshiftAmount-lshiftAmount,0);
+        uint32_t startingIndex = 0;
+        uint8_t lshiftAmount = (storageIndiceCapacity - firstCount);
+	uint8_t rshiftAmount = 0 % storageIndiceCapacity;
+        uint8_t writtenBits = storageIndiceCapacity - lshiftAmount - fmax(rshiftAmount-lshiftAmount,0);
         arrResiduals[startingIndex] = _compressorIV[0] << lshiftAmount;
     }
     //the inner bit is parallizable:
     #pragma omp parallel for shared(arrResiduals)
-    for (int i=1; i < elementCount-1; ++i) {
-        int startingIndex = arrIndexes[i] / storageIndiceCapacity;
-        int lshiftAmount = (storageIndiceCapacity - (arrIndexes[i+1]-arrIndexes[i]));
-        int rshiftAmount = arrIndexes[i] % storageIndiceCapacity;
-        int writtenBits = storageIndiceCapacity - lshiftAmount - fmax(rshiftAmount-lshiftAmount,0);
+    for (uint32_t i=1; i < elementCount-1; ++i) {
+        uint32_t startingIndex = arrIndexes[i] / storageIndiceCapacity;
+        uint8_t lshiftAmount = (storageIndiceCapacity - (arrIndexes[i+1]-arrIndexes[i]));
+        uint8_t rshiftAmount = arrIndexes[i] % storageIndiceCapacity;
+        uint8_t writtenBits = storageIndiceCapacity - lshiftAmount - fmax(rshiftAmount-lshiftAmount,0);
         #pragma omp atomic
         arrResiduals[startingIndex] |=
             ( (_compressorIV[i] << lshiftAmount) >> rshiftAmount);
@@ -179,28 +192,29 @@ void cpuCode::compressor::compressData(const float * data, uint64_t elementCount
   //deal with the special case of the last element
   if (elementCount > 1)
     {
-        int startingIndex = arrIndexes[elementCount - 1] / storageIndiceCapacity;
-        int lshiftAmount = (storageIndiceCapacity - lastCount);
-        int rshiftAmount = arrIndexes[elementCount - 1] % storageIndiceCapacity;
-        int writtenBits = storageIndiceCapacity - fmax(lshiftAmount,rshiftAmount);
+        uint32_t startingIndex = arrIndexes[elementCount - 1] / storageIndiceCapacity;
+        uint8_t lshiftAmount = (storageIndiceCapacity - lastCount);
+        uint8_t rshiftAmount = arrIndexes[elementCount - 1] % storageIndiceCapacity;
+        uint8_t writtenBits = storageIndiceCapacity - lshiftAmount - fmax(rshiftAmount - lshiftAmount,0);
         arrResiduals[startingIndex] |=
                              ( (_compressorIV[elementCount - 1] << lshiftAmount) >> rshiftAmount);
-        if (storageIndiceCapacity - lshiftAmount - writtenBits > 0)
+        if (storageIndiceCapacity - lshiftAmount - writtenBits > 0){
             arrResiduals[startingIndex+1] |=
                                    ( _compressorIV[elementCount - 1] << (lshiftAmount + writtenBits));
+	};
     }  
   arrIndexes[0] = 0;
   
   /*
    * Copy the current data to the IV memory for the next round of compression
    */
-  memcpy(_compressorIV,data,elementCount*sizeof(float));
+   memcpy(_compressorIV,data,elementCount*sizeof(float));
   
   /*
    * Finally call back to the caller with pointers to the compressed data & afterwards free the used data
    */
   callBack(sizeOfResidualArray,arrResiduals,sizeOfPrefixArray,arrPrefix);    
-  delete[] arrIndexes;
-  delete[] arrPrefix;
-  delete[] arrResiduals;
+   delete[] arrIndexes;
+   delete[] arrPrefix;
+   delete[] arrResiduals;
 }
