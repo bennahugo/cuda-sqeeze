@@ -25,17 +25,17 @@
 #include <stdint.h>
 #include <math.h>
 #include <omp.h>
-
+#include <emmintrin.h>
 #include <iostream>
 
 #include "exceptions.h"
-
+#include "../Timer.h"
 namespace cpuCode{
   namespace compressor{
     void initCompressor(const float * iv, uint64_t ivLength);
-    void compressData(const float * data, uint64_t elementCount,
-			    void (*callBack)(uint64_t compressedResidualsIntCount, uint32_t * compressedResiduals,
-			      uint64_t compressedPrefixIntCount, uint32_t * compressedPrefixes));
+    void compressData(const float * data, uint32_t elementCount,
+			    void (*callBack)(uint32_t compressedResidualsIntCount, uint32_t * compressedResiduals,
+			      uint32_t compressedPrefixIntCount, uint32_t * compressedPrefixes));
     void releaseResources();
   }
   namespace decompressor{
