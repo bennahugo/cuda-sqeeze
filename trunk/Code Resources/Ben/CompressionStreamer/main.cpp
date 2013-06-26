@@ -60,12 +60,12 @@ void compressCallback(uint32_t compressedResidualsIntCount, uint32_t * compresse
   using namespace std;
   accSize += compressedResidualsIntCount+compressedPrefixIntCount;
   //cout << ++callbackcount << ':' <<  compressedResidualsIntCount << ',' << compressedPrefixIntCount << endl;
-//   cout << "COMPRESSED PREFIXES:" << endl;
-//     for (uint64_t i = 0; i < compressedPrefixIntCount; ++i)
-//       printBinaryRepresentation(&(compressedPrefixes[i]),sizeof(uint32_t));
-//   cout << "COMPRESSED RESIDUALS:" << endl;
-//     for (uint64_t i = 0; i < compressedResidualsIntCount; ++i)
-//       printBinaryRepresentation(&(compressedResiduals[i]),sizeof(uint32_t));
+  /*cout << "COMPRESSED PREFIXES:" << endl;
+    for (uint64_t i = 0; i < compressedPrefixIntCount; ++i)
+      printBinaryRepresentation(&(compressedPrefixes[i]),sizeof(uint32_t));
+  cout << "COMPRESSED RESIDUALS:" << endl;
+    for (uint64_t i = 0; i < compressedResidualsIntCount; ++i)
+      printBinaryRepresentation(&(compressedResiduals[i]),sizeof(uint32_t));*/
 }
 
 void processStride(const astroReader::stride & data){

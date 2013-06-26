@@ -116,11 +116,11 @@ void cpuCode::compressor::compressData(const float * data, uint32_t elementCount
     /*
      * create storage for counts and prefixes:
      */
-    uint8_t bitCountForRepresentation = 4;
+    uint8_t bitCountForRepresentation = 5;
     uint32_t sizeOfPrefixArray = (elementCount * bitCountForRepresentation) / storageIndiceCapacity +
       ((elementCount * bitCountForRepresentation) % storageIndiceCapacity != 0 ? 1 : 0);
     uint32_t * arrPrefix = new uint32_t[sizeOfPrefixArray](); //default initialize
-    uint32_t * arrIndexes = new uint32_t[elementCount](); //default initialize
+    uint32_t * arrIndexes = new uint32_t[elementCount]; //no need to initialize we're going to override this in any case
     
     /*
      * Create difference array, count used bits (up to 15 leading zero bits) and save prefixes
@@ -128,7 +128,7 @@ void cpuCode::compressor::compressData(const float * data, uint32_t elementCount
     #pragma omp parallel for shared(_compressorIV)
     for (uint32_t i = 0; i < elementCount; ++i){
       _compressorIV[i] ^= ((uint32_t *)&data[0])[i];
-      arrIndexes[i] = fmax(17,(binaryLog32(_compressorIV[i]) + 1) & 0x3f); // &0x3f to mask out log2(0) + 1
+      arrIndexes[i] = fmax(1,(binaryLog32(_compressorIV[i]) + 1) & 0x3f); // &0x3f to mask out log2(0) + 1
       
       //store the 4-bit leading zero count (32 - used bits)
       uint8_t prefix =  (storageIndiceCapacity-arrIndexes[i]);
@@ -143,7 +143,7 @@ void cpuCode::compressor::compressData(const float * data, uint32_t elementCount
       if (bitCountForRepresentation - lshiftAmount - writtenBits > 0)
          #pragma omp atomic
          arrPrefix[startingIndex+1] |=
-            (prefix << (lshiftAmount + writtenBits));
+            (prefix << (lshiftAmount + writtenBits-1) << 1);
     }
     
     //save the first and last used bit counts, because they will be lost when the prefix sum is computed:
@@ -159,7 +159,7 @@ void cpuCode::compressor::compressData(const float * data, uint32_t elementCount
      * create storage for residuals:
      */
     uint32_t sizeOfResidualArray = (arrIndexes[elementCount-1] + lastCount) / storageIndiceCapacity + 
-       ((arrIndexes[elementCount-1] + lastCount) % storageIndiceCapacity != 0 ? 1 : 0);
+       ((arrIndexes[elementCount-1] + lastCount) % storageIndiceCapacity != 0 ? 1 : 0) + 1; //avoid branch divergence later by using one more int
     uint32_t * arrResiduals = new uint32_t[sizeOfResidualArray](); //default initialize
     
     /*
@@ -177,17 +177,22 @@ void cpuCode::compressor::compressData(const float * data, uint32_t elementCount
     //the inner bit is parallizable:
     #pragma omp parallel for shared(arrResiduals)
     for (uint32_t i=1; i < elementCount-1; ++i) {
-        uint32_t startingIndex = arrIndexes[i] / storageIndiceCapacity;
-        uint8_t lshiftAmount = (storageIndiceCapacity - (arrIndexes[i+1]-arrIndexes[i]));
-        uint8_t rshiftAmount = arrIndexes[i] % storageIndiceCapacity;
-        uint8_t writtenBits = storageIndiceCapacity - lshiftAmount - fmax(rshiftAmount-lshiftAmount,0);
-        #pragma omp atomic
-        arrResiduals[startingIndex] |=
-            ( (_compressorIV[i] << lshiftAmount) >> rshiftAmount);
-        if (storageIndiceCapacity - lshiftAmount - writtenBits > 0)
-            #pragma omp atomic
-            arrResiduals[startingIndex+1] |=
-                ( _compressorIV[i] << (lshiftAmount + writtenBits));
+        uint32_t index = arrIndexes[i];
+	uint32_t ivElem = _compressorIV[i];
+        uint32_t startingIndex = index / storageIndiceCapacity;
+        uint8_t lshiftAmount = (storageIndiceCapacity - (arrIndexes[i+1]-index));
+        uint8_t rshiftAmount = index % storageIndiceCapacity;
+        //uint8_t writtenBits = storageIndiceCapacity - lshiftAmount - fmax(rshiftAmount-lshiftAmount,0);
+	uint64_t* resElem = (uint64_t*) (arrResiduals + startingIndex);
+	#pragma omp atomic
+	resElem[0] |= ( (ivElem << lshiftAmount) >> rshiftAmount);
+//         #pragma omp atomic
+// 	arrResiduals[startingIndex] |=
+//             ( (ivElem << lshiftAmount) >> rshiftAmount);
+//         
+//         #pragma omp atomic
+//         arrResiduals[startingIndex+1] |=
+//             ( ivElem << (lshiftAmount + writtenBits - 1) << 1);
     }
   //deal with the special case of the last element
   if (elementCount > 1)
@@ -213,7 +218,7 @@ void cpuCode::compressor::compressData(const float * data, uint32_t elementCount
   /*
    * Finally call back to the caller with pointers to the compressed data & afterwards free the used data
    */
-  callBack(sizeOfResidualArray,arrResiduals,sizeOfPrefixArray,arrPrefix);    
+  callBack(sizeOfResidualArray-1,arrResiduals,sizeOfPrefixArray,arrPrefix);    
    delete[] arrIndexes;
    delete[] arrPrefix;
    delete[] arrResiduals;
