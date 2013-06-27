@@ -6,15 +6,37 @@
 
 #IncludeRegexTransform: 
 
-/home/benjamin/projects/CompressionStreamer/Compressor/../Timer.h
+/home/bhugo/projects/CompressionStreamer/AstroReader/complexPair.h
+
+/home/bhugo/projects/CompressionStreamer/AstroReader/exceptions.h
+exception
+-
+
+/home/bhugo/projects/CompressionStreamer/AstroReader/stride.cpp
+stride.h
+/home/bhugo/projects/CompressionStreamer/AstroReader/stride.h
+
+/home/bhugo/projects/CompressionStreamer/AstroReader/stride.h
+hdf5.h
+-
+iostream
+-
+cstring
+-
+complexPair.h
+/home/bhugo/projects/CompressionStreamer/AstroReader/complexPair.h
+exceptions.h
+/home/bhugo/projects/CompressionStreamer/AstroReader/exceptions.h
+
+/home/bhugo/projects/CompressionStreamer/Compressor/../Timer.h
 time.h
 -
 
-/home/benjamin/projects/CompressionStreamer/Compressor/cpuCode.cpp
+/home/bhugo/projects/CompressionStreamer/Compressor/cpuCode.cpp
 cpuCode.h
-/home/benjamin/projects/CompressionStreamer/Compressor/cpuCode.h
+/home/bhugo/projects/CompressionStreamer/Compressor/cpuCode.h
 
-/home/benjamin/projects/CompressionStreamer/Compressor/cpuCode.h
+/home/bhugo/projects/CompressionStreamer/Compressor/cpuCode.h
 cstdlib
 -
 cstring
@@ -30,11 +52,11 @@ emmintrin.h
 iostream
 -
 exceptions.h
-/home/benjamin/projects/CompressionStreamer/Compressor/exceptions.h
+/home/bhugo/projects/CompressionStreamer/Compressor/exceptions.h
 ../Timer.h
-/home/benjamin/projects/CompressionStreamer/Compressor/../Timer.h
+/home/bhugo/projects/CompressionStreamer/Compressor/../Timer.h
 
-/home/benjamin/projects/CompressionStreamer/Compressor/exceptions.h
+/home/bhugo/projects/CompressionStreamer/Compressor/exceptions.h
 exception
 -
 
