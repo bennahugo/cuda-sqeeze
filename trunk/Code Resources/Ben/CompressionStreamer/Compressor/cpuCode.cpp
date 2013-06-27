@@ -154,7 +154,7 @@ void cpuCode::compressor::compressData(const float * data, uint32_t elementCount
      * create prefix sum (these are the starting (bit) indexes of the values):
      */
      createParallelPrefixSum(arrIndexes, elementCount);
-     
+
     /*
      * create storage for residuals:
      */
@@ -222,4 +222,22 @@ void cpuCode::compressor::compressData(const float * data, uint32_t elementCount
    delete[] arrIndexes;
    delete[] arrPrefix;
    delete[] arrResiduals;
+}
+
+void cpuCode::decompressor::initDecompressor(const float* iv, uint64_t ivLength){
+  if (ivLength < 1)
+    throw invalidInitializationException();
+  if (_decompressorIV != NULL)
+    delete[] _decompressorIV;
+  _decompressorIV = new uint32_t[ivLength];
+  memcpy(_decompressorIV,iv,ivLength*sizeof(float));
+  _decompressorIVLength = ivLength;
+}
+
+void cpuCode::decompressor::releaseResources(){
+  if (_decompressorIV != NULL){
+    delete[] _decompressorIV;
+    _decompressorIV = NULL;
+    _decompressorIVLength = -1;
+  }
 }

@@ -140,6 +140,12 @@ complexPair<float> stride::getElement(int timeStampIndex, int frequencyIndex, in
     return complexPair<float>(fBuffer[offset + correlationPairIndex*2],fBuffer[offset + correlationPairIndex*2 + 1]);
 }
 
+/*
+ * Creates a deep copy of a single timestamp to provided buffer
+ * @params timeStampIndex is the index of the timestamp (must be within range)
+ * @params buffer A prealocated buffer of correct size
+ * @throws arguementError if timestampindex is not in bounds
+ */
 void stride::getTimeStampData(int timeStampIndex, float* buffer) const{
   if (timeStampIndex > fmaxTimestampIndex - fminTimestampIndex + 1 || timeStampIndex < 0)
     throw arguementError();
@@ -148,6 +154,9 @@ void stride::getTimeStampData(int timeStampIndex, float* buffer) const{
   memcpy(buffer,fBuffer + offset,length*sizeof(float));
 }
 
+/*
+ * Gets the size of a single time stamp
+ */
 int stride::getTimeStampSize() const{
   int diffFreq = fmaxFreqIndex - fminFreqIndex + 1;
   int diffCorrelation = fmaxCorrelationPairIndex - fminCorrelationPairIndex + 1;

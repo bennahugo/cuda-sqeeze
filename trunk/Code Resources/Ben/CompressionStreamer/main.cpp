@@ -11,7 +11,7 @@
 #include "Timer.h"
 
 
-#define FILENAME "/media/OS/SKA_DATA/kat7_data/1369853370.h5"
+#define FILENAME "/home/bhugo/Desktop/1370275467.h5"
 #define MAX_READ_BUFFER_IN_MB 1024
 void usedBitCountTest(uint32_t * data, int countData, int maxLeadingZeroCount, uint32_t * out);
 void printBinaryRepresentation(void * data, int sizeInBytes);
@@ -60,12 +60,12 @@ void compressCallback(uint32_t compressedResidualsIntCount, uint32_t * compresse
   using namespace std;
   accSize += compressedResidualsIntCount+compressedPrefixIntCount;
   //cout << ++callbackcount << ':' <<  compressedResidualsIntCount << ',' << compressedPrefixIntCount << endl;
-  /*cout << "COMPRESSED PREFIXES:" << endl;
-    for (uint64_t i = 0; i < compressedPrefixIntCount; ++i)
-      printBinaryRepresentation(&(compressedPrefixes[i]),sizeof(uint32_t));
-  cout << "COMPRESSED RESIDUALS:" << endl;
-    for (uint64_t i = 0; i < compressedResidualsIntCount; ++i)
-      printBinaryRepresentation(&(compressedResiduals[i]),sizeof(uint32_t));*/
+//   cout << "COMPRESSED PREFIXES:" << endl;
+//     for (uint64_t i = 0; i < compressedPrefixIntCount; ++i)
+//       printBinaryRepresentation(&(compressedPrefixes[i]),sizeof(uint32_t));
+//   cout << "COMPRESSED RESIDUALS:" << endl;
+//     for (uint64_t i = 0; i < compressedResidualsIntCount; ++i)
+//       printBinaryRepresentation(&(compressedResiduals[i]),sizeof(uint32_t));
 }
 
 void processStride(const astroReader::stride & data){
