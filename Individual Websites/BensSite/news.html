@@ -35,6 +35,11 @@
 	  </div>
 		<div id="content">
 		<h1>News</h1>
+		<h1 class="newsfeed">28 June 2013</h1>
+		<p>I've completed an OMP parallel implementation of the compressor &amp; decompressor. It seems the data
+		compresses best if leading zeros up to 31 bits are compressed (I'm getting compression ratios between 6% and 7%).
+		I'm hoping that by running the algorithm on a machine with more cores and by adding vectorized instructions I will 
+		get a better speedup. Currently compression is completed at ~250 MB/s and decompression is arround ~400 MB/s. </p>
 		<h1 class="newsfeed">18 June 2013</h1>
 		<p>From preliminary observations of the 32 bit floating point MeerKAT data it seems that a predictive algorithm
 		will result in Leading Zero Counts of about 12-13 bits (for the most part). This is not even two whole bytes! In light of
