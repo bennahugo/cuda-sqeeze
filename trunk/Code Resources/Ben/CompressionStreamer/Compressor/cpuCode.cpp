@@ -167,18 +167,16 @@ void cpuCode::compressor::compressData(const float * data, uint32_t elementCount
       _compressorIV[i] ^= ((uint32_t *)&data[0])[i];
       arrIndexes[i] = fmax(1,(binaryLog32(_compressorIV[i]) + 1) & 0x3f); // &0x3f to mask out log2(0) + 1
       
-      //store the 4-bit leading zero count (32 - used bits)
+      //store the 5-bit leading zero count (32 - used bits)
       uint32_t prefix =  (storageIndiceCapacity-arrIndexes[i]);
       //compact prefixes:
       uint32_t startingIndex = (i*bitCountForRepresentation) / storageIndiceCapacity;
       uint8_t lshiftAmount = (storageIndiceCapacity - bitCountForRepresentation);
       uint8_t rshiftAmount = (i*bitCountForRepresentation) % storageIndiceCapacity;
       uint8_t writtenBits = storageIndiceCapacity - lshiftAmount - fmax(rshiftAmount - lshiftAmount,0);
-      #pragma omp atomic
       arrPrefix[startingIndex] |=
           ((prefix << lshiftAmount) >> rshiftAmount);
       if (storageIndiceCapacity - lshiftAmount - writtenBits > 0){
-         #pragma omp atomic
          arrPrefix[startingIndex+1] |=
             (prefix << (lshiftAmount + writtenBits-1) << 1);
       }
@@ -220,7 +218,6 @@ void cpuCode::compressor::compressData(const float * data, uint32_t elementCount
         uint8_t writtenBits = storageIndiceCapacity - lshiftAmount - fmax(rshiftAmount-lshiftAmount,0);	
 	arrResiduals[startingIndex] |= ( (ivElem << lshiftAmount) >> rshiftAmount);
 	if (storageIndiceCapacity - lshiftAmount - writtenBits > 0){
-         #pragma omp atomic
 	 arrResiduals[startingIndex+1] |=
              ( ivElem << (lshiftAmount + writtenBits));
  	}
