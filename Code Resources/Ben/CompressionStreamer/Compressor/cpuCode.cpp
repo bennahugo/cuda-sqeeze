@@ -106,7 +106,7 @@ void cpuCode::compressor::releaseResources(){
 }
 
 void cpuCode::compressor::compressData(const float * data, uint32_t elementCount,
-			  void (*callBack)(uint32_t compressedResidualsIntCount, uint32_t * compressedResiduals,
+			  void (*callBack)(uint32_t elementCount, uint32_t compressedResidualsIntCount, uint32_t * compressedResiduals,
 			    uint32_t compressedPrefixIntCount, uint32_t * compressedPrefixes)){
     if (_compressorIV == NULL || _compressorIVLength != elementCount)
         throw invalidInitializationException();
@@ -149,7 +149,7 @@ void cpuCode::compressor::compressData(const float * data, uint32_t elementCount
     //save the first and last used bit counts, because they will be lost when the prefix sum is computed:
     uint8_t firstCount = arrIndexes[0];
     uint8_t lastCount = arrIndexes[elementCount - 1];
-    
+   
     /*
      * create prefix sum (these are the starting (bit) indexes of the values):
      */
@@ -168,31 +168,25 @@ void cpuCode::compressor::compressData(const float * data, uint32_t elementCount
     arrIndexes[0] = firstCount;
     //deal with the special case of the first element:
     {
-        uint32_t startingIndex = 0;
         uint8_t lshiftAmount = (storageIndiceCapacity - firstCount);
-	uint8_t rshiftAmount = 0 % storageIndiceCapacity;
-        uint8_t writtenBits = storageIndiceCapacity - lshiftAmount - fmax(rshiftAmount-lshiftAmount,0);
-        arrResiduals[startingIndex] = _compressorIV[0] << lshiftAmount;
+        arrResiduals[0] = _compressorIV[0] << lshiftAmount;
     }
     //the inner bit is parallizable:
-    #pragma omp parallel for shared(arrResiduals)
+    //#pragma omp parallel for shared(arrResiduals)
     for (uint32_t i=1; i < elementCount-1; ++i) {
         uint32_t index = arrIndexes[i];
 	uint32_t ivElem = _compressorIV[i];
         uint32_t startingIndex = index / storageIndiceCapacity;
         uint8_t lshiftAmount = (storageIndiceCapacity - (arrIndexes[i+1]-index));
         uint8_t rshiftAmount = index % storageIndiceCapacity;
-        //uint8_t writtenBits = storageIndiceCapacity - lshiftAmount - fmax(rshiftAmount-lshiftAmount,0);
-	uint64_t* resElem = (uint64_t*) (arrResiduals + startingIndex);
+        uint8_t writtenBits = storageIndiceCapacity - lshiftAmount - fmax(rshiftAmount-lshiftAmount,0);
 	#pragma omp atomic
-	resElem[0] |= ( (ivElem << lshiftAmount) >> rshiftAmount);
-//         #pragma omp atomic
-// 	arrResiduals[startingIndex] |=
-//             ( (ivElem << lshiftAmount) >> rshiftAmount);
-//         
-//         #pragma omp atomic
-//         arrResiduals[startingIndex+1] |=
-//             ( ivElem << (lshiftAmount + writtenBits - 1) << 1);
+	arrResiduals[startingIndex] |= ( (ivElem << lshiftAmount) >> rshiftAmount);
+	if (storageIndiceCapacity - lshiftAmount - writtenBits > 0){
+         #pragma omp atomic
+	 arrResiduals[startingIndex+1] |=
+             ( ivElem << (lshiftAmount + writtenBits));
+	}
     }
   //deal with the special case of the last element
   if (elementCount > 1)
@@ -218,7 +212,7 @@ void cpuCode::compressor::compressData(const float * data, uint32_t elementCount
   /*
    * Finally call back to the caller with pointers to the compressed data & afterwards free the used data
    */
-  callBack(sizeOfResidualArray-1,arrResiduals,sizeOfPrefixArray,arrPrefix);    
+  callBack(elementCount,sizeOfResidualArray-1,arrResiduals,sizeOfPrefixArray,arrPrefix);    
    delete[] arrIndexes;
    delete[] arrPrefix;
    delete[] arrResiduals;
@@ -240,4 +234,79 @@ void cpuCode::decompressor::releaseResources(){
     _decompressorIV = NULL;
     _decompressorIVLength = -1;
   }
+}
+
+void cpuCode::decompressor::decompressData(const uint32_t elementCount, const uint32_t* compressedResiduals, const uint32_t* compressedPrefixes, 
+					   void (*callBack)(uint32_t elementCount, uint32_t * decompressedData)){
+  if (_decompressorIV == NULL || _decompressorIVLength != elementCount)
+        throw invalidInitializationException();
+  
+  uint8_t bitCountForRepresentation = 5;
+  uint32_t storageIndiceCapacity = 8*sizeof(uint32_t);
+  
+  /*
+   * create storage for counts and decompressed data:
+   */
+  uint32_t * arrIndexes = new uint32_t[elementCount]; //no need to initialize we're going to override this in any case
+  
+  /*
+   * construct count array from prefix array 
+   */
+  #pragma omp parallel for shared(compressedPrefixes,arrIndexes)
+  for (uint32_t i = 0; i < elementCount; ++i){
+    uint32_t startingIndex = (i*bitCountForRepresentation) / storageIndiceCapacity;
+    uint8_t lshiftAmount = (storageIndiceCapacity - bitCountForRepresentation);
+    uint8_t rshiftAmount = (i*bitCountForRepresentation) % storageIndiceCapacity;
+    uint8_t writtenBits = storageIndiceCapacity - lshiftAmount - fmax(lshiftAmount - rshiftAmount,0);
+    register uint8_t prefix = ((compressedPrefixes[startingIndex] << rshiftAmount) >> lshiftAmount);
+    if (bitCountForRepresentation - lshiftAmount - writtenBits > 0)
+         prefix |= (compressedPrefixes[startingIndex+1] >> (lshiftAmount + writtenBits-1) >> 1);
+    arrIndexes[i] = 32 - prefix;
+  }
+  
+  //save the first and last used bit counts, because they will be lost when the prefix sum is computed:
+  uint8_t firstCount = arrIndexes[0];
+  uint8_t lastCount = arrIndexes[elementCount - 1];
+  /*
+   * create prefix sum (these are the starting (bit) indexes of the values):
+   */
+  createParallelPrefixSum(arrIndexes, elementCount);
+
+  /*
+   * decompress residuals:
+   */
+  arrIndexes[0] = firstCount;
+  //deal with the special case of the first element:
+  {
+      uint32_t startingIndex = 0;
+      uint8_t lshiftAmount = (storageIndiceCapacity - firstCount);
+      _decompressorIV[startingIndex] ^= (compressedResiduals[0] >> lshiftAmount);
+  }
+  //the inner bit is parallizable:
+  #pragma omp parallel for shared(arrResiduals)
+  for (uint32_t i=1; i < elementCount-1; ++i) {
+        uint32_t index = arrIndexes[i];
+        uint32_t startingIndex = index / storageIndiceCapacity;
+        uint8_t lshiftAmount = (storageIndiceCapacity - (arrIndexes[i+1]-index));
+        uint8_t rshiftAmount = index % storageIndiceCapacity;
+        uint8_t writtenBits = storageIndiceCapacity - lshiftAmount - fmax(rshiftAmount-lshiftAmount,0);
+	register uint32_t residual = ( (compressedResiduals[startingIndex] << rshiftAmount) >> lshiftAmount);
+ 	if (storageIndiceCapacity - lshiftAmount - writtenBits > 0)
+ 	  residual |= ( compressedResiduals[startingIndex+1] >> (lshiftAmount + writtenBits - 1) >> 1);
+	_decompressorIV[i] ^= residual;
+  }
+  //deal with the special case of the last element
+  if (elementCount > 1)
+    {
+        uint32_t startingIndex = arrIndexes[elementCount - 1] / storageIndiceCapacity;
+        uint8_t lshiftAmount = (storageIndiceCapacity - lastCount);
+        uint8_t rshiftAmount = arrIndexes[elementCount - 1] % storageIndiceCapacity;
+        uint8_t writtenBits = storageIndiceCapacity - lshiftAmount - fmax(rshiftAmount - lshiftAmount,0);
+        register uint32_t residual = ( (compressedResiduals[startingIndex] << rshiftAmount) >> lshiftAmount);
+         if (storageIndiceCapacity - lshiftAmount - writtenBits > 0)
+ 	  residual |= ( compressedResiduals[startingIndex+1] >> (lshiftAmount + writtenBits - 1) >> 1);
+	_decompressorIV[elementCount - 1] ^= residual;
+    }
+  callBack(elementCount,_decompressorIV);
+  delete[] arrIndexes;
 }

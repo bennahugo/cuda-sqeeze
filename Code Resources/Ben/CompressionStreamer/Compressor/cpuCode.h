@@ -34,13 +34,14 @@ namespace cpuCode{
   namespace compressor{
     void initCompressor(const float * iv, uint64_t ivLength);
     void compressData(const float * data, uint32_t elementCount,
-			    void (*callBack)(uint32_t compressedResidualsIntCount, uint32_t * compressedResiduals,
+			    void (*callBack)(uint32_t elementCount, uint32_t compressedResidualsIntCount, uint32_t * compressedResiduals,
 			      uint32_t compressedPrefixIntCount, uint32_t * compressedPrefixes));
     void releaseResources();
   }
   namespace decompressor{
     void initDecompressor(const float * iv, uint64_t ivLength);
-    //void decompressData(const uint32_t * compressedResiduals, const uint32_t * compressedPrefixes, 
+    void decompressData(const uint32_t elementCount, const uint32_t * compressedResiduals, const uint32_t * compressedPrefixes, 
+			void (*callBack)(uint32_t elementCount, uint32_t * decompressedData));
     void releaseResources();
   }
 }
