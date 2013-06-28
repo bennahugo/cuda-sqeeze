@@ -1,6 +1,6 @@
 /*
-    <one line to give the program's name and a brief idea of what it does.>
-    Copyright (C) 2013  <copyright holder> <email>
+    Predictive 32-bit IEEE 754 floating point data compressor
+    Copyright (C) 2013  benjamin bennahugo@aol.com
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -36,12 +36,14 @@ namespace cpuCode{
     void compressData(const float * data, uint32_t elementCount,
 			    void (*callBack)(uint32_t elementCount, uint32_t compressedResidualsIntCount, uint32_t * compressedResiduals,
 			      uint32_t compressedPrefixIntCount, uint32_t * compressedPrefixes));
+    double getAccumulatedRunTimeSinceInit();
     void releaseResources();
   }
   namespace decompressor{
     void initDecompressor(const float * iv, uint64_t ivLength);
     void decompressData(const uint32_t elementCount, const uint32_t * compressedResiduals, const uint32_t * compressedPrefixes, 
 			void (*callBack)(uint32_t elementCount, uint32_t * decompressedData));
+    double getAccumulatedRunTimeSinceInit();
     void releaseResources();
   }
 }

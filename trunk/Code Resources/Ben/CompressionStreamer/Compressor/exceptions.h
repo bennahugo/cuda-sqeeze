@@ -1,6 +1,6 @@
 /*
-    <one line to give the program's name and a brief idea of what it does.>
-    Copyright (C) 2013  <copyright holder> <email>
+    Predictive 32-bit IEEE 754 floating point data compressor
+    Copyright (C) 2013  benjamin bennahugo@aol.com
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
