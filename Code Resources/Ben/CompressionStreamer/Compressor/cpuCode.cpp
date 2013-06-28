@@ -22,6 +22,21 @@ uint32_t * _compressorIV = NULL;
 uint64_t _compressorIVLength = -1;
 uint32_t * _decompressorIV = NULL; 
 uint64_t _decompressorIVLength = -1;
+double _compressorAccumulatedTime = 0;
+double _decompressorAccumulatedTime = 0;
+
+void printBinaryRepresentation2(void * data, int sizeInBytes){
+  using namespace std;
+  char * temp = (char *)data;
+  for (int i = sizeInBytes - 1; i >= 0; --i){
+#pragma loop unroll
+    for (int b = 7; b >= 0; --b)  
+      cout << (0x1 << b & temp[i] ? '1' : '0');
+    cout << ' ';
+  }
+  cout << endl;
+}
+
 
 static const unsigned char LogTable256[256] = 
 {
@@ -125,22 +140,22 @@ void cpuCode::compressor::compressData(const float * data, uint32_t elementCount
     /*
      * Create difference array, count used bits (up to 15 leading zero bits) and save prefixes
      */
-    #pragma omp parallel for shared(_compressorIV)
+    //#pragma omp parallel for shared(_compressorIV)
     for (uint32_t i = 0; i < elementCount; ++i){
       _compressorIV[i] ^= ((uint32_t *)&data[0])[i];
       arrIndexes[i] = fmax(1,(binaryLog32(_compressorIV[i]) + 1) & 0x3f); // &0x3f to mask out log2(0) + 1
       
       //store the 4-bit leading zero count (32 - used bits)
-      uint8_t prefix =  (storageIndiceCapacity-arrIndexes[i]);
+      uint32_t prefix =  (storageIndiceCapacity-arrIndexes[i]);
       //compact prefixes:
       uint32_t startingIndex = (i*bitCountForRepresentation) / storageIndiceCapacity;
       uint8_t lshiftAmount = (storageIndiceCapacity - bitCountForRepresentation);
       uint8_t rshiftAmount = (i*bitCountForRepresentation) % storageIndiceCapacity;
-      uint8_t writtenBits = storageIndiceCapacity - lshiftAmount - fmax(lshiftAmount - rshiftAmount,0);
+      uint8_t writtenBits = storageIndiceCapacity - lshiftAmount - fmax(rshiftAmount - lshiftAmount,0);
       #pragma omp atomic
       arrPrefix[startingIndex] |=
           ((prefix << lshiftAmount) >> rshiftAmount);
-      if (bitCountForRepresentation - lshiftAmount - writtenBits > 0)
+      if (storageIndiceCapacity - lshiftAmount - writtenBits > 0)
          #pragma omp atomic
          arrPrefix[startingIndex+1] |=
             (prefix << (lshiftAmount + writtenBits-1) << 1);
@@ -149,7 +164,7 @@ void cpuCode::compressor::compressData(const float * data, uint32_t elementCount
     //save the first and last used bit counts, because they will be lost when the prefix sum is computed:
     uint8_t firstCount = arrIndexes[0];
     uint8_t lastCount = arrIndexes[elementCount - 1];
-   
+
     /*
      * create prefix sum (these are the starting (bit) indexes of the values):
      */
@@ -172,7 +187,7 @@ void cpuCode::compressor::compressData(const float * data, uint32_t elementCount
         arrResiduals[0] = _compressorIV[0] << lshiftAmount;
     }
     //the inner bit is parallizable:
-    //#pragma omp parallel for shared(arrResiduals)
+    #pragma omp parallel for shared(arrResiduals)
     for (uint32_t i=1; i < elementCount-1; ++i) {
         uint32_t index = arrIndexes[i];
 	uint32_t ivElem = _compressorIV[i];
@@ -257,9 +272,9 @@ void cpuCode::decompressor::decompressData(const uint32_t elementCount, const ui
     uint32_t startingIndex = (i*bitCountForRepresentation) / storageIndiceCapacity;
     uint8_t lshiftAmount = (storageIndiceCapacity - bitCountForRepresentation);
     uint8_t rshiftAmount = (i*bitCountForRepresentation) % storageIndiceCapacity;
-    uint8_t writtenBits = storageIndiceCapacity - lshiftAmount - fmax(lshiftAmount - rshiftAmount,0);
-    register uint8_t prefix = ((compressedPrefixes[startingIndex] << rshiftAmount) >> lshiftAmount);
-    if (bitCountForRepresentation - lshiftAmount - writtenBits > 0)
+    uint8_t writtenBits = storageIndiceCapacity - lshiftAmount - fmax(rshiftAmount - lshiftAmount,0);
+    uint8_t prefix = ((compressedPrefixes[startingIndex] << rshiftAmount) >> lshiftAmount);
+    if (storageIndiceCapacity - lshiftAmount - writtenBits > 0)
          prefix |= (compressedPrefixes[startingIndex+1] >> (lshiftAmount + writtenBits-1) >> 1);
     arrIndexes[i] = 32 - prefix;
   }
@@ -267,6 +282,7 @@ void cpuCode::decompressor::decompressData(const uint32_t elementCount, const ui
   //save the first and last used bit counts, because they will be lost when the prefix sum is computed:
   uint8_t firstCount = arrIndexes[0];
   uint8_t lastCount = arrIndexes[elementCount - 1];
+  
   /*
    * create prefix sum (these are the starting (bit) indexes of the values):
    */
