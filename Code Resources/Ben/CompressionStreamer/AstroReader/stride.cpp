@@ -132,7 +132,6 @@ complexPair<float> stride::getElement(int timeStampIndex, int frequencyIndex, in
       correlationPairIndex > fmaxCorrelationPairIndex - fminCorrelationPairIndex + 1 ||
       timeStampIndex < 0 || frequencyIndex < 0 || correlationPairIndex < 0)
       throw arguementError();
-    int diffTimestamp = fmaxTimestampIndex - fminTimestampIndex + 1;
     int diffFreq = fmaxFreqIndex - fminFreqIndex + 1;
     int diffCorrelation = fmaxCorrelationPairIndex - fminCorrelationPairIndex + 1;
     int offset = timeStampIndex*diffFreq*diffCorrelation*2 + frequencyIndex*diffCorrelation*2;
