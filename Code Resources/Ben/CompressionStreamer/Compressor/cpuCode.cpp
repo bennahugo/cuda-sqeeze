@@ -27,24 +27,24 @@ double _decompressorAccumulatedTime = 0;
 const uint8_t storageIndiceCapacity = 8*sizeof(uint32_t);
 const uint8_t bitCountForRepresentation = 5;
 
-static const unsigned char LogTable256[256] = 
-{
-#define LT(n) n, n, n, n, n, n, n, n, n, n, n, n, n, n, n, n
-    -1, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3,
-    LT(4), LT(5), LT(5), LT(6), LT(6), LT(6), LT(6),
-    LT(7), LT(7), LT(7), LT(7), LT(7), LT(7), LT(7), LT(7)
-};
 /*
  * Computes the binary logarithm of a 32 bit integer
  * Reference: Bit Twiddling Hacks by Sean Eron Anderson. Available at http://graphics.stanford.edu/~seander/bithacks.html
  * @params v a 32 bit unsigned integer
  */
 inline uint32_t binaryLog32(uint32_t v){
-  unsigned int t, tt; // temporaries
-  if ((tt = v >> 16))
-    return (t = tt >> 8) ? 24 + LogTable256[t] : 16 + LogTable256[tt];
-  else
-    return (t = v >> 8) ? 8 + LogTable256[t] : LogTable256[v];
+    static const unsigned char LogTable256[256] =
+    {
+	#define LT(n) n, n, n, n, n, n, n, n, n, n, n, n, n, n, n, n
+        -1, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3,
+        LT(4), LT(5), LT(5), LT(6), LT(6), LT(6), LT(6),
+        LT(7), LT(7), LT(7), LT(7), LT(7), LT(7), LT(7), LT(7)
+    };
+    unsigned int t, tt; // temporaries
+    if ((tt = v >> 16))
+        return (t = tt >> 8) ? 24 + LogTable256[t] : 16 + LogTable256[tt];
+    else
+        return (t = v >> 8) ? 8 + LogTable256[t] : LogTable256[v];
 }
 
 /*
@@ -61,7 +61,7 @@ void createParallelPrefixSum(uint32_t * counts, uint32_t numElements) {
         uint32_t upperBound = (uint64_t)binaryLog32(parallelLength)-1;
         for (uint32_t d = 0; d <= upperBound; ++d) {
             uint32_t twoTodPlus1 = (1 << (d+1));
-            #pragma omp parallel for shared(twoTodPlus1)
+             #pragma omp parallel for shared(twoTodPlus1)
             for (uint32_t i = 0; i < parallelLength; i += twoTodPlus1) {
                 counts[i + twoTodPlus1 - 1] += counts[i + (twoTodPlus1 >> 1) - 1];
             }
@@ -71,7 +71,7 @@ void createParallelPrefixSum(uint32_t * counts, uint32_t numElements) {
         //down-sweep:
         for (uint32_t d=upperBound; d >= 0; --d) {
             uint32_t twoTodPlus1 = (1 << (d+1));
-            #pragma omp parallel for shared(twoTodPlus1)
+             #pragma omp parallel for shared(twoTodPlus1)
             for (uint32_t i = 0; i < parallelLength; i += twoTodPlus1) {
                 uint32_t t = counts[i + (twoTodPlus1 >> 1) - 1];
                 counts[i + (twoTodPlus1 >> 1) - 1] = counts[i + twoTodPlus1 - 1];
@@ -165,8 +165,7 @@ void cpuCode::compressor::compressData(const float * data, uint32_t elementCount
     #pragma omp parallel for shared(_compressorIV,arrIndexes,arrPrefix)
     for (uint32_t i = 0; i < elementCount; ++i){
       _compressorIV[i] ^= ((uint32_t *)&data[0])[i];
-      arrIndexes[i] = fmax(1,(binaryLog32(_compressorIV[i]) + 1) & 0x3f); // &0x3f to mask out log2(0) + 1
-      
+      arrIndexes[i] = fmax(1,32-__builtin_clz (_compressorIV[i])); //this is an optimization for GCC compilers only, use fmax(1,(binaryLog32(_compressorIV[i]) + 1) &0x3f); otherwise
       //store the 5-bit leading zero count (32 - used bits)
       uint32_t prefix =  (storageIndiceCapacity-arrIndexes[i]);
       //compact prefixes:
@@ -211,11 +210,11 @@ void cpuCode::compressor::compressData(const float * data, uint32_t elementCount
     #pragma omp parallel for shared(arrResiduals)
     for (uint32_t i=1; i < elementCount-1; ++i) {
         uint32_t index = arrIndexes[i];
-	uint32_t ivElem = _compressorIV[i];
+	uint64_t ivElem = _compressorIV[i];
         uint32_t startingIndex = index / storageIndiceCapacity;
         uint8_t lshiftAmount = (storageIndiceCapacity - (arrIndexes[i+1]-index));
         uint8_t rshiftAmount = index % storageIndiceCapacity;
-        uint8_t writtenBits = storageIndiceCapacity - lshiftAmount - fmax(rshiftAmount-lshiftAmount,0);	
+        uint8_t writtenBits = storageIndiceCapacity - lshiftAmount - fmax(rshiftAmount-lshiftAmount,0);	 	
 	arrResiduals[startingIndex] |= ( (ivElem << lshiftAmount) >> rshiftAmount);
 	if (storageIndiceCapacity - lshiftAmount - writtenBits > 0){
 	 arrResiduals[startingIndex+1] |=
