@@ -11,7 +11,7 @@
 #include "Timer.h"
 
 
-#define FILENAME "/media/OS/SKA_DATA/kat7_data/1369853370.h5"
+#define FILENAME "/home/benjamin/1370275467.h5"
 #define MAX_READ_BUFFER_IN_MB 1024
 void usedBitCountTest(uint32_t * data, int countData, int maxLeadingZeroCount, uint32_t * out);
 void printBinaryRepresentation(void * data, int sizeInBytes);
@@ -21,8 +21,12 @@ void compressCallback(uint32_t elementCount, uint32_t compressedResidualsIntCoun
 
 unsigned int accSize = 0;
 float * currentUncompressedData = NULL;
+
+
+
 int main(int argc, char **argv) {
     using namespace std;
+//    cout << binaryLog32T(0xf) << endl;
     astroReader::file f(string(FILENAME));
     cout << "File dimensions: ";
     for (int i = 0; i < f.getDimensionCount(); ++i)
