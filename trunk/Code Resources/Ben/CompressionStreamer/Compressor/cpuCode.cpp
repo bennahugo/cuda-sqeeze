@@ -47,6 +47,11 @@ inline uint32_t binaryLog32(uint32_t v){
         return (t = v >> 8) ? 8 + LogTable256[t] : LogTable256[v];
 }
 
+inline int32_t imax( int32_t a, int32_t b )
+{
+    return a + ( ( b - a ) & ( (a - b) >> 31 ) );
+}
+
 /*
  * Computes the parallel prefix scan of an array
  * The first power of 2 indices can be computed in parallel as described by Blelloch (1990). The remaining indices are computed in serial.
@@ -165,14 +170,15 @@ void cpuCode::compressor::compressData(const float * data, uint32_t elementCount
     #pragma omp parallel for shared(_compressorIV,arrIndexes,arrPrefix)
     for (uint32_t i = 0; i < elementCount; ++i){
       _compressorIV[i] ^= ((uint32_t *)&data[0])[i];
-      arrIndexes[i] = fmax(1,32-__builtin_clz (_compressorIV[i])); //this is an optimization for GCC compilers only, use fmax(1,(binaryLog32(_compressorIV[i]) + 1) &0x3f); otherwise
+      register uint32_t lzc = imax(1,32-__builtin_clz (_compressorIV[i])); //this is an optimization for GCC compilers only, use fmax(1,(binaryLog32(_compressorIV[i]) + 1) &0x3f); otherwise
+      arrIndexes[i] = lzc;
       //store the 5-bit leading zero count (32 - used bits)
-      uint32_t prefix =  (storageIndiceCapacity-arrIndexes[i]);
+      uint32_t prefix =  (storageIndiceCapacity-lzc);
       //compact prefixes:
       uint32_t startingIndex = (i*bitCountForRepresentation) / storageIndiceCapacity;
       uint8_t lshiftAmount = (storageIndiceCapacity - bitCountForRepresentation);
       uint8_t rshiftAmount = (i*bitCountForRepresentation) % storageIndiceCapacity;
-      uint8_t writtenBits = storageIndiceCapacity - lshiftAmount - fmax(rshiftAmount - lshiftAmount,0);
+      uint8_t writtenBits = storageIndiceCapacity - lshiftAmount - imax(rshiftAmount - lshiftAmount,0);
       arrPrefix[startingIndex] |=
           ((prefix << lshiftAmount) >> rshiftAmount);
       if (storageIndiceCapacity - lshiftAmount - writtenBits > 0){
@@ -214,7 +220,7 @@ void cpuCode::compressor::compressData(const float * data, uint32_t elementCount
         uint32_t startingIndex = index / storageIndiceCapacity;
         uint8_t lshiftAmount = (storageIndiceCapacity - (arrIndexes[i+1]-index));
         uint8_t rshiftAmount = index % storageIndiceCapacity;
-        uint8_t writtenBits = storageIndiceCapacity - lshiftAmount - fmax(rshiftAmount-lshiftAmount,0);	 	
+        uint8_t writtenBits = storageIndiceCapacity - lshiftAmount - imax(rshiftAmount-lshiftAmount,0);	 	
 	arrResiduals[startingIndex] |= ( (ivElem << lshiftAmount) >> rshiftAmount);
 	if (storageIndiceCapacity - lshiftAmount - writtenBits > 0){
 	 arrResiduals[startingIndex+1] |=
@@ -227,7 +233,7 @@ void cpuCode::compressor::compressData(const float * data, uint32_t elementCount
         uint32_t startingIndex = arrIndexes[elementCount - 1] / storageIndiceCapacity;
         uint8_t lshiftAmount = (storageIndiceCapacity - lastCount);
         uint8_t rshiftAmount = arrIndexes[elementCount - 1] % storageIndiceCapacity;
-        uint8_t writtenBits = storageIndiceCapacity - lshiftAmount - fmax(rshiftAmount - lshiftAmount,0);
+        uint8_t writtenBits = storageIndiceCapacity - lshiftAmount - imax(rshiftAmount - lshiftAmount,0);
         arrResiduals[startingIndex] |=
                              ( (_compressorIV[elementCount - 1] << lshiftAmount) >> rshiftAmount);
         if (storageIndiceCapacity - lshiftAmount - writtenBits > 0){
@@ -344,7 +350,7 @@ void cpuCode::decompressor::decompressData(const uint32_t elementCount, const ui
         uint32_t startingIndex = index / storageIndiceCapacity;
         uint8_t lshiftAmount = (storageIndiceCapacity - (arrIndexes[i+1]-index));
         uint8_t rshiftAmount = index % storageIndiceCapacity;
-        uint8_t writtenBits = storageIndiceCapacity - lshiftAmount - fmax(rshiftAmount-lshiftAmount,0);
+        uint8_t writtenBits = storageIndiceCapacity - lshiftAmount - imax(rshiftAmount-lshiftAmount,0);
 	register uint32_t residual = ( (compressedResiduals[startingIndex] << rshiftAmount) >> lshiftAmount);
  	if (storageIndiceCapacity - lshiftAmount - writtenBits > 0)
  	  residual |= ( compressedResiduals[startingIndex+1] >> (lshiftAmount + writtenBits - 1) >> 1);
@@ -356,7 +362,7 @@ void cpuCode::decompressor::decompressData(const uint32_t elementCount, const ui
         uint32_t startingIndex = arrIndexes[elementCount - 1] / storageIndiceCapacity;
         uint8_t lshiftAmount = (storageIndiceCapacity - lastCount);
         uint8_t rshiftAmount = arrIndexes[elementCount - 1] % storageIndiceCapacity;
-        uint8_t writtenBits = storageIndiceCapacity - lshiftAmount - fmax(rshiftAmount - lshiftAmount,0);
+        uint8_t writtenBits = storageIndiceCapacity - lshiftAmount - imax(rshiftAmount - lshiftAmount,0);
         register uint32_t residual = ( (compressedResiduals[startingIndex] << rshiftAmount) >> lshiftAmount);
          if (storageIndiceCapacity - lshiftAmount - writtenBits > 0)
  	  residual |= ( compressedResiduals[startingIndex+1] >> (lshiftAmount + writtenBits - 1) >> 1);
