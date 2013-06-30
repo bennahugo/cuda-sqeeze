@@ -183,7 +183,7 @@ void cpuCode::compressor::compressData(const float * data, uint32_t elementCount
           ((prefix << lshiftAmount) >> rshiftAmount);
       if (storageIndiceCapacity - lshiftAmount - writtenBits > 0){
          arrPrefix[startingIndex+1] |=
-            (prefix << (lshiftAmount + writtenBits-1) << 1);
+            (prefix << (lshiftAmount + writtenBits));
       }
     }
     
@@ -200,7 +200,7 @@ void cpuCode::compressor::compressData(const float * data, uint32_t elementCount
      * create storage for residuals:
      */
     uint32_t sizeOfResidualArray = (arrIndexes[elementCount-1] + lastCount) / storageIndiceCapacity + 
-       ((arrIndexes[elementCount-1] + lastCount) % storageIndiceCapacity != 0 ? 1 : 0);
+       ((arrIndexes[elementCount-1] + lastCount) % storageIndiceCapacity != 0 ? 1 : 0)+1;
     uint32_t * arrResiduals = new uint32_t[sizeOfResidualArray](); //default initialize
     
     /*
@@ -216,16 +216,14 @@ void cpuCode::compressor::compressData(const float * data, uint32_t elementCount
     #pragma omp parallel for shared(arrResiduals)
     for (uint32_t i=1; i < elementCount-1; ++i) {
         uint32_t index = arrIndexes[i];
-	uint64_t ivElem = _compressorIV[i];
+	uint32_t ivElem = _compressorIV[i];
         uint32_t startingIndex = index / storageIndiceCapacity;
         uint8_t lshiftAmount = (storageIndiceCapacity - (arrIndexes[i+1]-index));
         uint8_t rshiftAmount = index % storageIndiceCapacity;
-        uint8_t writtenBits = storageIndiceCapacity - lshiftAmount - imax(rshiftAmount-lshiftAmount,0);	 	
-	arrResiduals[startingIndex] |= ( (ivElem << lshiftAmount) >> rshiftAmount);
-	if (storageIndiceCapacity - lshiftAmount - writtenBits > 0){
-	 arrResiduals[startingIndex+1] |=
-             ( ivElem << (lshiftAmount + writtenBits));
- 	}
+        uint8_t writtenBits = storageIndiceCapacity - lshiftAmount - imax(rshiftAmount-lshiftAmount,0);
+ 	arrResiduals[startingIndex] |= ( (ivElem << lshiftAmount) >> rshiftAmount);
+ 	//if (storageIndiceCapacity - lshiftAmount - writtenBits > 0) //deliberitely made the array slightly larger to avoid branch divergence
+ 	arrResiduals[startingIndex+1] |= ( ivElem << (lshiftAmount + writtenBits - 1) << 1); 
     }
   //deal with the special case of the last element
   if (elementCount > 1)
@@ -236,10 +234,8 @@ void cpuCode::compressor::compressData(const float * data, uint32_t elementCount
         uint8_t writtenBits = storageIndiceCapacity - lshiftAmount - imax(rshiftAmount - lshiftAmount,0);
         arrResiduals[startingIndex] |=
                              ( (_compressorIV[elementCount - 1] << lshiftAmount) >> rshiftAmount);
-        if (storageIndiceCapacity - lshiftAmount - writtenBits > 0){
-            arrResiduals[startingIndex+1] |=
-                                   ( _compressorIV[elementCount - 1] << (lshiftAmount + writtenBits));
-	};
+//         if (storageIndiceCapacity - lshiftAmount - writtenBits > 0)  //deliberitely made the array slightly larger to avoid branch divergence
+        arrResiduals[startingIndex+1] |= ( _compressorIV[elementCount - 1] << (lshiftAmount + writtenBits - 1) << 1);
     }  
   
   /*
