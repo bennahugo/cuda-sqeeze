@@ -35,6 +35,10 @@
 	  </div>
 		<div id="content">
 		<h1>News</h1>
+		<h1 class="newsfeed">30 June 2013</h1>
+		<p> I've added some further optimizations to make use of the CPU instruction set to count leading zeros, as well as other minor
+		tweeks including a bittwidled max function for 32 bit integers. I now get up to ~380 MB/s on the compressor and up to
+		~450 MB/s on the decompressor.</p>
 		<h1 class="newsfeed">28 June 2013</h1>
 		<p>I've completed an OMP parallel implementation of the compressor &amp; decompressor. It seems the data
 		compresses best if leading zeros up to 31 bits are compressed (I'm getting compression ratios between 6% and 7%).
