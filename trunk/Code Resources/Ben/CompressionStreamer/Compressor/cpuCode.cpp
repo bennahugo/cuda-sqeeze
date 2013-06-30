@@ -25,7 +25,7 @@ uint64_t _decompressorIVLength = -1;
 double _compressorAccumulatedTime = 0;
 double _decompressorAccumulatedTime = 0;
 const uint8_t storageIndiceCapacity = 8*sizeof(uint32_t);
-const uint8_t bitCountForRepresentation = 5;
+const uint8_t bitCountForRepresentation = 2;
 
 /*
  * Computes the binary logarithm of a 32 bit integer
@@ -51,7 +51,6 @@ inline int32_t imax( int32_t a, int32_t b )
 {
     return a + ( ( b - a ) & ( (a - b) >> 31 ) );
 }
-
 /*
  * Computes the parallel prefix scan of an array
  * The first power of 2 indices can be computed in parallel as described by Blelloch (1990). The remaining indices are computed in serial.
@@ -142,6 +141,17 @@ double cpuCode::compressor::getAccumulatedRunTimeSinceInit(){
   return _compressorAccumulatedTime;
 }
 
+void printBinaryRepresentationtest(void * data, int sizeInBytes){
+  using namespace std;
+  char * temp = (char *)data;
+  for (int i = sizeInBytes - 1; i >= 0; --i){
+    for (int b = 7; b >= 0; --b)  
+      cout << (0x1 << b & temp[i] ? '1' : '0');
+    cout << ' ';
+  }
+  cout << endl;
+}
+
 /*
  * Compresses a dataframe. This function will compress a dataframe in parallel and will call back with the compressed data when completed.
  * The user should save the initialization vector dataframe and the elementCount to file himself. For dataframe index > 1 the user
@@ -170,10 +180,13 @@ void cpuCode::compressor::compressData(const float * data, uint32_t elementCount
     #pragma omp parallel for shared(_compressorIV,arrIndexes,arrPrefix)
     for (uint32_t i = 0; i < elementCount; ++i){
       _compressorIV[i] ^= ((uint32_t *)&data[0])[i];
-      register uint32_t lzc = imax(1,32-__builtin_clz (_compressorIV[i])); //this is an optimization for GCC compilers only, use fmax(1,(binaryLog32(_compressorIV[i]) + 1) &0x3f); otherwise
-      arrIndexes[i] = lzc;
-      //store the 5-bit leading zero count (32 - used bits)
-      uint32_t prefix =  (storageIndiceCapacity-lzc);
+      uint8_t* bytes = (uint8_t*)&(_compressorIV[i]);
+      register uint32_t prefix = (bytes[3] == 0) + ((bytes[3] | bytes[2]) == 0) + ((bytes[3] | bytes[2] | bytes[1]) == 0); //count how many bytes of leading zeros
+     
+      //if packing by bit then use:
+      //register uint32_t lzc = imax(1,32-__builtin_clz (_compressorIV[i])); //this is an optimization for GCC compilers only, use fmax(1,(binaryLog32(_compressorIV[i]) + 1) &0x3f); otherwise
+      //arrIndexes[i] = lzc;
+      
       //compact prefixes:
       uint32_t startingIndex = (i*bitCountForRepresentation) / storageIndiceCapacity;
       uint8_t lshiftAmount = (storageIndiceCapacity - bitCountForRepresentation);
@@ -181,10 +194,10 @@ void cpuCode::compressor::compressData(const float * data, uint32_t elementCount
       uint8_t writtenBits = storageIndiceCapacity - lshiftAmount - imax(rshiftAmount - lshiftAmount,0);
       arrPrefix[startingIndex] |=
           ((prefix << lshiftAmount) >> rshiftAmount);
-      if (storageIndiceCapacity - lshiftAmount - writtenBits > 0){
+      if (storageIndiceCapacity - lshiftAmount - writtenBits > 0)
          arrPrefix[startingIndex+1] |=
             (prefix << (lshiftAmount + writtenBits));
-      }
+      arrIndexes[i] = (-prefix+4)*8;
     }
     
     //save the first and last used bit counts, because they will be lost when the prefix sum is computed:
@@ -317,7 +330,7 @@ void cpuCode::decompressor::decompressData(const uint32_t elementCount, const ui
     uint8_t prefix = ((compressedPrefixes[startingIndex] << rshiftAmount) >> lshiftAmount);
     if (storageIndiceCapacity - lshiftAmount - writtenBits > 0)
          prefix |= (compressedPrefixes[startingIndex+1] >> (lshiftAmount + writtenBits-1) >> 1);
-    arrIndexes[i] = 32 - prefix;
+    arrIndexes[i] = 32 - prefix*8;
   }
   
   //save the first and last used bit counts, because they will be lost when the prefix sum is computed:
