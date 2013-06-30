@@ -35,6 +35,12 @@
 	  </div>
 		<div id="content">
 		<h1>News</h1>
+		<h1 class="newsfeed">30 June 2013 (Part 2)</h1>
+		<p>For the sake of thoroughness I've decided to try out compaction at a byte level instead of a bit level and I'm seemingly
+		saving approximately 1% in compression ratio. This is likely due to the fact that the prefixes can be represented by 2 bits
+		instead of 5 bits. This also meant I could remove one of the branches for saving prefixes. Now I'm getting approximately ~400 MB/s
+		on the compressor and ~600 MB/s on the decompressor. I think further optimizations are now possible on the prefix loop since 4 prefixes
+		can be saved simultaniously.</p>
 		<h1 class="newsfeed">30 June 2013</h1>
 		<p> I've added some further optimizations to make use of the CPU instruction set to count leading zeros, as well as other minor
 		tweeks including a bittwidled max function for 32 bit integers. I now get up to ~380 MB/s on the compressor and up to
