@@ -181,22 +181,20 @@ void cpuCode::compressor::compressData(const float * data, uint32_t elementCount
     for (uint32_t i = 0; i < elementCount; ++i){
       _compressorIV[i] ^= ((uint32_t *)&data[0])[i];
       uint8_t* bytes = (uint8_t*)&(_compressorIV[i]);
-      register uint32_t prefix = (bytes[3] == 0) + ((bytes[3] | bytes[2]) == 0) + ((bytes[3] | bytes[2] | bytes[1]) == 0); //count how many bytes of leading zeros
-     
-      //if packing by bit then use:
-      //register uint32_t lzc = imax(1,32-__builtin_clz (_compressorIV[i])); //this is an optimization for GCC compilers only, use fmax(1,(binaryLog32(_compressorIV[i]) + 1) &0x3f); otherwise
-      //arrIndexes[i] = lzc;
-      
+     register uint32_t prefix = (bytes[3] == 0) + ((bytes[3] | bytes[2]) == 0) + ((bytes[3] | bytes[2] | bytes[1]) == 0); //count how many bytes of leading zeros
+//   The following line works well for obtaining leading zero count when compressing bits 
+//       uint32_t ubc = 32-__builtin_clz (_compressorIV[i]); //this is an optimization for GCC compilers only, use fmax(1,(binaryLog32(_compressorIV[i]) + 1) &0x3f); otherwise
+//       uint32_t prefix = 4-imax(1,ubc/8 + (ubc % 8 > 0 ? 1 : 0)); 
       //compact prefixes:
       uint32_t startingIndex = (i*bitCountForRepresentation) / storageIndiceCapacity;
       uint8_t lshiftAmount = (storageIndiceCapacity - bitCountForRepresentation);
       uint8_t rshiftAmount = (i*bitCountForRepresentation) % storageIndiceCapacity;
-      uint8_t writtenBits = storageIndiceCapacity - lshiftAmount - imax(rshiftAmount - lshiftAmount,0);
+      //uint8_t writtenBits = storageIndiceCapacity - lshiftAmount - imax(rshiftAmount - lshiftAmount,0); //commented out because the prefix is of length 2
       arrPrefix[startingIndex] |=
           ((prefix << lshiftAmount) >> rshiftAmount);
-      if (storageIndiceCapacity - lshiftAmount - writtenBits > 0)
+      /*if (storageIndiceCapacity - lshiftAmount - writtenBits > 0) //commented out because the prefix is of length 2
          arrPrefix[startingIndex+1] |=
-            (prefix << (lshiftAmount + writtenBits));
+            (prefix << (lshiftAmount + writtenBits));*/
       arrIndexes[i] = (-prefix+4)*8;
     }
     
@@ -326,10 +324,10 @@ void cpuCode::decompressor::decompressData(const uint32_t elementCount, const ui
     uint32_t startingIndex = (i*bitCountForRepresentation) / storageIndiceCapacity;
     uint8_t lshiftAmount = (storageIndiceCapacity - bitCountForRepresentation);
     uint8_t rshiftAmount = (i*bitCountForRepresentation) % storageIndiceCapacity;
-    uint8_t writtenBits = storageIndiceCapacity - lshiftAmount - fmax(rshiftAmount - lshiftAmount,0);
+    //uint8_t writtenBits = storageIndiceCapacity - lshiftAmount - fmax(rshiftAmount - lshiftAmount,0); //commented out because the prefix is of length 2
     uint8_t prefix = ((compressedPrefixes[startingIndex] << rshiftAmount) >> lshiftAmount);
-    if (storageIndiceCapacity - lshiftAmount - writtenBits > 0)
-         prefix |= (compressedPrefixes[startingIndex+1] >> (lshiftAmount + writtenBits-1) >> 1);
+//     if (storageIndiceCapacity - lshiftAmount - writtenBits > 0)
+//          prefix |= (compressedPrefixes[startingIndex+1] >> (lshiftAmount + writtenBits-1) >> 1); //commented out because the prefix is of length 2
     arrIndexes[i] = 32 - prefix*8;
   }
   
