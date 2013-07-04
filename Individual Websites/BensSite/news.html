@@ -35,6 +35,13 @@
 	  </div>
 		<div id="content">
 		<h1>News</h1>
+		<h1 class="newsfeed">3-4 July 2013</h1>
+		<p>Turns out that I will need the SSE4.2 &amp; AVX2 instruction sets to facilitate the operations I require, including
+		elementwise bitshifting. I've also decided to do away with the atomic operations and the parallel prefix sum by cutting up the
+		data instead making the compression algorithm parallel. Prof. Gain agreed with this approach. After a long night of restructuring
+		I've managed a significant increase in performance. I now get up to
+		0.673 GB/s on the compressor and 1.178 GB/s on the decompressor using 16 cores. I will look into further optimizations later today, including 
+		vectorized instructions. But first things first: need to grab a few hours sleep :(</p>
 		<h1 class="newsfeed">30 June 2013 (Part 2)</h1>
 		<p>For the sake of thoroughness I've decided to try out compaction at a byte level instead of a bit level and I'm seemingly
 		saving approximately 1% in compression ratio. This is likely due to the fact that the prefixes can be represented by 2 bits
