@@ -1,4 +1,4 @@
-# Install script for directory: /home/bhugo/projects/CompressionStreamer/AstroReader
+# Install script for directory: /home/benjamin/projects/CompressionStreamer/AstroReader
 
 # Set the install prefix
 IF(NOT DEFINED CMAKE_INSTALL_PREFIX)
