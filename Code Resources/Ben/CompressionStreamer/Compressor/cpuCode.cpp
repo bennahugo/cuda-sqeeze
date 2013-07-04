@@ -260,7 +260,7 @@ void cpuCode::compressor::compressData(const float * data, uint32_t elementCount
     uint32_t* prefixSizesStore = new uint32_t[numStores];
     uint32_t* chunkSizes = new uint32_t[numStores];
 #pragma omp parallel for 
-    for (uint32_t dataBlockIndex = 0; dataBlockIndex < numStores; ++dataBlockIndex) {
+    for (uint32_t dataBlockIndex = 0; dataBlockIndex < NUMTHREADS; ++dataBlockIndex) {
       uint32_t index = dataBlockIndex % NUMTHREADS;
       compressionArgs[index].data = data;
       compressionArgs[index].elementCount = elementCount;
@@ -272,6 +272,18 @@ void cpuCode::compressor::compressData(const float * data, uint32_t elementCount
       compressionArgs[index].prefixStore = prefixStore;
       compressionArgs[index].residualStore = residlualStore;
       compressionKernel((void *)&compressionArgs[index]);
+    }
+    if (elementCount%NUMTHREADS != 0){
+      compressionArgs[0].data = data;
+      compressionArgs[0].elementCount = elementCount;
+      compressionArgs[0].chunkSize = chunkSize;
+      compressionArgs[0].dataBlockSizes = chunkSizes;
+      compressionArgs[0].dataBlockIndex = NUMTHREADS;
+      compressionArgs[0].prefixSizeStore = prefixSizesStore;
+      compressionArgs[0].residualSizeStore = residualSizesStore;
+      compressionArgs[0].prefixStore = prefixStore;
+      compressionArgs[0].residualStore = residlualStore;
+      compressionKernel((void *)&compressionArgs[0]);
     }
     _compressorAccumulatedTime += timer::toc();
     //Now do the callback and free all resources afterwards except the IV:
@@ -350,7 +362,7 @@ void cpuCode::decompressor::decompressData(uint32_t elementCount, uint32_t chunk
   uint32_t NUMTHREADS = omp_get_max_threads();
   decompressionKernelArgs decompressionArgs[NUMTHREADS];
   #pragma omp parallel for 
-  for (uint32_t dataBlockIndex = 0; dataBlockIndex < chunkCount; ++dataBlockIndex) {
+  for (uint32_t dataBlockIndex = 0; dataBlockIndex < NUMTHREADS; ++dataBlockIndex) {
     uint32_t index = dataBlockIndex%NUMTHREADS;
     decompressionArgs[index].chunkSize = chunkSizes[0];
     decompressionArgs[index].dataBlockSize = chunkSizes[dataBlockIndex];
@@ -358,6 +370,14 @@ void cpuCode::decompressor::decompressData(uint32_t elementCount, uint32_t chunk
     decompressionArgs[index].compressedResiduals = compressedResiduals[dataBlockIndex];
     decompressionArgs[index].dataBlockIndex = dataBlockIndex;
     decompressionKernel((void *)&decompressionArgs[index]);
+  }
+  if (NUMTHREADS < chunkCount){
+    decompressionArgs[0].chunkSize = chunkSizes[0];
+    decompressionArgs[0].dataBlockSize = chunkSizes[NUMTHREADS];
+    decompressionArgs[0].compressedPrefixes = compressedPrefixes[NUMTHREADS];
+    decompressionArgs[0].compressedResiduals = compressedResiduals[NUMTHREADS];
+    decompressionArgs[0].dataBlockIndex = NUMTHREADS;
+    decompressionKernel((void *)&decompressionArgs[0]);
   }
   _decompressorAccumulatedTime += timer::toc();
   callBack(elementCount, _decompressorIV);
