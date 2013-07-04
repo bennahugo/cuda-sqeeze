@@ -218,12 +218,16 @@ void cpuCode::compressor::compressData(const float * data, uint32_t elementCount
     uint32_t* prefixSizesStore = new uint32_t[numStores];
     uint32_t* chunkSizes = new uint32_t[numStores];
 #pragma omp parallel for 
-    for (uint32_t dataBlockIndex = 0; dataBlockIndex < numStores; ++dataBlockIndex) {  
+    for (uint32_t dataBlockIndex = 0; dataBlockIndex < NUMTHREADS; ++dataBlockIndex) {  
       compressionKernel(data,elementCount,dataBlockIndex,chunkSize,prefixStore,
 			residlualStore,prefixSizesStore,residualSizesStore,chunkSizes,
 			dataBlockIndex*chunkSize,
 			(((dataBlockIndex + 1)*chunkSize <= elementCount) ? chunkSize : chunkSize-((dataBlockIndex + 1)*chunkSize-elementCount)));
     }
+      compressionKernel(data,elementCount,NUMTHREADS,chunkSize,prefixStore,
+			residlualStore,prefixSizesStore,residualSizesStore,chunkSizes,
+			NUMTHREADS*chunkSize,
+			(((NUMTHREADS + 1)*chunkSize <= elementCount) ? chunkSize : chunkSize-((NUMTHREADS + 1)*chunkSize-elementCount)));
     _compressorAccumulatedTime += timer::toc();
     //Now do the callback and free all resources afterwards except the IV:
     for (int i = 0; i < numStores; ++i){
