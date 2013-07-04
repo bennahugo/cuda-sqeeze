@@ -147,7 +147,7 @@ void* compressionKernel(void * args){
     sizeOfResidualArray = sizeOfResidualArray / storageIndiceCapacity +
                           (sizeOfResidualArray % storageIndiceCapacity != 0 ? 1 : 0)+1; //+1 to avoid branching later on
     uint32_t * arrResiduals = (uint32_t*)_mm_malloc(sizeof(uint32_t)*sizeOfResidualArray,16);
-    for (int i = 0; i < sizeOfResidualArray; i+=4) {
+    for (int i = 0; i < sizeOfResidualArray; ++i) {
 	arrResiduals[i] = 0;
 	//_mm_store_si128((__m128i*)(arrResiduals+i),_mm_set1_epi32(0));
     }
