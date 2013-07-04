@@ -2,17 +2,12 @@
 #include <string>
 #include <cstring>
 #include <math.h>
-#include <omp.h>
 #include <assert.h>
+#include <omp.h>
 #include "AstroReader/file.h"
 #include "AstroReader/stride.h"
 #include "AstroReader/stridefactory.h"
 #include "Compressor/cpuCode.h"
-//#include "processorFeatures.h"
-#include "timer.h"
-
-
-#define FILENAME "/home/bhugo/Desktop/1370275467.h5"
 #define MAX_READ_BUFFER_IN_MB 1024
 void usedBitCountTest(uint32_t * data, int countData, int maxLeadingZeroCount, uint32_t * out);
 void printBinaryRepresentation(void * data, int sizeInBytes);
@@ -24,13 +19,18 @@ float * currentUncompressedData = NULL;
 
 int main(int argc, char **argv) {
     using namespace std;
+    if (argc != 2){
+      cout << "FATAL: PLEASE SPECIFY MEERKAT HDF5 FILE LOCATION" << endl;
+      exit(1);
+    }
     //CPURegisters info = getCPUFeatures();
+    string filename(argv[1]);
     
-    astroReader::file f(string(FILENAME));
+     astroReader::file f(filename);
     cout << "File dimensions: ";
     for (int i = 0; i < f.getDimensionCount(); ++i)
       cout << f.getDimensionSize(i) << ((i == f.getDimensionCount() -1) ? "\n" : " x ");
-    
+    cout << "Processor Threads Available: " << omp_get_max_threads() << endl;
     //Read in chunks:
     long maxBlockSizeBytes = MAX_READ_BUFFER_IN_MB*1024*1024;
     long pageSize = (f.getDimensionSize(1)-1)*(f.getDimensionSize(2)-1)*2*sizeof(float);
@@ -57,6 +57,7 @@ int main(int argc, char **argv) {
 }
 void decompressCallback(uint32_t elementCount, uint32_t * decompressedData){
   using namespace std;
+  //Automated test of the compression algorithm. Check decompressed data against original timeslice
   for (int i = 0; i < elementCount; ++i){
     int checkElement = *(uint32_t *)&currentUncompressedData[i];
     if (decompressedData[i] != checkElement){

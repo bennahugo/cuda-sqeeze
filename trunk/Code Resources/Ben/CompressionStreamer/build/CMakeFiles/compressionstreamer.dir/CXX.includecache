@@ -50,10 +50,6 @@ file.h
 time.h
 -
 
-/home/bhugo/projects/CompressionStreamer/Compressor/cpuCode.cpp
-cpuCode.h
-/home/bhugo/projects/CompressionStreamer/Compressor/cpuCode.h
-
 /home/bhugo/projects/CompressionStreamer/Compressor/cpuCode.h
 cstdlib
 -
@@ -84,10 +80,6 @@ exceptions.h
 ../timer.h
 /home/bhugo/projects/CompressionStreamer/Compressor/../timer.h
 
-/home/bhugo/projects/CompressionStreamer/Compressor/exceptions.h
-exception
--
-
 /home/bhugo/projects/CompressionStreamer/main.cpp
 iostream
 -
@@ -97,9 +89,9 @@ cstring
 -
 math.h
 -
-omp.h
--
 assert.h
+-
+omp.h
 -
 AstroReader/file.h
 /home/bhugo/projects/CompressionStreamer/AstroReader/file.h
@@ -109,10 +101,4 @@ AstroReader/stridefactory.h
 /home/bhugo/projects/CompressionStreamer/AstroReader/stridefactory.h
 Compressor/cpuCode.h
 /home/bhugo/projects/CompressionStreamer/Compressor/cpuCode.h
-timer.h
-/home/bhugo/projects/CompressionStreamer/timer.h
-
-/home/bhugo/projects/CompressionStreamer/timer.h
-time.h
--
 
