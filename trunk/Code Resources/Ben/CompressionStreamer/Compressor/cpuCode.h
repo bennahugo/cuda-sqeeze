@@ -25,14 +25,13 @@
 #include <stdint.h>
 #include <math.h>
 #include <omp.h>
-#include <pthread.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <xmmintrin.h>
 #include <emmintrin.h>
 #include <pmmintrin.h>
 #include <smmintrin.h>
-#include <immintrin.h>
+//#include <immintrin.h>
 #include <iostream>
 
 #include "exceptions.h"

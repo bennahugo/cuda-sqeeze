@@ -8,11 +8,11 @@
 #include "AstroReader/stride.h"
 #include "AstroReader/stridefactory.h"
 #include "Compressor/cpuCode.h"
-#include "processorFeatures.h"
+//#include "processorFeatures.h"
 #include "timer.h"
 
 
-#define FILENAME "/media/OS/SKA_DATA/kat7_data/1370275467.h5"
+#define FILENAME "/home/bhugo/Desktop/1370275467.h5"
 #define MAX_READ_BUFFER_IN_MB 1024
 void usedBitCountTest(uint32_t * data, int countData, int maxLeadingZeroCount, uint32_t * out);
 void printBinaryRepresentation(void * data, int sizeInBytes);
@@ -24,7 +24,7 @@ float * currentUncompressedData = NULL;
 
 int main(int argc, char **argv) {
     using namespace std;
-    CPURegisters info = getCPUFeatures();
+    //CPURegisters info = getCPUFeatures();
     
     astroReader::file f(string(FILENAME));
     cout << "File dimensions: ";

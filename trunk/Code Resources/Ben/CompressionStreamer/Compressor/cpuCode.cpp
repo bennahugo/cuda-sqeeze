@@ -28,7 +28,6 @@ double _decompressorAccumulatedTime = 0;
 uint32_t _accumDecompressedDataSize = 0;
 const uint8_t storageIndiceCapacity = 8*sizeof(uint32_t);
 const uint8_t bitCountForRepresentation = 2;
-const uint32_t NUMTHREADS = 8;
 
 // Define macro for aligning data
 #ifdef _MSC_VER
@@ -232,8 +231,9 @@ void cpuCode::compressor::compressData(const float * data, uint32_t elementCount
     if (_compressorIV == NULL || _compressorIVLength != elementCount)
         throw invalidInitializationException();
     timer::tic();
+    uint32_t NUMTHREADS = omp_get_max_threads();
     uint32_t chunkSize = elementCount/NUMTHREADS; 
-    pthread_t threadIds[NUMTHREADS];
+    uint32_t remThreads = elementCount%NUMTHREADS != 0;
     compressionKernelArgs compressionArgs[NUMTHREADS];
     uint32_t numStores = NUMTHREADS+(elementCount%NUMTHREADS != 0);
     uint32_t** residlualStore = new uint32_t*[numStores];
@@ -241,31 +241,18 @@ void cpuCode::compressor::compressData(const float * data, uint32_t elementCount
     uint32_t* residualSizesStore = new uint32_t[numStores];
     uint32_t* prefixSizesStore = new uint32_t[numStores];
     uint32_t* chunkSizes = new uint32_t[numStores];
-    for (uint32_t dataBlockIndex = 0; dataBlockIndex < NUMTHREADS; ++dataBlockIndex) {
-      compressionArgs[dataBlockIndex].data = data;
-      compressionArgs[dataBlockIndex].elementCount = elementCount;
-      chunkSizes[dataBlockIndex] = (compressionArgs[dataBlockIndex].chunkSize = chunkSize);
-      compressionArgs[dataBlockIndex].dataBlockIndex = dataBlockIndex;
-      compressionArgs[dataBlockIndex].prefixSizeStore = prefixSizesStore;
-      compressionArgs[dataBlockIndex].residualSizeStore = residualSizesStore;
-      compressionArgs[dataBlockIndex].prefixStore = prefixStore;
-      compressionArgs[dataBlockIndex].residualStore = residlualStore;
-      pthread_create(&threadIds[dataBlockIndex],NULL,compressionKernel,(void *)&compressionArgs[dataBlockIndex]);
-    }
-    for (uint32_t i = 0; i < NUMTHREADS; ++i){
-      pthread_join(threadIds[i],NULL);
-    }
-    if (elementCount%NUMTHREADS != 0){
-      compressionArgs[0].data = data;
-      compressionArgs[0].elementCount = elementCount;
-      chunkSizes[NUMTHREADS] = (compressionArgs[0].chunkSize = chunkSize);
-      compressionArgs[0].dataBlockIndex = NUMTHREADS;
-      compressionArgs[0].prefixSizeStore = prefixSizesStore;
-      compressionArgs[0].residualSizeStore = residualSizesStore;
-      compressionArgs[0].prefixStore = prefixStore;
-      compressionArgs[0].residualStore = residlualStore;
-      pthread_create(&threadIds[0],NULL,compressionKernel,(void *)&compressionArgs[0]);
-      pthread_join(threadIds[0],NULL);
+#pragma omp parallel for 
+    for (uint32_t dataBlockIndex = 0; dataBlockIndex < NUMTHREADS+remThreads; ++dataBlockIndex) {
+      uint32_t index = dataBlockIndex % NUMTHREADS;
+      compressionArgs[index].data = data;
+      compressionArgs[index].elementCount = elementCount;
+      chunkSizes[index] = (compressionArgs[index].chunkSize = chunkSize);
+      compressionArgs[index].dataBlockIndex = dataBlockIndex;
+      compressionArgs[index].prefixSizeStore = prefixSizesStore;
+      compressionArgs[index].residualSizeStore = residualSizesStore;
+      compressionArgs[index].prefixStore = prefixStore;
+      compressionArgs[index].residualStore = residlualStore;
+      compressionKernel((void *)&compressionArgs[dataBlockIndex]);
     }
     _compressorAccumulatedTime += timer::toc();
     //Now do the callback and free all resources afterwards except the IV:
@@ -341,24 +328,16 @@ void cpuCode::decompressor::decompressData(uint32_t elementCount, uint32_t chunk
   if (_decompressorIV == NULL || _decompressorIVLength != elementCount)
         throw invalidInitializationException();
   timer::tic();
-  pthread_t threadIds[NUMTHREADS];
+  uint32_t NUMTHREADS = omp_get_max_threads();
   decompressionKernelArgs decompressionArgs[NUMTHREADS];
+  #pragma omp parallel for 
   for (uint32_t dataBlockIndex = 0; dataBlockIndex < chunkCount; ++dataBlockIndex) {
     uint32_t index = dataBlockIndex%NUMTHREADS;
     decompressionArgs[index].chunkSize = chunkSizes[dataBlockIndex];
     decompressionArgs[index].compressedPrefixes = compressedPrefixes[dataBlockIndex];
     decompressionArgs[index].compressedResiduals = compressedResiduals[dataBlockIndex];
     decompressionArgs[index].dataBlockIndex = dataBlockIndex;
-    pthread_create(&threadIds[index],NULL,decompressionKernel,(void *)&decompressionArgs[index]);
-    //join threads
-    if (dataBlockIndex % NUMTHREADS == NUMTHREADS-1)
-	for (uint32_t i = 0; i < NUMTHREADS; ++i){
-	  pthread_join(threadIds[i],NULL);
-	}
-  }
-  uint32_t remThreads = chunkCount % NUMTHREADS;
-  for (uint32_t i = 0; i < remThreads; ++i){
-    pthread_join(threadIds[i],NULL);
+    decompressionKernel((void *)&decompressionArgs[index]);
   }
   _decompressorAccumulatedTime += timer::toc();
   callBack(elementCount, _decompressorIV);

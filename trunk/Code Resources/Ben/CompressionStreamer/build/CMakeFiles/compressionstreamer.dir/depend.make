@@ -30,7 +30,6 @@ CMakeFiles/compressionstreamer.dir/main.cpp.o: ../AstroReader/stridefactory.h
 CMakeFiles/compressionstreamer.dir/main.cpp.o: ../Compressor/../timer.h
 CMakeFiles/compressionstreamer.dir/main.cpp.o: ../Compressor/cpuCode.h
 CMakeFiles/compressionstreamer.dir/main.cpp.o: ../main.cpp
-CMakeFiles/compressionstreamer.dir/main.cpp.o: ../processorFeatures.h
 CMakeFiles/compressionstreamer.dir/main.cpp.o: ../timer.h
 
 CMakeFiles/compressionstreamer.dir/timer.cpp.o: ../timer.cpp
