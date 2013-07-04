@@ -94,8 +94,20 @@ struct compressionKernelArgs {
   uint32_t ** residualStore;
   uint32_t * prefixSizeStore;
   uint32_t * residualSizeStore;
+  uint32_t * dataBlockSizes;
 };
-uint32_t residualSize = 0;
+
+void printBinaryRepresentationT(void * data, int sizeInBytes){
+  using namespace std;
+  char * temp = (char *)data;
+  for (int i = sizeInBytes - 1; i >= 0; --i){
+    for (int b = 7; b >= 0; --b)  
+      cout << (0x1 << b & temp[i] ? '1' : '0');
+    cout << ' ';
+  }
+  cout << endl;
+}
+
 void* compressionKernel(void * args){
     const float * data = ((compressionKernelArgs*)args)->data;
     uint32_t elementCount = ((compressionKernelArgs*)args)->elementCount;
@@ -162,7 +174,7 @@ void* compressionKernel(void * args){
     ((compressionKernelArgs*)args)->prefixStore[dataBlockIndex] = arrPrefix;
     ((compressionKernelArgs*)args)->residualSizeStore[dataBlockIndex] = sizeOfResidualArray;
     ((compressionKernelArgs*)args)->prefixSizeStore[dataBlockIndex] = sizeOfPrefixArray;
- 
+    ((compressionKernelArgs*)args)->dataBlockSizes[dataBlockIndex] = elementsInDataBlock;
     /*
      * Copy the current data to the IV memory for the next round of compression
      */
@@ -174,7 +186,8 @@ void* compressionKernel(void * args){
 
 struct decompressionKernelArgs {
   uint32_t chunkSize;
-  uint32_t dataBlockIndex; 
+  uint32_t dataBlockIndex;
+  uint32_t dataBlockSize;
   uint32_t * compressedPrefixes;
   uint32_t * compressedResiduals;
 };
@@ -182,6 +195,7 @@ struct decompressionKernelArgs {
 void* decompressionKernel(void * args) {
     uint32_t dataBlockIndex = ((decompressionKernelArgs*)args)->dataBlockIndex;
     uint32_t chunkSize = ((decompressionKernelArgs*)args)->chunkSize;
+    uint32_t dataBlockSize = ((decompressionKernelArgs*)args)->dataBlockSize;
     uint32_t * compressedPrefixes = ((decompressionKernelArgs*)args)->compressedPrefixes;
     uint32_t * compressedResiduals = ((decompressionKernelArgs*)args)->compressedResiduals;
     uint32_t lowerBound = dataBlockIndex*chunkSize;
@@ -194,7 +208,7 @@ void* decompressionKernel(void * args) {
      * construct count array from prefix array
      */
     uint8_t lshiftAmount = (storageIndiceCapacity - bitCountForRepresentation);
-    for (uint32_t i = 0; i < chunkSize; ++i) {
+    for (uint32_t i = 0; i < dataBlockSize; ++i) {
         uint32_t startingIndex = (i*bitCountForRepresentation) / storageIndiceCapacity;
         uint8_t rshiftAmount = (i*bitCountForRepresentation) % storageIndiceCapacity;
         uint8_t prefix = ((compressedPrefixes[startingIndex] << rshiftAmount) >> lshiftAmount);
@@ -202,7 +216,7 @@ void* decompressionKernel(void * args) {
     }
 
     uint32_t accumulatedIndex = 0;
-    for (uint32_t i = 0; i < chunkSize; ++i) {
+    for (uint32_t i = 0; i < dataBlockSize; ++i) {
         uint32_t startingIndex = accumulatedIndex / storageIndiceCapacity;
         uint8_t lshiftAmount = (storageIndiceCapacity - arrCounts[i]);
         uint8_t rshiftAmount = accumulatedIndex % storageIndiceCapacity;
@@ -210,6 +224,10 @@ void* decompressionKernel(void * args) {
         register uint32_t residual = ( (compressedResiduals[startingIndex] << rshiftAmount) >> lshiftAmount);
         if (storageIndiceCapacity - lshiftAmount - writtenBits > 0)
             residual |= ( compressedResiduals[startingIndex+1] >> (lshiftAmount + writtenBits - 1) >> 1);
+// 	if (i+lowerBound == 229375){
+// 	
+// 	std::cout << *((float*)(_compressorIV+i+lowerBound)) << std::endl;
+// 	}
         _decompressorIV[lowerBound+i] ^= residual;
         accumulatedIndex += arrCounts[i];
     }
@@ -242,17 +260,18 @@ void cpuCode::compressor::compressData(const float * data, uint32_t elementCount
     uint32_t* prefixSizesStore = new uint32_t[numStores];
     uint32_t* chunkSizes = new uint32_t[numStores];
 #pragma omp parallel for 
-    for (uint32_t dataBlockIndex = 0; dataBlockIndex < NUMTHREADS+remThreads; ++dataBlockIndex) {
+    for (uint32_t dataBlockIndex = 0; dataBlockIndex < numStores; ++dataBlockIndex) {
       uint32_t index = dataBlockIndex % NUMTHREADS;
       compressionArgs[index].data = data;
       compressionArgs[index].elementCount = elementCount;
-      chunkSizes[index] = (compressionArgs[index].chunkSize = chunkSize);
+      compressionArgs[index].chunkSize = chunkSize;
+      compressionArgs[index].dataBlockSizes = chunkSizes;
       compressionArgs[index].dataBlockIndex = dataBlockIndex;
       compressionArgs[index].prefixSizeStore = prefixSizesStore;
       compressionArgs[index].residualSizeStore = residualSizesStore;
       compressionArgs[index].prefixStore = prefixStore;
       compressionArgs[index].residualStore = residlualStore;
-      compressionKernel((void *)&compressionArgs[dataBlockIndex]);
+      compressionKernel((void *)&compressionArgs[index]);
     }
     _compressorAccumulatedTime += timer::toc();
     //Now do the callback and free all resources afterwards except the IV:
@@ -333,7 +352,8 @@ void cpuCode::decompressor::decompressData(uint32_t elementCount, uint32_t chunk
   #pragma omp parallel for 
   for (uint32_t dataBlockIndex = 0; dataBlockIndex < chunkCount; ++dataBlockIndex) {
     uint32_t index = dataBlockIndex%NUMTHREADS;
-    decompressionArgs[index].chunkSize = chunkSizes[dataBlockIndex];
+    decompressionArgs[index].chunkSize = chunkSizes[0];
+    decompressionArgs[index].dataBlockSize = chunkSizes[dataBlockIndex];
     decompressionArgs[index].compressedPrefixes = compressedPrefixes[dataBlockIndex];
     decompressionArgs[index].compressedResiduals = compressedResiduals[dataBlockIndex];
     decompressionArgs[index].dataBlockIndex = dataBlockIndex;
