@@ -37,10 +37,21 @@ const uint8_t bitCountForRepresentation = 2;
 // Gnu compiler, etc.
 #define Alignd(X) X __attribute__((aligned(16)))
 #endif
-inline int32_t imax( int32_t a, int32_t b )
+
+/*
+ * the following bittwiddled integer min,max functions assume INT_MIN <= x - y <= INT_MAX and are taken from
+ * Sean Eron Anderson's Bit Twiddling Hacks. Available at http://graphics.stanford.edu/~seander/bithacks.html#IntegerMinOrMax
+ */
+const uint32_t BYTESPERINTMIN1 = sizeof(uint32_t) * sizeof(uint8_t) - 1;
+inline int32_t imax( int32_t x, int32_t y )
 {
-    return a + ( ( b - a ) & ( (a - b) >> 31 ) );
+    return x - ((x - y) & ((x - y) >> (BYTESPERINTMIN1)));
 }
+inline int32_t imin( int32_t x, int32_t y )
+{
+    return y + ((x - y) & ((x - y) >> (BYTESPERINTMIN1))); // min(x, y)
+}
+
 /*
  * Inits the compressor
  * @params iv the first dataframe that serves as a basis for the compresson of further dataframes
@@ -132,13 +143,14 @@ void* compressionKernel(void * args){
      */
     uint32_t lshiftAmount = storageIndiceCapacity - bitCountForRepresentation;
     for (uint32_t i = 0; i < elementsInDataBlock; ++i) {
- 	_compressorIV[i+lowerBound] ^= ((uint32_t*)&(data[0]))[i+lowerBound]; 
-        uint8_t* bytes = (uint8_t*)&(_compressorIV[i+lowerBound]);
-        register uint32_t prefix0 = (bytes[3] == 0) + ((bytes[3] | bytes[2]) == 0) + ((bytes[3] | bytes[2] | bytes[1]) == 0); //count how many bytes of leading zeros
-        uint32_t startingIndex = (i*bitCountForRepresentation) / storageIndiceCapacity;
-        uint32_t rshiftAmount = (i*bitCountForRepresentation) % storageIndiceCapacity;
+	uint32_t index = i+lowerBound;
+ 	uint32_t element =  (_compressorIV[index] ^= ((uint32_t*)&(data[0]))[index]); 
+	uint32_t prefix0 = imin(3,(__builtin_clz(element)/8));
+	uint32_t iTimesBitCountForRepresentation = i*bitCountForRepresentation;
+        uint32_t startingIndex = (iTimesBitCountForRepresentation) / storageIndiceCapacity;
+        uint32_t rshiftAmount = (iTimesBitCountForRepresentation) % storageIndiceCapacity;
         arrPrefix[startingIndex] |= ((prefix0 << lshiftAmount) >> rshiftAmount);
-        sizeOfResidualArray += (arrCounts[i] = ((4-prefix0)*8));
+        sizeOfResidualArray += (arrCounts[i] = ((sizeof(uint32_t)-prefix0)*8));
     }
     /*
      * create storage for residuals:
