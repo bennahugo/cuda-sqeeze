@@ -121,10 +121,9 @@ void* compressionKernel(void * args){
      */
     uint32_t sizeOfPrefixArray = (elementsInDataBlock * bitCountForRepresentation) / storageIndiceCapacity +
                                  ((elementsInDataBlock * bitCountForRepresentation) % storageIndiceCapacity != 0 ? 1 : 0);
-    uint32_t * arrPrefix = (uint32_t*)_mm_malloc(sizeof(uint32_t)*sizeOfPrefixArray,16); //default initialize
-    for (int i = 0; i < sizeOfPrefixArray; ++i) {
-	arrPrefix[i] = 0;
-    }
+    uint32_t * arrPrefix = (uint32_t*)_mm_malloc(sizeof(uint32_t)*sizeOfPrefixArray,16);
+    memset(arrPrefix,0,sizeof(uint32_t)*sizeOfPrefixArray);
+    
     uint32_t * arrCounts = (uint32_t*)_mm_malloc(sizeof(uint32_t)*elementsInDataBlock,16); //no need to initialize we're going to override this in any case
     uint32_t sizeOfResidualArray = 0;
 
@@ -147,10 +146,7 @@ void* compressionKernel(void * args){
     sizeOfResidualArray = sizeOfResidualArray / storageIndiceCapacity +
                           (sizeOfResidualArray % storageIndiceCapacity != 0 ? 1 : 0)+1; //+1 to avoid branching later on
     uint32_t * arrResiduals = (uint32_t*)_mm_malloc(sizeof(uint32_t)*sizeOfResidualArray,16);
-    for (int i = 0; i < sizeOfResidualArray; ++i) {
-	arrResiduals[i] = 0;
-	//_mm_store_si128((__m128i*)(arrResiduals+i),_mm_set1_epi32(0));
-    }
+    memset(arrResiduals,0,sizeof(uint32_t)*sizeOfResidualArray);
     /*
      * save residuals:
      */
@@ -163,8 +159,7 @@ void* compressionKernel(void * args){
          uint8_t rshiftAmount = accumulatedIndex % storageIndiceCapacity;
          uint8_t writtenBits = storageIndiceCapacity - lshiftAmount - imax(rshiftAmount-lshiftAmount,0);
          arrResiduals[startingIndex] |= ( (ivElem << lshiftAmount) >> rshiftAmount);
-         //if (storageIndiceCapacity - lshiftAmount - writtenBits > 0)
-             arrResiduals[startingIndex+1] |= ( ivElem << (lshiftAmount + writtenBits - 1) << 1);
+         arrResiduals[startingIndex+1] |= ( ivElem << (lshiftAmount + writtenBits - 1) << 1);
          accumulatedIndex += arrCounts[i];
      }
      
