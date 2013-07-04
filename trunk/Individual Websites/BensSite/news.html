@@ -35,6 +35,11 @@
 	  </div>
 		<div id="content">
 		<h1>News</h1>
+		<h1 class="newsfeed">4 July 2013 (Part 2)</h1>
+		<p>After I've replaced pthreads with OMP and done some more optimizations I've finally achieved a very good throughput
+		on both the compressor and decompressor. My compressor now runs at ~1.98 GB/s and the decompressor runs at ~3.66GB/s using
+		16 cores. The code is now ready to write some SSE &amp; AVX instructions that will hopefully get me the required throughput.
+		If not we will have to try out the CUDA route in order to get the magical 40 GiB we're aiming for.</p>
 		<h1 class="newsfeed">3-4 July 2013</h1>
 		<p>Turns out that I will need the SSE4.2 &amp; AVX2 instruction sets to facilitate the operations I require, including
 		elementwise bitshifting. I've also decided to do away with the atomic operations and the parallel prefix sum by cutting up the
