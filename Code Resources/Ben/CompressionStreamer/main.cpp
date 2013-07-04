@@ -4,6 +4,7 @@
 #include <math.h>
 #include <assert.h>
 #include <omp.h>
+#include <set>
 #include "AstroReader/file.h"
 #include "AstroReader/stride.h"
 #include "AstroReader/stridefactory.h"
@@ -39,14 +40,14 @@ int main(int argc, char **argv) {
     int numReads = ceil(fileSize / (float)maxBlockSizeBytes);
     int numPagesPerRead = fileSize / numReads / pageSize;
     for (int i = 0; i < numReads; ++i){
+      std::cout << "Processing file chunk " << i+1 << "/" << numReads << std::endl;
       astroReader::stride data = astroReader::strideFactory::createStride(f,
 									  (i+1)*numPagesPerRead  > f.getDimensionSize(0)-1 ? f.getDimensionSize(0)-1 : (i+1)*numPagesPerRead,
 									  i*numPagesPerRead > f.getDimensionSize(0)-1 ? f.getDimensionSize(0)-1 : i*numPagesPerRead,
 									  f.getDimensionSize(1)-1,0,
-									  f.getDimensionSize(2)-1,0);
-      
+									  f.getDimensionSize(2)-1,0);	  
       processStride(data);
-    }
+    } 
     std::cout << "COMPRESSION RATIO: " << (cpuCode::compressor::getAccumulatedCompressedDataSize()/
       (float)cpuCode::decompressor::getAccumulatedDecompressedDataSize()) << std::endl;
     std::cout << "COMPRESSED IN " << cpuCode::compressor::getAccumulatedRunTimeSinceInit() << " seconds @ " << 

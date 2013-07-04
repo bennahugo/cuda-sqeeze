@@ -30,13 +30,13 @@ stride strideFactory::createStride(const file & astroFile, int max_timestamp_ind
       throw arguementError();
     
     //define stride:
-    stride * ret = new stride;
-    ret->fmaxCorrelationPairIndex = max_correlation_pair_index;
-    ret->fmaxFreqIndex = max_freq_index;
-    ret->fmaxTimestampIndex = max_timestamp_index;
-    ret->fminCorrelationPairIndex = min_correlation_pair_index;
-    ret->fminFreqIndex = min_freq_index;
-    ret->fminTimestampIndex = min_timestamp_index;
+    stride ret;
+    ret.fmaxCorrelationPairIndex = max_correlation_pair_index;
+    ret.fmaxFreqIndex = max_freq_index;
+    ret.fmaxTimestampIndex = max_timestamp_index;
+    ret.fminCorrelationPairIndex = min_correlation_pair_index;
+    ret.fminFreqIndex = min_freq_index;
+    ret.fminTimestampIndex = min_timestamp_index;
     
     hid_t data = H5Dopen1(astroFile.fFileHandle,"/Data/correlator_data");
     hid_t filespace = H5Dget_space(data);    /* Get filespace handle first. */
@@ -53,8 +53,8 @@ stride strideFactory::createStride(const file & astroFile, int max_timestamp_ind
 			  diffFreq,
 			  diffCorrelation,2};
     hid_t memspace =  H5Screate_simple(astroFile.fDimCount, slabSize, NULL);
-    ret->fBufferSize = diffTimestamp*diffFreq*diffCorrelation*2;
-    ret->fBuffer = new float[ret->fBufferSize];
+    ret.fBufferSize = diffTimestamp*diffFreq*diffCorrelation*2;
+    ret.fBuffer = new float[ret.fBufferSize];
     
     //Read the hyperslab:
     herr_t status = H5Sselect_hyperslab(filespace, H5S_SELECT_SET, offset, NULL,
@@ -62,10 +62,10 @@ stride strideFactory::createStride(const file & astroFile, int max_timestamp_ind
     if (status != 0)
       throw ioError();
     status = H5Dread(data, H5T_NATIVE_FLOAT, memspace, filespace,
-		     H5P_DEFAULT,ret->fBuffer);
+		     H5P_DEFAULT,ret.fBuffer);
     if (status != 0)
       throw ioError();
     H5Dclose(data);
-    return *ret;
+    return ret;
 }
 } //namespace astroReader
