@@ -1,5 +1,5 @@
 /*
- * Timer.h
+ * timer.h
  *
  *  Created on: 13 May 2013
  *      Author: benjamin
@@ -8,7 +8,7 @@
 #ifndef TIMER_H_
 #define TIMER_H_
 #include <time.h>
-namespace Timer{
+namespace timer{
 	extern timespec start, stop;
 	void tic();
 	double toc();

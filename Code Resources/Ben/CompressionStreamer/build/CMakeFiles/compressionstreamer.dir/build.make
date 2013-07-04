@@ -141,28 +141,28 @@ CMakeFiles/compressionstreamer.dir/AstroReader/stridefactory.cpp.o.provides: CMa
 
 CMakeFiles/compressionstreamer.dir/AstroReader/stridefactory.cpp.o.provides.build: CMakeFiles/compressionstreamer.dir/AstroReader/stridefactory.cpp.o
 
-CMakeFiles/compressionstreamer.dir/Timer.cpp.o: CMakeFiles/compressionstreamer.dir/flags.make
-CMakeFiles/compressionstreamer.dir/Timer.cpp.o: ../Timer.cpp
+CMakeFiles/compressionstreamer.dir/timer.cpp.o: CMakeFiles/compressionstreamer.dir/flags.make
+CMakeFiles/compressionstreamer.dir/timer.cpp.o: ../timer.cpp
 	$(CMAKE_COMMAND) -E cmake_progress_report /home/benjamin/projects/CompressionStreamer/build/CMakeFiles $(CMAKE_PROGRESS_5)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building CXX object CMakeFiles/compressionstreamer.dir/Timer.cpp.o"
-	/usr/bin/c++   $(CXX_DEFINES) $(CXX_FLAGS) -o CMakeFiles/compressionstreamer.dir/Timer.cpp.o -c /home/benjamin/projects/CompressionStreamer/Timer.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building CXX object CMakeFiles/compressionstreamer.dir/timer.cpp.o"
+	/usr/bin/c++   $(CXX_DEFINES) $(CXX_FLAGS) -o CMakeFiles/compressionstreamer.dir/timer.cpp.o -c /home/benjamin/projects/CompressionStreamer/timer.cpp
 
-CMakeFiles/compressionstreamer.dir/Timer.cpp.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/compressionstreamer.dir/Timer.cpp.i"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_FLAGS) -E /home/benjamin/projects/CompressionStreamer/Timer.cpp > CMakeFiles/compressionstreamer.dir/Timer.cpp.i
+CMakeFiles/compressionstreamer.dir/timer.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/compressionstreamer.dir/timer.cpp.i"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_FLAGS) -E /home/benjamin/projects/CompressionStreamer/timer.cpp > CMakeFiles/compressionstreamer.dir/timer.cpp.i
 
-CMakeFiles/compressionstreamer.dir/Timer.cpp.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/compressionstreamer.dir/Timer.cpp.s"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_FLAGS) -S /home/benjamin/projects/CompressionStreamer/Timer.cpp -o CMakeFiles/compressionstreamer.dir/Timer.cpp.s
+CMakeFiles/compressionstreamer.dir/timer.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/compressionstreamer.dir/timer.cpp.s"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_FLAGS) -S /home/benjamin/projects/CompressionStreamer/timer.cpp -o CMakeFiles/compressionstreamer.dir/timer.cpp.s
 
-CMakeFiles/compressionstreamer.dir/Timer.cpp.o.requires:
-.PHONY : CMakeFiles/compressionstreamer.dir/Timer.cpp.o.requires
+CMakeFiles/compressionstreamer.dir/timer.cpp.o.requires:
+.PHONY : CMakeFiles/compressionstreamer.dir/timer.cpp.o.requires
 
-CMakeFiles/compressionstreamer.dir/Timer.cpp.o.provides: CMakeFiles/compressionstreamer.dir/Timer.cpp.o.requires
-	$(MAKE) -f CMakeFiles/compressionstreamer.dir/build.make CMakeFiles/compressionstreamer.dir/Timer.cpp.o.provides.build
-.PHONY : CMakeFiles/compressionstreamer.dir/Timer.cpp.o.provides
+CMakeFiles/compressionstreamer.dir/timer.cpp.o.provides: CMakeFiles/compressionstreamer.dir/timer.cpp.o.requires
+	$(MAKE) -f CMakeFiles/compressionstreamer.dir/build.make CMakeFiles/compressionstreamer.dir/timer.cpp.o.provides.build
+.PHONY : CMakeFiles/compressionstreamer.dir/timer.cpp.o.provides
 
-CMakeFiles/compressionstreamer.dir/Timer.cpp.o.provides.build: CMakeFiles/compressionstreamer.dir/Timer.cpp.o
+CMakeFiles/compressionstreamer.dir/timer.cpp.o.provides.build: CMakeFiles/compressionstreamer.dir/timer.cpp.o
 
 CMakeFiles/compressionstreamer.dir/main.cpp.o: CMakeFiles/compressionstreamer.dir/flags.make
 CMakeFiles/compressionstreamer.dir/main.cpp.o: ../main.cpp
@@ -193,7 +193,7 @@ compressionstreamer_OBJECTS = \
 "CMakeFiles/compressionstreamer.dir/AstroReader/stride.cpp.o" \
 "CMakeFiles/compressionstreamer.dir/AstroReader/file.cpp.o" \
 "CMakeFiles/compressionstreamer.dir/AstroReader/stridefactory.cpp.o" \
-"CMakeFiles/compressionstreamer.dir/Timer.cpp.o" \
+"CMakeFiles/compressionstreamer.dir/timer.cpp.o" \
 "CMakeFiles/compressionstreamer.dir/main.cpp.o"
 
 # External object files for target compressionstreamer
@@ -203,7 +203,7 @@ compressionstreamer: CMakeFiles/compressionstreamer.dir/Compressor/cpuCode.cpp.o
 compressionstreamer: CMakeFiles/compressionstreamer.dir/AstroReader/stride.cpp.o
 compressionstreamer: CMakeFiles/compressionstreamer.dir/AstroReader/file.cpp.o
 compressionstreamer: CMakeFiles/compressionstreamer.dir/AstroReader/stridefactory.cpp.o
-compressionstreamer: CMakeFiles/compressionstreamer.dir/Timer.cpp.o
+compressionstreamer: CMakeFiles/compressionstreamer.dir/timer.cpp.o
 compressionstreamer: CMakeFiles/compressionstreamer.dir/main.cpp.o
 compressionstreamer: CMakeFiles/compressionstreamer.dir/build.make
 compressionstreamer: CMakeFiles/compressionstreamer.dir/link.txt
@@ -218,7 +218,7 @@ CMakeFiles/compressionstreamer.dir/requires: CMakeFiles/compressionstreamer.dir/
 CMakeFiles/compressionstreamer.dir/requires: CMakeFiles/compressionstreamer.dir/AstroReader/stride.cpp.o.requires
 CMakeFiles/compressionstreamer.dir/requires: CMakeFiles/compressionstreamer.dir/AstroReader/file.cpp.o.requires
 CMakeFiles/compressionstreamer.dir/requires: CMakeFiles/compressionstreamer.dir/AstroReader/stridefactory.cpp.o.requires
-CMakeFiles/compressionstreamer.dir/requires: CMakeFiles/compressionstreamer.dir/Timer.cpp.o.requires
+CMakeFiles/compressionstreamer.dir/requires: CMakeFiles/compressionstreamer.dir/timer.cpp.o.requires
 CMakeFiles/compressionstreamer.dir/requires: CMakeFiles/compressionstreamer.dir/main.cpp.o.requires
 .PHONY : CMakeFiles/compressionstreamer.dir/requires
 

@@ -8,29 +8,24 @@
 #include "AstroReader/stride.h"
 #include "AstroReader/stridefactory.h"
 #include "Compressor/cpuCode.h"
-#include "Timer.h"
+#include "processorFeatures.h"
+#include "timer.h"
 
 
-#define FILENAME "/media/OS/SKA_DATA/kat7_data/1369853370.h5"
+#define FILENAME "/media/OS/SKA_DATA/kat7_data/1370275467.h5"
 #define MAX_READ_BUFFER_IN_MB 1024
 void usedBitCountTest(uint32_t * data, int countData, int maxLeadingZeroCount, uint32_t * out);
 void printBinaryRepresentation(void * data, int sizeInBytes);
 void processStride(const astroReader::stride & data);
-void compressCallback(uint32_t elementCount, uint32_t compressedResidualsIntCount, uint32_t * compressedResiduals,
-		       uint32_t compressedPrefixIntCount, uint32_t * compressedPrefixes);
+void compressCallback(uint32_t elementCount, uint32_t * compressedResidualsIntCounts, uint32_t ** compressedResiduals,
+			    uint32_t * compressedPrefixIntCounts, uint32_t ** compressedPrefixes, uint32_t chunkCount, uint32_t * chunkSizes);
 
-unsigned int accSize = 0;
 float * currentUncompressedData = NULL;
-
-
 
 int main(int argc, char **argv) {
     using namespace std;
+    CPURegisters info = getCPUFeatures();
     
-//     uint32_t t = 0x000000ff;
-//     uint8_t * bytes = (uint8_t*)&t;
-//     register uint8_t lzc = (bytes[3] == 0) + ((bytes[3] | bytes[2]) == 0) + ((bytes[3] | bytes[2] | bytes[1]) == 0);
-//     cout << (uint32_t)lzc << endl;
     astroReader::file f(string(FILENAME));
     cout << "File dimensions: ";
     for (int i = 0; i < f.getDimensionCount(); ++i)
@@ -52,6 +47,12 @@ int main(int argc, char **argv) {
       
       processStride(data);
     }
+    std::cout << "COMPRESSION RATIO: " << (cpuCode::compressor::getAccumulatedCompressedDataSize()/
+      (float)cpuCode::decompressor::getAccumulatedDecompressedDataSize()) << std::endl;
+    std::cout << "COMPRESSED IN " << cpuCode::compressor::getAccumulatedRunTimeSinceInit() << " seconds @ " << 
+      cpuCode::decompressor::getAccumulatedDecompressedDataSize()*sizeof(float)/1024.0f/1024.0f/1024.0f/cpuCode::compressor::getAccumulatedRunTimeSinceInit() << " GB/s" << std::endl;
+    std::cout << "DECOMPRESSED IN " << cpuCode::decompressor::getAccumulatedRunTimeSinceInit() << " seconds @ " << 
+      cpuCode::decompressor::getAccumulatedDecompressedDataSize()*sizeof(float)/1024.0f/1024.0f/1024.0f/cpuCode::decompressor::getAccumulatedRunTimeSinceInit() << " GB/s" << std::endl;
     return 0;
 }
 void decompressCallback(uint32_t elementCount, uint32_t * decompressedData){
@@ -66,39 +67,27 @@ void decompressCallback(uint32_t elementCount, uint32_t * decompressedData){
     }
   }
 }
-void compressCallback(uint32_t elementCount, uint32_t compressedResidualsIntCount, uint32_t * compressedResiduals,
-		       uint32_t compressedPrefixIntCount, uint32_t * compressedPrefixes){
-  using namespace std;
-   accSize += compressedResidualsIntCount+compressedPrefixIntCount;
-   cpuCode::decompressor::decompressData(elementCount,compressedResiduals,compressedPrefixes,decompressCallback);
+void compressCallback(uint32_t elementCount, uint32_t * compressedResidualsIntCounts, uint32_t ** compressedResiduals,
+			    uint32_t * compressedPrefixIntCounts, uint32_t ** compressedPrefixes, 
+			    uint32_t chunkCount, uint32_t * chunkSizes){
+    cpuCode::decompressor::decompressData(elementCount,chunkCount,chunkSizes,
+ 					 compressedResiduals,compressedPrefixes,decompressCallback);
 }
 
 void processStride(const astroReader::stride & data){
     uint32_t tsSize = data.getTimeStampSize();
-    float * ts = new float[tsSize];
+    float * ts = (float*)_mm_malloc(sizeof(uint32_t)*tsSize,16);
     currentUncompressedData = ts;
-    
     data.getTimeStampData(0,ts);
+    
     cpuCode::compressor::initCompressor(ts,tsSize);
     cpuCode::decompressor::initDecompressor(ts,tsSize);
-    accSize += tsSize+1;
-    double origSize = tsSize;
-    std::cout << "Original Timestamp Size:  " << origSize << std::endl;
     for (int t = 1; t <= data.getMaxTimestampIndex() - data.getMinTimestampIndex(); ++t) {
         data.getTimeStampData(t,ts);
         cpuCode::compressor::compressData(ts,tsSize,compressCallback);
-	origSize += tsSize;
     }
-
-    double ratio = (accSize / origSize);
-    delete[] ts;
-    std::cout << "COMPRESSION RATIO: " << ratio << std::endl;
-    accSize = 0;
     
-    std::cout << "COMPRESSED IN " << cpuCode::compressor::getAccumulatedRunTimeSinceInit() << " seconds @ " << 
-      origSize*sizeof(float)/1024.0f/1024.0f/1024.0f/cpuCode::compressor::getAccumulatedRunTimeSinceInit() << " GB/s" << std::endl;
-    std::cout << "DECOMPRESSED IN " << cpuCode::decompressor::getAccumulatedRunTimeSinceInit() << " seconds @ " << 
-      origSize*sizeof(float)/1024.0f/1024.0f/1024.0f/cpuCode::decompressor::getAccumulatedRunTimeSinceInit() << " GB/s" << std::endl;
+    _mm_free(ts);
 }
 
 void printBinaryRepresentation(void * data, int sizeInBytes){

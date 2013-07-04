@@ -248,30 +248,6 @@ Compressor/cpuCode.cpp.s:
 	$(MAKE) -f CMakeFiles/compressionstreamer.dir/build.make CMakeFiles/compressionstreamer.dir/Compressor/cpuCode.cpp.s
 .PHONY : Compressor/cpuCode.cpp.s
 
-Timer.o: Timer.cpp.o
-.PHONY : Timer.o
-
-# target to build an object file
-Timer.cpp.o:
-	$(MAKE) -f CMakeFiles/compressionstreamer.dir/build.make CMakeFiles/compressionstreamer.dir/Timer.cpp.o
-.PHONY : Timer.cpp.o
-
-Timer.i: Timer.cpp.i
-.PHONY : Timer.i
-
-# target to preprocess a source file
-Timer.cpp.i:
-	$(MAKE) -f CMakeFiles/compressionstreamer.dir/build.make CMakeFiles/compressionstreamer.dir/Timer.cpp.i
-.PHONY : Timer.cpp.i
-
-Timer.s: Timer.cpp.s
-.PHONY : Timer.s
-
-# target to generate assembly for a file
-Timer.cpp.s:
-	$(MAKE) -f CMakeFiles/compressionstreamer.dir/build.make CMakeFiles/compressionstreamer.dir/Timer.cpp.s
-.PHONY : Timer.cpp.s
-
 main.o: main.cpp.o
 .PHONY : main.o
 
@@ -295,6 +271,30 @@ main.s: main.cpp.s
 main.cpp.s:
 	$(MAKE) -f CMakeFiles/compressionstreamer.dir/build.make CMakeFiles/compressionstreamer.dir/main.cpp.s
 .PHONY : main.cpp.s
+
+timer.o: timer.cpp.o
+.PHONY : timer.o
+
+# target to build an object file
+timer.cpp.o:
+	$(MAKE) -f CMakeFiles/compressionstreamer.dir/build.make CMakeFiles/compressionstreamer.dir/timer.cpp.o
+.PHONY : timer.cpp.o
+
+timer.i: timer.cpp.i
+.PHONY : timer.i
+
+# target to preprocess a source file
+timer.cpp.i:
+	$(MAKE) -f CMakeFiles/compressionstreamer.dir/build.make CMakeFiles/compressionstreamer.dir/timer.cpp.i
+.PHONY : timer.cpp.i
+
+timer.s: timer.cpp.s
+.PHONY : timer.s
+
+# target to generate assembly for a file
+timer.cpp.s:
+	$(MAKE) -f CMakeFiles/compressionstreamer.dir/build.make CMakeFiles/compressionstreamer.dir/timer.cpp.s
+.PHONY : timer.cpp.s
 
 # Help Target
 help:
@@ -321,12 +321,12 @@ help:
 	@echo "... Compressor/cpuCode.o"
 	@echo "... Compressor/cpuCode.i"
 	@echo "... Compressor/cpuCode.s"
-	@echo "... Timer.o"
-	@echo "... Timer.i"
-	@echo "... Timer.s"
 	@echo "... main.o"
 	@echo "... main.i"
 	@echo "... main.s"
+	@echo "... timer.o"
+	@echo "... timer.i"
+	@echo "... timer.s"
 .PHONY : help
 
 
