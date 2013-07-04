@@ -187,8 +187,8 @@ void decompressionKernel(uint32_t chunkSize, uint32_t dataBlockSize,
         rshiftAmount = accumulatedIndex % storageIndiceCapacity;
         uint8_t writtenBits = storageIndiceCapacity - residuallshiftAmount - imax(rshiftAmount-residuallshiftAmount,0);
         register uint32_t residual = ( (compressedResiduals[startingIndex] << rshiftAmount) >> residuallshiftAmount);
-        if (storageIndiceCapacity - residuallshiftAmount - writtenBits > 0)
-            residual |= ( compressedResiduals[startingIndex+1] >> (residuallshiftAmount + writtenBits - 1) >> 1);
+        residual |= 
+	  ( compressedResiduals[startingIndex+(storageIndiceCapacity - residuallshiftAmount - writtenBits > 0)] >> (residuallshiftAmount + writtenBits - 1) >> 1);
         _decompressorIV[lowerBound+i] ^= residual;
         accumulatedIndex += count;
     }
