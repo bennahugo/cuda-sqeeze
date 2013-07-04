@@ -26,7 +26,6 @@ int main(int argc, char **argv) {
     }
     //CPURegisters info = getCPUFeatures();
     string filename(argv[1]);
-    
      astroReader::file f(filename);
     cout << "File dimensions: ";
     for (int i = 0; i < f.getDimensionCount(); ++i)
