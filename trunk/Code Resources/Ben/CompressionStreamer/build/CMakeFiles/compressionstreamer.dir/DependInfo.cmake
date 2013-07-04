@@ -8,8 +8,8 @@ SET(CMAKE_DEPENDS_CHECK_CXX
   "/home/benjamin/projects/CompressionStreamer/AstroReader/stride.cpp" "/home/benjamin/projects/CompressionStreamer/build/CMakeFiles/compressionstreamer.dir/AstroReader/stride.cpp.o"
   "/home/benjamin/projects/CompressionStreamer/AstroReader/stridefactory.cpp" "/home/benjamin/projects/CompressionStreamer/build/CMakeFiles/compressionstreamer.dir/AstroReader/stridefactory.cpp.o"
   "/home/benjamin/projects/CompressionStreamer/Compressor/cpuCode.cpp" "/home/benjamin/projects/CompressionStreamer/build/CMakeFiles/compressionstreamer.dir/Compressor/cpuCode.cpp.o"
-  "/home/benjamin/projects/CompressionStreamer/Timer.cpp" "/home/benjamin/projects/CompressionStreamer/build/CMakeFiles/compressionstreamer.dir/Timer.cpp.o"
   "/home/benjamin/projects/CompressionStreamer/main.cpp" "/home/benjamin/projects/CompressionStreamer/build/CMakeFiles/compressionstreamer.dir/main.cpp.o"
+  "/home/benjamin/projects/CompressionStreamer/timer.cpp" "/home/benjamin/projects/CompressionStreamer/build/CMakeFiles/compressionstreamer.dir/timer.cpp.o"
   )
 SET(CMAKE_CXX_COMPILER_ID "GNU")
 

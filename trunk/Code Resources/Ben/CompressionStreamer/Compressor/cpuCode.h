@@ -25,25 +25,35 @@
 #include <stdint.h>
 #include <math.h>
 #include <omp.h>
+#include <pthread.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <xmmintrin.h>
 #include <emmintrin.h>
+#include <pmmintrin.h>
+#include <smmintrin.h>
+#include <immintrin.h>
 #include <iostream>
 
 #include "exceptions.h"
-#include "../Timer.h"
+#include "../timer.h"
 namespace cpuCode{
   namespace compressor{
     void initCompressor(const float * iv, uint64_t ivLength);
     void compressData(const float * data, uint32_t elementCount,
-			    void (*callBack)(uint32_t elementCount, uint32_t compressedResidualsIntCount, uint32_t * compressedResiduals,
-			      uint32_t compressedPrefixIntCount, uint32_t * compressedPrefixes));
+			    void (*callBack)(uint32_t elementCount, uint32_t * compressedResidualsIntCounts, uint32_t ** compressedResiduals,
+			    uint32_t * compressedPrefixIntCounts, uint32_t ** compressedPrefixes, uint32_t chunkCount, uint32_t * chunkSizes));
     double getAccumulatedRunTimeSinceInit();
+    uint32_t getAccumulatedCompressedDataSize();
     void releaseResources();
   }
   namespace decompressor{
     void initDecompressor(const float * iv, uint64_t ivLength);
-    void decompressData(const uint32_t elementCount, const uint32_t * compressedResiduals, const uint32_t * compressedPrefixes, 
+    void decompressData(uint32_t elementCount, uint32_t chunkCount, uint32_t * chunkSizes, 
+			uint32_t ** compressedResiduals, uint32_t ** compressedPrefixes, 
 			void (*callBack)(uint32_t elementCount, uint32_t * decompressedData));
     double getAccumulatedRunTimeSinceInit();
+    uint32_t getAccumulatedDecompressedDataSize();
     void releaseResources();
   }
 }
