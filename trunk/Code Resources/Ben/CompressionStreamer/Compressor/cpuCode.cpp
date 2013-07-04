@@ -145,10 +145,11 @@ void* compressionKernel(void * args){
      * create storage for residuals:
      */
     sizeOfResidualArray = sizeOfResidualArray / storageIndiceCapacity +
-                          (sizeOfResidualArray % storageIndiceCapacity != 0 ? 1 : 0);
+                          (sizeOfResidualArray % storageIndiceCapacity != 0 ? 1 : 0)+1; //+1 to avoid branching later on
     uint32_t * arrResiduals = (uint32_t*)_mm_malloc(sizeof(uint32_t)*sizeOfResidualArray,16);
-    for (int i = 0; i < sizeOfResidualArray; ++i) {
+    for (int i = 0; i < sizeOfResidualArray; i+=4) {
 	arrResiduals[i] = 0;
+	//_mm_store_si128((__m128i*)(arrResiduals+i),_mm_set1_epi32(0));
     }
     /*
      * save residuals:
@@ -162,7 +163,7 @@ void* compressionKernel(void * args){
          uint8_t rshiftAmount = accumulatedIndex % storageIndiceCapacity;
          uint8_t writtenBits = storageIndiceCapacity - lshiftAmount - imax(rshiftAmount-lshiftAmount,0);
          arrResiduals[startingIndex] |= ( (ivElem << lshiftAmount) >> rshiftAmount);
-         if (storageIndiceCapacity - lshiftAmount - writtenBits > 0)
+         //if (storageIndiceCapacity - lshiftAmount - writtenBits > 0)
              arrResiduals[startingIndex+1] |= ( ivElem << (lshiftAmount + writtenBits - 1) << 1);
          accumulatedIndex += arrCounts[i];
      }
@@ -172,8 +173,8 @@ void* compressionKernel(void * args){
      */ 
     ((compressionKernelArgs*)args)->residualStore[dataBlockIndex] = arrResiduals;
     ((compressionKernelArgs*)args)->prefixStore[dataBlockIndex] = arrPrefix;
-    ((compressionKernelArgs*)args)->residualSizeStore[dataBlockIndex] = sizeOfResidualArray;
-    ((compressionKernelArgs*)args)->prefixSizeStore[dataBlockIndex] = sizeOfPrefixArray;
+    ((compressionKernelArgs*)args)->residualSizeStore[dataBlockIndex] = sizeOfResidualArray-1; //-1 because we used 1 int to avoid a branch
+    ((compressionKernelArgs*)args)->prefixSizeStore[dataBlockIndex] = sizeOfPrefixArray; 
     ((compressionKernelArgs*)args)->dataBlockSizes[dataBlockIndex] = elementsInDataBlock;
     /*
      * Copy the current data to the IV memory for the next round of compression
@@ -199,40 +200,30 @@ void* decompressionKernel(void * args) {
     uint32_t * compressedPrefixes = ((decompressionKernelArgs*)args)->compressedPrefixes;
     uint32_t * compressedResiduals = ((decompressionKernelArgs*)args)->compressedResiduals;
     uint32_t lowerBound = dataBlockIndex*chunkSize;
+    
     /*
-     * create storage for counts and decompressed data:
+     * deflate prefixes and residuals
      */
-    uint32_t * arrCounts = (uint32_t*)_mm_malloc(sizeof(uint32_t)*chunkSize,16); //no need to initialize we're going to override this in any case
-
-    /*
-     * construct count array from prefix array
-     */
+    uint32_t accumulatedIndex = 0;
     uint8_t lshiftAmount = (storageIndiceCapacity - bitCountForRepresentation);
     for (uint32_t i = 0; i < dataBlockSize; ++i) {
-        uint32_t startingIndex = (i*bitCountForRepresentation) / storageIndiceCapacity;
-        uint8_t rshiftAmount = (i*bitCountForRepresentation) % storageIndiceCapacity;
+	//deflate prefix
+	uint32_t prefixIndex = i*bitCountForRepresentation;
+        uint32_t startingIndex = (prefixIndex) / storageIndiceCapacity;
+        uint8_t rshiftAmount = (prefixIndex) % storageIndiceCapacity;
         uint8_t prefix = ((compressedPrefixes[startingIndex] << rshiftAmount) >> lshiftAmount);
-        arrCounts[i] = storageIndiceCapacity - prefix*8;
-    }
-
-    uint32_t accumulatedIndex = 0;
-    for (uint32_t i = 0; i < dataBlockSize; ++i) {
-        uint32_t startingIndex = accumulatedIndex / storageIndiceCapacity;
-        uint8_t lshiftAmount = (storageIndiceCapacity - arrCounts[i]);
-        uint8_t rshiftAmount = accumulatedIndex % storageIndiceCapacity;
-        uint8_t writtenBits = storageIndiceCapacity - lshiftAmount - imax(rshiftAmount-lshiftAmount,0);
-        register uint32_t residual = ( (compressedResiduals[startingIndex] << rshiftAmount) >> lshiftAmount);
-        if (storageIndiceCapacity - lshiftAmount - writtenBits > 0)
-            residual |= ( compressedResiduals[startingIndex+1] >> (lshiftAmount + writtenBits - 1) >> 1);
-// 	if (i+lowerBound == 229375){
-// 	
-// 	std::cout << *((float*)(_compressorIV+i+lowerBound)) << std::endl;
-// 	}
+        uint32_t count = storageIndiceCapacity - prefix*8;
+	//deflate its associated residual
+	startingIndex = accumulatedIndex / storageIndiceCapacity;
+        uint8_t residuallshiftAmount = (storageIndiceCapacity - count);
+        rshiftAmount = accumulatedIndex % storageIndiceCapacity;
+        uint8_t writtenBits = storageIndiceCapacity - residuallshiftAmount - imax(rshiftAmount-residuallshiftAmount,0);
+        register uint32_t residual = ( (compressedResiduals[startingIndex] << rshiftAmount) >> residuallshiftAmount);
+        if (storageIndiceCapacity - residuallshiftAmount - writtenBits > 0)
+            residual |= ( compressedResiduals[startingIndex+1] >> (residuallshiftAmount + writtenBits - 1) >> 1);
         _decompressorIV[lowerBound+i] ^= residual;
-        accumulatedIndex += arrCounts[i];
+        accumulatedIndex += count;
     }
-
-    _mm_free(arrCounts);
 }
 
 
