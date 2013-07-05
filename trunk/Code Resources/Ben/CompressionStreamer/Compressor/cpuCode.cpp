@@ -118,7 +118,9 @@ void compressionKernel(const float * data, uint32_t elementCount, uint32_t dataB
     for (uint32_t i = 0; i < elementsInDataBlock; ++i) {
 	uint32_t index = i+lowerBound;
  	uint32_t element =  (_compressorIV[index] ^= ((uint32_t*)&(data[0]))[index]); 
-	uint32_t prefix0 = imin(3,(__builtin_clz(element)/8));
+	
+	uint32_t prefix0 = imin(3,(_lzcnt_u32 (element)/8));
+	//uint32_t prefix0 = imin(3,(__builtin_clz(element)/8));
 	uint32_t iTimesBitCountForRepresentation = i*bitCountForRepresentation;
         uint32_t startingIndex = (iTimesBitCountForRepresentation) / storageIndiceCapacity;
         uint32_t rshiftAmount = (iTimesBitCountForRepresentation) % storageIndiceCapacity;
