@@ -31,8 +31,8 @@
 #include <emmintrin.h>
 #include <pmmintrin.h>
 #include <smmintrin.h>
-#include <immintrin.h>
-#include <lzcntintrin.h>
+#include "immintrin.h"
+#include "lzcntintrin.h"
 #include <iostream>
 
 #include "exceptions.h"
