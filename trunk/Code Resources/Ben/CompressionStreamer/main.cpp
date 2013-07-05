@@ -20,7 +20,7 @@ float * currentUncompressedData = NULL;
 
 int main(int argc, char **argv) {
     using namespace std;
-    if (argc != 2){
+    if (argc < 2){
       cout << "FATAL: PLEASE SPECIFY MEERKAT HDF5 FILE LOCATION" << endl;
       exit(1);
     }
