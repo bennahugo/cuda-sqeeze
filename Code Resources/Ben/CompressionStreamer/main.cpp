@@ -17,7 +17,8 @@ void compressCallback(uint32_t elementCount, uint32_t * compressedResidualsIntCo
 			    uint32_t * compressedPrefixIntCounts, uint32_t ** compressedPrefixes, uint32_t chunkCount, uint32_t * chunkSizes);
 
 float * currentUncompressedData = NULL;
-
+bool skipDecompression = false;
+bool skipValidation = false;
 int main(int argc, char **argv) {
     using namespace std;
     if (argc < 2){
@@ -27,11 +28,24 @@ int main(int argc, char **argv) {
     //CPURegisters info = getCPUFeatures();
     string filename(argv[1]);
      astroReader::file f(filename);
+    int origSize = 1;
     cout << "File dimensions: ";
-    for (int i = 0; i < f.getDimensionCount(); ++i)
+    for (int i = 0; i < f.getDimensionCount(); ++i){
       cout << f.getDimensionSize(i) << ((i == f.getDimensionCount() -1) ? "\n" : " x ");
+      origSize *= f.getDimensionSize(i);
+    }
     if (argc == 3)
       omp_set_num_threads(atoi(argv[2]));
+    if (argc >= 4){
+      if (skipDecompression = atoi(argv[3]))
+	cout << "WARNING: USER REQUESTED TO SKIP DECOMPRESSION" << endl;
+    }
+    if (argc == 5){
+      if (!skipDecompression){
+	if (skipValidation = atoi(argv[4]))
+	  cout << "WARNING: USER REQUESTED TO SKIP VALIDATION" << endl;
+      }
+    }
     cout << "Processor Threads Available: " << omp_get_max_threads() << endl;
     //Read in chunks:
     long maxBlockSizeBytes = MAX_READ_BUFFER_IN_MB*1024*1024;
@@ -50,31 +64,37 @@ int main(int argc, char **argv) {
       processStride(data);
     } 
     std::cout << "COMPRESSION RATIO: " << (cpuCode::compressor::getAccumulatedCompressedDataSize()/
-      (float)cpuCode::decompressor::getAccumulatedDecompressedDataSize()) << std::endl;
+      (float)origSize) << std::endl;
     std::cout << "COMPRESSED IN " << cpuCode::compressor::getAccumulatedRunTimeSinceInit() << " seconds @ " << 
       cpuCode::decompressor::getAccumulatedDecompressedDataSize()*sizeof(float)/1024.0f/1024.0f/1024.0f/cpuCode::compressor::getAccumulatedRunTimeSinceInit() << " GB/s" << std::endl;
-    std::cout << "DECOMPRESSED IN " << cpuCode::decompressor::getAccumulatedRunTimeSinceInit() << " seconds @ " << 
-      cpuCode::decompressor::getAccumulatedDecompressedDataSize()*sizeof(float)/1024.0f/1024.0f/1024.0f/cpuCode::decompressor::getAccumulatedRunTimeSinceInit() << " GB/s" << std::endl;
+    if (!skipDecompression){  
+      std::cout << "DECOMPRESSED IN " << cpuCode::decompressor::getAccumulatedRunTimeSinceInit() << " seconds @ " << 
+	cpuCode::decompressor::getAccumulatedDecompressedDataSize()*sizeof(float)/1024.0f/1024.0f/1024.0f/cpuCode::decompressor::getAccumulatedRunTimeSinceInit() << " GB/s" << std::endl;
+    }
     return 0;
 }
 void decompressCallback(uint32_t elementCount, uint32_t * decompressedData){
   using namespace std;
   //Automated test of the compression algorithm. Check decompressed data against original timeslice
-  for (int i = 0; i < elementCount; ++i){
-    int checkElement = *(uint32_t *)&currentUncompressedData[i];
-    if (decompressedData[i] != checkElement){
-      std::cout << "SANITY CHECK FAILED at elem:" << i << std::endl;
-       std::cout << "Found:\t" << *(float*)&decompressedData[i] << std::endl;
-       std::cout << "Expected:\t" << *(float*)&checkElement << std::endl;
-      exit(1);
+  if (!skipValidation){ 
+    for (int i = 0; i < elementCount; ++i){
+      int checkElement = *(uint32_t *)&currentUncompressedData[i];
+      if (decompressedData[i] != checkElement){
+	std::cout << "SANITY CHECK FAILED at elem:" << i << std::endl;
+	std::cout << "Found:\t" << *(float*)&decompressedData[i] << std::endl;
+	std::cout << "Expected:\t" << *(float*)&checkElement << std::endl;
+	exit(1);
+      }
     }
   }
 }
 void compressCallback(uint32_t elementCount, uint32_t * compressedResidualsIntCounts, uint32_t ** compressedResiduals,
 			    uint32_t * compressedPrefixIntCounts, uint32_t ** compressedPrefixes, 
 			    uint32_t chunkCount, uint32_t * chunkSizes){
-    cpuCode::decompressor::decompressData(elementCount,chunkCount,chunkSizes,
+    if (!skipDecompression){ 
+      cpuCode::decompressor::decompressData(elementCount,chunkCount,chunkSizes,
  					 compressedResiduals,compressedPrefixes,decompressCallback);
+    }
 }
 
 void processStride(const astroReader::stride & data){
