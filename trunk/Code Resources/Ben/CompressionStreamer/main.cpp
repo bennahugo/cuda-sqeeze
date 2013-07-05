@@ -30,6 +30,8 @@ int main(int argc, char **argv) {
     cout << "File dimensions: ";
     for (int i = 0; i < f.getDimensionCount(); ++i)
       cout << f.getDimensionSize(i) << ((i == f.getDimensionCount() -1) ? "\n" : " x ");
+    if (argc == 3)
+      omp_set_num_threads(atoi(argv[2]));
     cout << "Processor Threads Available: " << omp_get_max_threads() << endl;
     //Read in chunks:
     long maxBlockSizeBytes = MAX_READ_BUFFER_IN_MB*1024*1024;
