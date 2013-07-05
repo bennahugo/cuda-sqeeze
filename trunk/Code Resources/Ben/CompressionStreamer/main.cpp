@@ -66,10 +66,10 @@ int main(int argc, char **argv) {
     std::cout << "COMPRESSION RATIO: " << (cpuCode::compressor::getAccumulatedCompressedDataSize()/
       (float)origSize) << std::endl;
     std::cout << "COMPRESSED IN " << cpuCode::compressor::getAccumulatedRunTimeSinceInit() << " seconds @ " << 
-      cpuCode::decompressor::getAccumulatedDecompressedDataSize()*sizeof(float)/1024.0f/1024.0f/1024.0f/cpuCode::compressor::getAccumulatedRunTimeSinceInit() << " GB/s" << std::endl;
+      origSize*sizeof(float)/1024.0f/1024.0f/1024.0f/cpuCode::compressor::getAccumulatedRunTimeSinceInit() << " GB/s" << std::endl;
     if (!skipDecompression){  
       std::cout << "DECOMPRESSED IN " << cpuCode::decompressor::getAccumulatedRunTimeSinceInit() << " seconds @ " << 
-	cpuCode::decompressor::getAccumulatedDecompressedDataSize()*sizeof(float)/1024.0f/1024.0f/1024.0f/cpuCode::decompressor::getAccumulatedRunTimeSinceInit() << " GB/s" << std::endl;
+	origSize*sizeof(float)/1024.0f/1024.0f/1024.0f/cpuCode::decompressor::getAccumulatedRunTimeSinceInit() << " GB/s" << std::endl;
     }
     return 0;
 }
