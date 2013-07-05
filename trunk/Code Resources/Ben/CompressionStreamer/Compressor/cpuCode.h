@@ -27,8 +27,7 @@
 #include <omp.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <emmintrin.h>
-//#include <x86intrin.h>
+#include <x86intrin.h>
 #include <iostream>
 #include "exceptions.h"
 #include "../timer.h"
