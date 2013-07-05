@@ -19,6 +19,7 @@ void compressCallback(uint32_t elementCount, uint32_t * compressedResidualsIntCo
 float * currentUncompressedData = NULL;
 bool skipDecompression = false;
 bool skipValidation = false;
+bool writeStream = false;
 int main(int argc, char **argv) {
     using namespace std;
     if (argc < 2){
@@ -40,11 +41,14 @@ int main(int argc, char **argv) {
       if (skipDecompression = atoi(argv[3]))
 	cout << "WARNING: USER REQUESTED TO SKIP DECOMPRESSION" << endl;
     }
-    if (argc == 5){
+    if (argc >= 5){
       if (!skipDecompression){
 	if (skipValidation = atoi(argv[4]))
 	  cout << "WARNING: USER REQUESTED TO SKIP VALIDATION" << endl;
       }
+    }
+    if (argc >= 6){
+      writeStream = atoi(argv[5]);
     }
     cout << "Processor Threads Available: " << omp_get_max_threads() << endl;
     //Read in chunks:
@@ -94,6 +98,15 @@ void compressCallback(uint32_t elementCount, uint32_t * compressedResidualsIntCo
     if (!skipDecompression){ 
       cpuCode::decompressor::decompressData(elementCount,chunkCount,chunkSizes,
  					 compressedResiduals,compressedPrefixes,decompressCallback);
+    }
+    if (writeStream){
+      for (int i = 0; i < chunkCount; ++i){
+	 std::cout << chunkSizes;
+	 for (int p = 0; p < compressedPrefixIntCounts[i]; ++p)
+	   std::cout << compressedPrefixes[i][p];
+	 for (int r = 0; r < compressedResidualsIntCounts[i]; ++r)
+	   std::cout << compressedResiduals[i][r];
+      }
     }
 }
 
