@@ -27,14 +27,9 @@
 #include <omp.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <xmmintrin.h>
 #include <emmintrin.h>
-#include <pmmintrin.h>
-#include <smmintrin.h>
-#include "immintrin.h"
-#include "lzcntintrin.h"
+//#include <x86intrin.h>
 #include <iostream>
-
 #include "exceptions.h"
 #include "../timer.h"
 namespace cpuCode{
