@@ -34,7 +34,7 @@ int main(int argc, char **argv) {
       cout << f.getDimensionSize(i) << ((i == f.getDimensionCount() -1) ? "\n" : " x ");
       origSize *= f.getDimensionSize(i);
     }
-    if (argc == 3)
+    if (argc >= 3)
       omp_set_num_threads(atoi(argv[2]));
     if (argc >= 4){
       if (skipDecompression = atoi(argv[3]))
