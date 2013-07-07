@@ -49,7 +49,7 @@ inline int32_t imax( int32_t x, int32_t y )
 }
 inline int32_t imin( int32_t x, int32_t y )
 {
-    return y + ((x - y) & ((x - y) >> (BYTESPERINTMIN1))); // min(x, y)
+    return y ^ ((x ^ y) & -(x < y)); // min(x, y)
 }
 
 // Returns the number of leading 0-bits in x, starting at the most significant bit position.
@@ -133,11 +133,9 @@ void compressionKernel(const float * data, uint32_t elementCount, uint32_t dataB
 	uint32_t index = i+lowerBound;
         //save the prefixes:
         uint32_t element = (_compressorIV[index] ^= ((uint32_t*)&(data[0]))[index]);
-	#ifdef __LZCNT__
-        uint32_t prefix0 = imin(3,(_lzcnt_u32 (element) >> 3));
-	#else
-        uint32_t prefix0 = imin(3,(__builtin_clz(element) >> 3));
-	#endif
+	register uint32_t prefix0;
+	asm("LZCNT %0,%1" : "=r" (prefix0) : "r" (element));	
+	prefix0 = imin(3,prefix0 >> 3);
         uint32_t iTimesBitCountForRepresentation = i*bitCountForRepresentation;
         uint32_t startingIndex = (iTimesBitCountForRepresentation) >> 5;
         uint32_t rshiftAmount = (iTimesBitCountForRepresentation) % storageIndiceCapacity;
@@ -155,7 +153,7 @@ void compressionKernel(const float * data, uint32_t elementCount, uint32_t dataB
         accumulatedIndex += count;
     }
     /*
-     * create storage for residuals:
+     * calculate storage space used by residuals:
      */
     uint32_t sizeOfResidualArray = accumulatedIndex / storageIndiceCapacity +
                           (accumulatedIndex % storageIndiceCapacity != 0)+1; //+1 to avoid branching later on
@@ -179,18 +177,18 @@ void decompressionKernel(uint32_t chunkSize, uint32_t dataBlockSize,
 			  uint32_t * compressedPrefixes, uint32_t * compressedResiduals,
 			  uint32_t dataBlockIndex,uint32_t lowerBound) {
     /*
-     * deflate prefixes and residuals
+     * inflate prefixes and residuals
      */
     uint32_t accumulatedIndex = 0;
     uint8_t lshiftAmount = (storageIndiceCapacity - bitCountForRepresentation);
     for (uint32_t i = 0; i < dataBlockSize; ++i) {
-	//deflate prefix
+	//inflate prefix
 	uint32_t prefixIndex = i*bitCountForRepresentation;
         uint32_t startingIndex = prefixIndex >> 5;
         uint8_t rshiftAmount = prefixIndex % storageIndiceCapacity;
         uint8_t prefix = ((compressedPrefixes[startingIndex] << rshiftAmount) >> lshiftAmount);
         uint32_t count = storageIndiceCapacity - (prefix << 3);
-	//deflate its associated residual
+	//inflate its associated residual
 	startingIndex = accumulatedIndex >> 5;
         uint8_t residuallshiftAmount = (storageIndiceCapacity - count);
         rshiftAmount = accumulatedIndex % storageIndiceCapacity;
