@@ -114,19 +114,16 @@ void compressionKernel(const float * data, uint32_t elementCount, uint32_t dataB
 			uint32_t chunkSize, uint32_t ** prefixStore, uint32_t ** residualStore, 
 			uint32_t * prefixSizeStore, uint32_t * residualSizeStore, uint32_t * dataBlockSizes,
 			uint32_t lowerBound, uint32_t elementsInDataBlock){
-    /*
-     * create storage for counts and prefixes:
-     */
+
+    //create storage for counts and prefixes:
     uint32_t sizeOfPrefixArray = (elementsInDataBlock * bitCountForRepresentation) / storageIndiceCapacity +
                                  ((elementsInDataBlock * bitCountForRepresentation) % storageIndiceCapacity != 0);
     uint32_t * arrPrefix = (uint32_t*)_mm_malloc(sizeof(uint32_t)*sizeOfPrefixArray,16);
     memset(arrPrefix,0,sizeof(uint32_t)*sizeOfPrefixArray);
-    uint32_t * arrResiduals = (uint32_t*)_mm_malloc(sizeof(uint32_t)*elementsInDataBlock,16); //this padding actually waste less space than having a count array
+    uint32_t * arrResiduals = (uint32_t*)_mm_malloc(sizeof(uint32_t)*(elementsInDataBlock+1),16); //this padding actually waste less space than having a count array, +1 to avoid a branch later on when writing the remainder of the residuals
     memset(arrResiduals,0,sizeof(uint32_t)*elementsInDataBlock);
 
-    /*
-     * Create difference array, count used bits (up to 3 bytes of leading zeros) and save prefixes
-     */
+    //Create difference array, count used bits (up to 3 bytes of leading zeros) and save prefixes
     uint32_t lshiftAmountPrefixes = storageIndiceCapacity - bitCountForRepresentation;
     uint32_t accumulatedIndex = 0;
     for (uint32_t i = 0; i < elementsInDataBlock; ++i) {
@@ -152,33 +149,27 @@ void compressionKernel(const float * data, uint32_t elementCount, uint32_t dataB
         arrResiduals[startingIndex+1] |= (element << (lshiftAmount + writtenBits - 1) << 1);
         accumulatedIndex += count;
     }
-    /*
-     * calculate storage space used by residuals:
-     */
+ 
+    //calculate storage space used by residuals:
     uint32_t sizeOfResidualArray = accumulatedIndex / storageIndiceCapacity +
-                          (accumulatedIndex % storageIndiceCapacity != 0)+1; //+1 to avoid branching later on
-    /*
-     * Store pointers to the current prefixes and residuals
-     */ 
+                          (accumulatedIndex % storageIndiceCapacity != 0);
+
+    //Store pointers to the current prefixes and residuals
     residualStore[dataBlockIndex] = arrResiduals;
     prefixStore[dataBlockIndex] = arrPrefix;
-    residualSizeStore[dataBlockIndex] = sizeOfResidualArray-1; //-1 because we used 1 int to avoid a branch
+    residualSizeStore[dataBlockIndex] = sizeOfResidualArray;
     prefixSizeStore[dataBlockIndex] = sizeOfPrefixArray; 
     dataBlockSizes[dataBlockIndex] = elementsInDataBlock;
     
-    /*
-     * Copy the current data to the IV memory for the next round of compression
-     */
+    
+    //Copy the current data to the IV memory for the next round of compression
      memcpy(_compressorIV+lowerBound,data+lowerBound,elementsInDataBlock*sizeof(float));
     //the prefixes and residluals will be freed by the caller
 }
-
+/*
 void decompressionKernel(uint32_t chunkSize, uint32_t dataBlockSize, 
 			  uint32_t * compressedPrefixes, uint32_t * compressedResiduals,
 			  uint32_t dataBlockIndex,uint32_t lowerBound) {
-    /*
-     * inflate prefixes and residuals
-     */
     uint32_t accumulatedIndex = 0;
     uint8_t lshiftAmount = (storageIndiceCapacity - bitCountForRepresentation);
     for (uint32_t i = 0; i < dataBlockSize; ++i) {
@@ -200,8 +191,98 @@ void decompressionKernel(uint32_t chunkSize, uint32_t dataBlockSize,
         accumulatedIndex += count;
     }
 }
+*/
 
+void decompressionKernel(uint32_t chunkSize, uint32_t dataBlockSize, 
+			  uint32_t * compressedPrefixes, uint32_t * compressedResiduals,
+			  uint32_t dataBlockIndex,uint32_t lowerBound) {
+    uint32_t elementsDiv4 = dataBlockSize / 4;
+    uint32_t remElements = dataBlockSize % 4;
+    uint32_t uBound = elementsDiv4<<2;
 
+    uint32_t accumulatedIndex = 0;
+    uint8_t lshiftAmount = (storageIndiceCapacity - bitCountForRepresentation);
+    __m128i lshiftAmounts = _mm_set1_epi32(lshiftAmount);
+    __m128i storageIndiceCapacities = _mm_set1_epi32(storageIndiceCapacity);
+    __m128i bitCountsForRepresentation = _mm_set1_epi32(bitCountForRepresentation);
+    __m128i indexOffsets = _mm_set_epi32(3,2,1,0);
+    __m128i fives = _mm_set1_epi32(5);
+    __m128i ones = _mm_set1_epi32(1);
+    __m128i zeros = _mm_set1_epi32(0);
+    __m128i minusones = _mm_set1_epi32(-1);
+    Alignd(uint32_t startingIndexStore[4]);
+    Alignd(uint32_t countsStore[4]);
+    Alignd(uint32_t startingIndexPlus1Store[4]);
+    for (uint32_t i = 0; i < uBound; i+=4) {
+      //inflate prefix
+      __m128i indexes = _mm_add_epi32(_mm_set1_epi32(i),indexOffsets);
+      __m128i prefixIndexes = _mm_mullo_epi32(indexes,bitCountsForRepresentation);
+      __m128i startingIndexes = _mm_srl_epi32(prefixIndexes,fives);  
+      __m128i rshiftAmounts = _mm_sub_epi32(prefixIndexes,_mm_mullo_epi32(startingIndexes,storageIndiceCapacities));
+      uint32_t startingIndex = _mm_extract_epi32(startingIndexes,0);	//the starting indexes for up to 8 consequtive prefixes will be the same
+      __m128i  deflatedPrefixes = _mm_set1_epi32(compressedPrefixes[startingIndex]);
+      __m128i prefixes = _mm_srl_epi32(_mm_shl_epi32(deflatedPrefixes,rshiftAmounts),lshiftAmounts);
+      __m128i counts = _mm_sub_epi32(storageIndiceCapacities,_mm_sll_epi32(prefixes,_mm_set1_epi32(3)));
+      //inflate residual
+      _mm_store_si128((__m128i*)countsStore,counts);
+      uint32_t counts0plus1 = countsStore[0]+countsStore[1];
+      __m128i accumulatedIndexes = _mm_add_epi32(_mm_set1_epi32(accumulatedIndex),
+						  _mm_set_epi32(counts0plus1+countsStore[2],
+							       counts0plus1,countsStore[0],0));
+      startingIndexes = _mm_srl_epi32(accumulatedIndexes,fives);
+      __m128i residuallshiftAmounts = _mm_sub_epi32(storageIndiceCapacities,counts);
+      rshiftAmounts = _mm_sub_epi32(accumulatedIndexes,_mm_mullo_epi32(startingIndexes,storageIndiceCapacities));
+      __m128i writtenBits = _mm_sub_epi32(_mm_sub_epi32(storageIndiceCapacities,residuallshiftAmounts),
+									      _mm_max_epi32(
+										_mm_sub_epi32(rshiftAmounts,residuallshiftAmounts),
+										   zeros));
+      //grab the first few residaul bits:
+      _mm_store_si128((__m128i*)startingIndexStore,startingIndexes);
+      __m128i deflatedResiduals = _mm_set_epi32(compressedResiduals[startingIndexStore[3]],
+						compressedResiduals[startingIndexStore[2]],
+						compressedResiduals[startingIndexStore[1]],
+						compressedResiduals[startingIndexStore[0]]);
+      __m128i residuals = _mm_shl_epi32(_mm_shl_epi32(deflatedResiduals,rshiftAmounts),_mm_mullo_epi32(residuallshiftAmounts,minusones));
+      //grab the remaining bits:
+      __m128i startingIndexPlus1s = _mm_add_epi32(startingIndexes,
+						  _mm_and_si128(_mm_cmpgt_epi32(_mm_sub_epi32(_mm_sub_epi32(storageIndiceCapacities,residuallshiftAmounts),
+											      writtenBits),
+										zeros),
+								ones));
+      
+      _mm_store_si128((__m128i*)startingIndexPlus1Store,startingIndexPlus1s);
+      __m128i nextShift = _mm_sub_epi32(_mm_add_epi32(residuallshiftAmounts,writtenBits),ones);
+      
+      __m128i deflatedRemainingBits = _mm_set_epi32(compressedResiduals[startingIndexPlus1Store[3]],
+						compressedResiduals[startingIndexPlus1Store[2]],
+						compressedResiduals[startingIndexPlus1Store[1]],
+						compressedResiduals[startingIndexPlus1Store[0]]);
+      __m128i remBits = _mm_srl_epi32(_mm_shl_epi32(deflatedRemainingBits,_mm_mullo_epi32(nextShift,minusones)),ones);
+      uint32_t * _decompressorIVElem = _decompressorIV + lowerBound + i;
+      _mm_store_si128((__m128i*)(_decompressorIVElem),_mm_xor_si128(_mm_load_si128((__m128i*)(_decompressorIVElem)),
+								    _mm_or_si128(residuals,remBits)));
+      accumulatedIndex = _mm_extract_epi32(accumulatedIndexes,3) + countsStore[3];
+    }
+    for (uint32_t r = 0; r < remElements; ++r) {
+        uint32_t i = uBound + r;
+        //inflate prefix
+        uint32_t prefixIndex = i*bitCountForRepresentation;
+        uint32_t startingIndex = prefixIndex >> 5;
+        uint8_t rshiftAmount = prefixIndex % storageIndiceCapacity;
+        uint8_t prefix = ((compressedPrefixes[startingIndex] << rshiftAmount) >> lshiftAmount);
+        uint32_t count = storageIndiceCapacity - (prefix << 3);
+        //inflate its associated residual
+        startingIndex = accumulatedIndex >> 5;
+        uint8_t residuallshiftAmount = (storageIndiceCapacity - count);
+        rshiftAmount = accumulatedIndex % storageIndiceCapacity;
+        uint8_t writtenBits = storageIndiceCapacity - residuallshiftAmount - imax(rshiftAmount-residuallshiftAmount,0);
+        register uint32_t residual = ( (compressedResiduals[startingIndex] << rshiftAmount) >> residuallshiftAmount);
+        residual |=
+            ( compressedResiduals[startingIndex+(storageIndiceCapacity - residuallshiftAmount - writtenBits > 0)] >> (residuallshiftAmount + writtenBits - 1) >> 1);
+        _decompressorIV[lowerBound+i] ^= residual;
+        accumulatedIndex += count;
+    }
+}
 /*
  * Compresses a dataframe. This function will compress a dataframe in parallel and will call back with the compressed data when completed.
  * The user should save the initialization vector dataframe and the elementCount to file himself. For dataframe index > 1 the user
@@ -217,7 +298,6 @@ void cpuCode::compressor::compressData(const float * data, uint32_t elementCount
     timer::tic();
     uint32_t NUMTHREADS = omp_get_max_threads();
     uint32_t chunkSize = elementCount/NUMTHREADS; 
-    uint32_t remThreads = elementCount%NUMTHREADS != 0;
     uint32_t numStores = NUMTHREADS+(elementCount%NUMTHREADS != 0);
     uint32_t** residlualStore = new uint32_t*[numStores];
     uint32_t** prefixStore = new uint32_t*[numStores];
@@ -237,11 +317,11 @@ void cpuCode::compressor::compressData(const float * data, uint32_t elementCount
 			(((NUMTHREADS + 1)*chunkSize <= elementCount) ? chunkSize : chunkSize-((NUMTHREADS + 1)*chunkSize-elementCount)));
     _compressorAccumulatedTime += timer::toc();
     //Now do the callback and free all resources afterwards except the IV:
-    for (int i = 0; i < numStores; ++i){
+    for (uint32_t i = 0; i < numStores; ++i){
       _accumCompressedDataSize += residualSizesStore[i] + prefixSizesStore[i] + 1;
     }
     callBack(elementCount,residualSizesStore,residlualStore,prefixSizesStore,prefixStore,numStores,chunkSizes);
-    for (int i = 0; i < numStores; ++i){
+    for (uint32_t i = 0; i < numStores; ++i){
        _mm_free(residlualStore[i]);
        _mm_free(prefixStore[i]);
     }
@@ -309,7 +389,6 @@ void cpuCode::decompressor::decompressData(uint32_t elementCount, uint32_t chunk
   if (_decompressorIV == NULL || _decompressorIVLength != elementCount)
         throw invalidInitializationException();
   timer::tic();
-  uint32_t NUMTHREADS = omp_get_max_threads();
   #pragma omp parallel for 
   for (uint32_t dataBlockIndex = 0; dataBlockIndex < chunkCount; ++dataBlockIndex) {
     decompressionKernel(chunkSizes[0],chunkSizes[dataBlockIndex],compressedPrefixes[dataBlockIndex],
