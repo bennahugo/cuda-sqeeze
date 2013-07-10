@@ -20,6 +20,11 @@ float * currentUncompressedData = NULL;
 bool skipDecompression = false;
 bool skipValidation = false;
 bool writeStream = false;
+
+double totalCompressTime = 0;
+double totalDecompressTime = 0;
+long totalCompressSize = 0;
+
 int main(int argc, char **argv) {
     using namespace std;
     if (argc < 2){
@@ -38,12 +43,12 @@ int main(int argc, char **argv) {
     if (argc >= 3)
       omp_set_num_threads(atoi(argv[2]));
     if (argc >= 4){
-      if (skipDecompression = atoi(argv[3]))
+      if ((skipDecompression = atoi(argv[3])))
 	cout << "WARNING: USER REQUESTED TO SKIP DECOMPRESSION" << endl;
     }
     if (argc >= 5){
       if (!skipDecompression){
-	if (skipValidation = atoi(argv[4]))
+	if ((skipValidation = atoi(argv[4])))
 	  cout << "WARNING: USER REQUESTED TO SKIP VALIDATION" << endl;
       }
     }
@@ -53,11 +58,16 @@ int main(int argc, char **argv) {
     cout << "Processor Threads Available: " << omp_get_max_threads() << endl;
     //Read in chunks:
     long maxBlockSizeBytes = MAX_READ_BUFFER_IN_MB*1024*1024;
-    long pageSize = (f.getDimensionSize(1)-1)*(f.getDimensionSize(2)-1)*2*sizeof(float);
-    long fileSize = (f.getDimensionSize(0)-1)*pageSize;
+    long pageSize = (f.getDimensionSize(1))*(f.getDimensionSize(2))*2*sizeof(float);
+    long fileSize = (f.getDimensionSize(0))*pageSize;
+    cout << "File Size (bytes): " << fileSize << endl;
+    cout << "Page Size (bytes): " << pageSize << endl;
+    cout << "Maximum Readible Block (bytes): " << maxBlockSizeBytes << endl;
     assert(pageSize < maxBlockSizeBytes);
-    int numReads = ceil(fileSize / (float)maxBlockSizeBytes);
-    int numPagesPerRead = fileSize / numReads / pageSize;
+    int numPagesPerRead = maxBlockSizeBytes/ (float)pageSize;
+    int numReads = ceil(fileSize/(float)fmin(numPagesPerRead*pageSize,f.getDimensionSize(0)*pageSize));    
+
+    cout << "Maximum number of pages per read: " << numPagesPerRead << endl;
     for (int i = 0; i < numReads; ++i){
       std::cout << "Processing file chunk " << i+1 << "/" << numReads << std::endl;
       astroReader::stride data = astroReader::strideFactory::createStride(f,
@@ -67,13 +77,12 @@ int main(int argc, char **argv) {
 									  f.getDimensionSize(2)-1,0);	  
       processStride(data);
     } 
-    std::cout << "COMPRESSION RATIO: " << (cpuCode::compressor::getAccumulatedCompressedDataSize()/
-      (float)origSize) << std::endl;
-    std::cout << "COMPRESSED IN " << cpuCode::compressor::getAccumulatedRunTimeSinceInit() << " seconds @ " << 
-      origSize*sizeof(float)/1024.0f/1024.0f/1024.0f/cpuCode::compressor::getAccumulatedRunTimeSinceInit() << " GB/s" << std::endl;
+    std::cout << "COMPRESSION RATIO: " << (totalCompressSize/(float)origSize) << std::endl;
+    std::cout << "COMPRESSED IN " << totalCompressTime << " seconds @ " << 
+      origSize*sizeof(float)/1024.0f/1024.0f/1024.0f/totalCompressTime << " GB/s" << std::endl;
     if (!skipDecompression){  
-      std::cout << "DECOMPRESSED IN " << cpuCode::decompressor::getAccumulatedRunTimeSinceInit() << " seconds @ " << 
-	origSize*sizeof(float)/1024.0f/1024.0f/1024.0f/cpuCode::decompressor::getAccumulatedRunTimeSinceInit() << " GB/s" << std::endl;
+      std::cout << "DECOMPRESSED IN " << totalDecompressTime << " seconds @ " << 
+	origSize*sizeof(float)/1024.0f/1024.0f/1024.0f/totalDecompressTime << " GB/s" << std::endl;
     }
     return 0;
 }
@@ -81,7 +90,7 @@ void decompressCallback(uint32_t elementCount, uint32_t * decompressedData){
   using namespace std;
   //Automated test of the compression algorithm. Check decompressed data against original timeslice
   if (!skipValidation){ 
-    for (int i = 0; i < elementCount; ++i){
+    for (uint32_t i = 0; i < elementCount; ++i){
       int checkElement = *(uint32_t *)&currentUncompressedData[i];
       if (decompressedData[i] != checkElement){
 	std::cout << "SANITY CHECK FAILED at elem:" << i << std::endl;
@@ -100,11 +109,11 @@ void compressCallback(uint32_t elementCount, uint32_t * compressedResidualsIntCo
  					 compressedResiduals,compressedPrefixes,decompressCallback);
     }
     if (writeStream){
-      for (int i = 0; i < chunkCount; ++i){
+      for (uint32_t i = 0; i < chunkCount; ++i){
 	 std::cout << chunkSizes;
-	 for (int p = 0; p < compressedPrefixIntCounts[i]; ++p)
+	 for (uint32_t p = 0; p < compressedPrefixIntCounts[i]; ++p)
 	   std::cout << compressedPrefixes[i][p];
-	 for (int r = 0; r < compressedResidualsIntCounts[i]; ++r)
+	 for (uint32_t r = 0; r < compressedResidualsIntCounts[i]; ++r)
 	   std::cout << compressedResiduals[i][r];
       }
     }
@@ -122,7 +131,11 @@ void processStride(const astroReader::stride & data){
         data.getTimeStampData(t,ts);
         cpuCode::compressor::compressData(ts,tsSize,compressCallback);
     }
-    
+    totalCompressTime += cpuCode::compressor::getAccumulatedRunTimeSinceInit();
+    totalDecompressTime += cpuCode::decompressor::getAccumulatedRunTimeSinceInit();
+    totalCompressSize += cpuCode::compressor::getAccumulatedCompressedDataSize();
+    cpuCode::compressor::releaseResources();
+    cpuCode::decompressor::releaseResources();
     _mm_free(ts);
 }
 
