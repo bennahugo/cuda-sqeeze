@@ -115,7 +115,7 @@ double cpuCode::compressor::getAccumulatedRunTimeSinceInit(){
 uint32_t cpuCode::compressor::getAccumulatedCompressedDataSize(){
   return _accumCompressedDataSize;
 }
-/*
+
 void compressionKernel(const float * data, uint32_t elementCount, uint32_t dataBlockIndex, 
 			uint32_t chunkSize, uint32_t ** prefixStore, uint32_t ** residualStore, 
 			uint32_t * prefixSizeStore, uint32_t * residualSizeStore, uint32_t * dataBlockSizes,
@@ -136,10 +136,7 @@ void compressionKernel(const float * data, uint32_t elementCount, uint32_t dataB
 	uint32_t index = i+lowerBound;
         //save the prefixes:
         uint32_t element = (_compressorIV[index] ^= ((uint32_t*)&(data[0]))[index]);
-// 	register uint32_t prefix0;
-// 	asm("LZCNT %0,%1" : "=r" (prefix0) : "r" (element));	
-// 	prefix0 = imin(3,prefix0 >> 3);
-	uint32_t prefix0 = imin(3,lzc(element) >> 3);
+	uint32_t prefix0 = imin(3,fastLZC (element) >> 3);
         uint32_t iTimesBitCountForRepresentation = i*bitCountForRepresentation;
         uint32_t startingIndex = (iTimesBitCountForRepresentation) >> 5;
         uint32_t rshiftAmount = (iTimesBitCountForRepresentation) % storageIndiceCapacity;
@@ -173,8 +170,8 @@ void compressionKernel(const float * data, uint32_t elementCount, uint32_t dataB
      memcpy(_compressorIV+lowerBound,data+lowerBound,elementsInDataBlock*sizeof(float));
     //the prefixes and residluals will be freed by the caller
 }
-*/
 
+/*
 void compressionKernel(const float * data, uint32_t elementCount, uint32_t dataBlockIndex, 
 			uint32_t chunkSize, uint32_t ** prefixStore, uint32_t ** residualStore, 
 			uint32_t * prefixSizeStore, uint32_t * residualSizeStore, uint32_t * dataBlockSizes,
@@ -218,15 +215,17 @@ void compressionKernel(const float * data, uint32_t elementCount, uint32_t dataB
 	_mm_store_si128((__m128i*)(_compressorIV+index),elements);
 	_mm_store_si128((__m128i*)elementsStore,elements);
 	__m128i	prefixes = _mm_min_epi32(threes,
-					 _mm_srl_epi32(_mm_set_epi32(lzc(elements[3]),lzc(elements[2]),lzc(elements[1]),lzc(elements[0])),threes));
+					 _mm_srl_epi32(_mm_set_epi32(fastLZC (elementsStore[3]),fastLZC (elementsStore[2]),
+							fastLZC (elementsStore[1]),fastLZC (elementsStore[0])),threes));
 	//save prefixes:
-	__m128i iTimesBitCountsForRepresentation = _mm_mullo_epi32(_mm_set1_epi32(i),bitCountsForRepresentation);
+	__m128i iTimesBitCountsForRepresentation = _mm_mullo_epi32(_mm_add_epi32(_mm_set1_epi32(i),indexOffsets),bitCountsForRepresentation);
         __m128i startingIndexes = _mm_srl_epi32(iTimesBitCountsForRepresentation,fives);
-	__m128i rshiftAmounts = _mm_sub_epi32(iTimesBitCountsForRepresentation,_mm_mullo_epi32(startingIndexes,storageIndiceCapacities));
+	__m128i rshiftAmounts = _mm_sub_epi32(iTimesBitCountsForRepresentation,_mm_sll_epi32(startingIndexes,fives));
         uint32_t startingIndex = _mm_extract_epi32(startingIndexes,0);	//the starting indexes for up to 8 consequtive prefixes will be the same
-        _mm_store_si128((__m128i*)prefixesStore,_mm_shl_epi32(_mm_sll_epi32(prefixes,lshiftAmountPrefixes),_mm_mullo_epi32(rshiftAmounts,minusones)));
+        _mm_store_si128((__m128i*)prefixesStore,
+			_mm_shl_epi32(_mm_sll_epi32(prefixes,lshiftAmounts),_mm_mullo_epi32(rshiftAmounts,minusones)));
 	arrPrefix[startingIndex] |= prefixesStore[0] | prefixesStore[1] | prefixesStore[2] | prefixesStore[3];
-        uint32_t counts = _mm_sll_epi32(_mm_sub_epi32(_mm_set1_epi32(sizeof(uint32_t)),prefixes),threes);
+        __m128i counts = _mm_sll_epi32(_mm_sub_epi32(_mm_set1_epi32(sizeof(uint32_t)),prefixes),threes);
         
 	//save the residuals:
 	_mm_store_si128((__m128i*)countsStore,counts);
@@ -235,14 +234,14 @@ void compressionKernel(const float * data, uint32_t elementCount, uint32_t dataB
 						  _mm_set_epi32(counts0plus1+countsStore[2],
 							       counts0plus1,countsStore[0],0));
         startingIndexes = _mm_srl_epi32(accumulatedIndexes,fives);
-        __m128i lshiftAmounts = _mm_sub_epi32(storageIndiceCapacities,counts);
-        rshiftAmounts = _mm_sub_epi32(accumulatedIndexes, _mm_mullo_epi32(startingIndexes,storageIndiceCapacity));
-	__m128i writtenBits = _mm_sub_epi32(_mm_sub_epi32(storageIndiceCapacities,lshiftAmounts),
+        __m128i residuallshiftAmounts = _mm_sub_epi32(storageIndiceCapacities,counts);
+        rshiftAmounts = _mm_sub_epi32(accumulatedIndexes, _mm_sll_epi32(startingIndexes,fives));
+	__m128i writtenBits = _mm_sub_epi32(_mm_sub_epi32(storageIndiceCapacities,residuallshiftAmounts),
 									      _mm_max_epi32(
-										_mm_sub_epi32(rshiftAmounts,lshiftAmounts),
+										_mm_sub_epi32(rshiftAmounts,residuallshiftAmounts),
 										   zeros));
 	_mm_store_si128((__m128i*)startingIndexStore,startingIndexes);
-	__m128i residuals = _mm_shl_epi32(_mm_shl_epi32(elements,lshiftAmounts),_mm_mullo_epi32(rshiftAmounts,minusones));
+	__m128i residuals = _mm_shl_epi32(_mm_shl_epi32(elements,residuallshiftAmounts),_mm_mullo_epi32(rshiftAmounts,minusones));
 	_mm_store_si128((__m128i*)residlualsStore,residuals);
         arrResiduals[startingIndexStore[0]] |= residlualsStore[0];
 	arrResiduals[startingIndexStore[1]] |= residlualsStore[1];
@@ -253,7 +252,7 @@ void compressionKernel(const float * data, uint32_t elementCount, uint32_t dataB
 	startingIndexes = _mm_add_epi32(startingIndexes,ones);
 	_mm_store_si128((__m128i*)startingIndexPlus1Store,startingIndexes);
 	__m128i remainingBits = _mm_sll_epi32(_mm_shl_epi32(elements,
-							    _mm_sub_epi32(_mm_add_epi32(lshiftAmounts,writtenBits),ones)),
+							    _mm_sub_epi32(_mm_add_epi32(residuallshiftAmounts,writtenBits),ones)),
 					      ones);
 	_mm_store_si128((__m128i*)remainingBitsStore,remainingBits);
         arrResiduals[startingIndexPlus1Store[0]] |= remainingBitsStore[0];
@@ -268,10 +267,7 @@ void compressionKernel(const float * data, uint32_t elementCount, uint32_t dataB
       uint32_t index = i+lowerBound;
         //save the prefixes:
         uint32_t element = (_compressorIV[index] ^= ((uint32_t*)&(data[0]))[index]);
-// 	register uint32_t prefix0;
-// 	asm("LZCNT %0,%1" : "=r" (prefix0) : "r" (element));	
-// 	prefix0 = imin(3,prefix0 >> 3);
-	uint32_t prefix0 = imin(3,lzc(element) >> 3);
+	uint32_t prefix0 = imin(3,fastLZC (element) >> 3);
         uint32_t iTimesBitCountForRepresentation = i*bitCountForRepresentation;
         uint32_t startingIndex = (iTimesBitCountForRepresentation) >> 5;
         uint32_t rshiftAmount = (iTimesBitCountForRepresentation) % storageIndiceCapacity;
@@ -304,6 +300,7 @@ void compressionKernel(const float * data, uint32_t elementCount, uint32_t dataB
      memcpy(_compressorIV+lowerBound,data+lowerBound,elementsInDataBlock*sizeof(float));
     //the prefixes and residluals will be freed by the caller
 }
+*/
 
 void decompressionKernel(uint32_t chunkSize, uint32_t dataBlockSize, 
 			  uint32_t * compressedPrefixes, uint32_t * compressedResiduals,
@@ -356,7 +353,7 @@ void decompressionKernel(uint32_t chunkSize, uint32_t dataBlockSize,
       __m128i indexes = _mm_add_epi32(_mm_set1_epi32(i),indexOffsets);
       __m128i prefixIndexes = _mm_mullo_epi32(indexes,bitCountsForRepresentation);
       __m128i startingIndexes = _mm_srl_epi32(prefixIndexes,fives);  
-      __m128i rshiftAmounts = _mm_sub_epi32(prefixIndexes,_mm_mullo_epi32(startingIndexes,storageIndiceCapacities));
+      __m128i rshiftAmounts = _mm_sub_epi32(prefixIndexes,_mm_sll_epi32(startingIndexes,fives));
       uint32_t startingIndex = _mm_extract_epi32(startingIndexes,0);	//the starting indexes for up to 8 consequtive prefixes will be the same
       __m128i  deflatedPrefixes = _mm_set1_epi32(compressedPrefixes[startingIndex]);
       __m128i prefixes = _mm_srl_epi32(_mm_shl_epi32(deflatedPrefixes,rshiftAmounts),lshiftAmounts);
@@ -369,7 +366,7 @@ void decompressionKernel(uint32_t chunkSize, uint32_t dataBlockSize,
 							       counts0plus1,countsStore[0],0));
       startingIndexes = _mm_srl_epi32(accumulatedIndexes,fives);
       __m128i residuallshiftAmounts = _mm_sub_epi32(storageIndiceCapacities,counts);
-      rshiftAmounts = _mm_sub_epi32(accumulatedIndexes,_mm_mullo_epi32(startingIndexes,storageIndiceCapacities));
+      rshiftAmounts = _mm_sub_epi32(accumulatedIndexes,_mm_sll_epi32(startingIndexes,fives));
       __m128i writtenBits = _mm_sub_epi32(_mm_sub_epi32(storageIndiceCapacities,residuallshiftAmounts),
 									      _mm_max_epi32(
 										_mm_sub_epi32(rshiftAmounts,residuallshiftAmounts),
@@ -420,7 +417,8 @@ void decompressionKernel(uint32_t chunkSize, uint32_t dataBlockSize,
         _decompressorIV[lowerBound+i] ^= residual;
         accumulatedIndex += count;
     }
-}*/
+}
+*/
 /*
  * Compresses a dataframe. This function will compress a dataframe in parallel and will call back with the compressed data when completed.
  * The user should save the initialization vector dataframe and the elementCount to file himself. For dataframe index > 1 the user
@@ -428,6 +426,7 @@ void decompressionKernel(uint32_t chunkSize, uint32_t dataBlockSize,
  * return of the callback function the compressed data will be deleted from memory and the pointers will no longer be valid.
  * @throws invalidInitializationException if the length of the dataframe vector does not match the length of the initialization vector
  */
+
 void cpuCode::compressor::compressData(const float * data, uint32_t elementCount,
 			  void (*callBack)(uint32_t elementCount, uint32_t * compressedResidualsIntCounts, uint32_t ** compressedResiduals,
 			    uint32_t * compressedPrefixIntCounts, uint32_t ** compressedPrefixes, uint32_t chunkCount, uint32_t * chunkSizes)){
