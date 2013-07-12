@@ -38,7 +38,7 @@
 		<h1 class="newsfeed">12 July 2013</h1>
 		<p>I've made a lot of progress since the last update on this feed. I've added some assembler to do the leading zero counting
 		and that alone give me a couple of hundred MB/s speedup. I'm pleased to report that on the larger files I get up to 
-		5 GB/s on the compressor and over 9 GB/s when there are no other processes making active use of the memory. On the files with smaller
+		5 GB/s on the compressor and over 9 GB/s on the decompressor when there are no other processes making active use of the memory. On the files with smaller
 		timestamps I don't get the same performance with the compressor only achieving about 3.7GB/s.</p>
 		<p>I then went and added on an SSE 4.2 + AMD XOP version of both the compressor and the decompressor. This proved a fruitless avenue. 
 		I actually recorded a massive slowdown in both the compressor and decompressor on the larger 850MB sample. According to comments online having 
