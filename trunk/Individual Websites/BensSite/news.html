@@ -35,6 +35,17 @@
 	  </div>
 		<div id="content">
 		<h1>News</h1>
+		<h1 class="newsfeed">12 July 2013</h1>
+		<p>I've made a lot of progress since the last update on this feed. I've added some assembler to do the leading zero counting
+		and that alone give me a couple of hundred MB/s speedup. I'm pleased to report that on the larger files I get up to 
+		5 GB/s on the compressor and over 9 GB/s when there are no other processes making active use of the memory. On the files with smaller
+		timestamps I don't get the same performance with the compressor only achieving about 3.7GB/s.</p>
+		<p>I then went and added on an SSE 4.2 + AMD XOP version of both the compressor and the decompressor. This proved a fruitless avenue. 
+		I actually recorded a massive slowdown in both the compressor and decompressor on the larger 850MB sample. According to comments online having 
+		many set operations actually inflates the number of assembly instructions. This is the best explanation I could come up with to date.</p>
+		<p>Depending on my supervisor's concent and access to the new Intel Haswell architecture I may still try out an AVX2 version of the code.
+		Converting the SSE + XOP version to AVX2 should not take very long, since the instruction sets are very similar. However, it is my opinion
+		that we should move on to doing a CUDA version now, to see if running a similar kernel on the GPU will give better results.</p>
 		<h1 class="newsfeed">4 July 2013 (Part 2)</h1>
 		<p>After I've replaced pthreads with OMP and done some more optimizations I've finally achieved a very good throughput
 		on both the compressor and decompressor. My compressor now runs at ~1.98 GB/s and the decompressor runs at ~3.66GB/s using
