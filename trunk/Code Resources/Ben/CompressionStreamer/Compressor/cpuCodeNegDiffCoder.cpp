@@ -17,7 +17,7 @@
 */
 
 
-#include "cpuCode.h"
+#include "cpuCodeNegDiffCoder.h"
 uint32_t * _compressorIV = NULL; 
 uint64_t _compressorIVLength = -1;
 uint32_t _accumCompressedDataSize = 0;
@@ -27,7 +27,7 @@ double _compressorAccumulatedTime = 0;
 double _decompressorAccumulatedTime = 0;
 uint32_t _accumDecompressedDataSize = 0;
 const uint8_t storageIndiceCapacity = 8*sizeof(uint32_t);
-const uint8_t bitCountForRepresentation = 2;
+const uint8_t bitCountForRepresentation = 3;
 
 // Define macro for aligning data
 #ifdef _MSC_VER
@@ -45,7 +45,7 @@ const uint8_t bitCountForRepresentation = 2;
 const uint32_t BYTESPERINTMIN1 = sizeof(uint32_t) * sizeof(uint8_t) - 1;
 inline int32_t imax( int32_t x, int32_t y )
 {
-    return x - ((x - y) & ((x - y) >> (BYTESPERINTMIN1)));
+    return x ^ ((x ^ y) & -(x < y)); // max(x, y)
 }
 inline int32_t imin( int32_t x, int32_t y )
 {
@@ -124,10 +124,10 @@ void compressionKernel(const float * data, uint32_t elementCount, uint32_t dataB
     //create storage for counts and prefixes:
     uint32_t sizeOfPrefixArray = (elementsInDataBlock * bitCountForRepresentation) / storageIndiceCapacity +
                                  ((elementsInDataBlock * bitCountForRepresentation) % storageIndiceCapacity != 0);
-    uint32_t * arrPrefix = (uint32_t*)_mm_malloc(sizeof(uint32_t)*sizeOfPrefixArray,16);
-    memset(arrPrefix,0,sizeof(uint32_t)*sizeOfPrefixArray);
+    uint32_t * arrPrefix = (uint32_t*)_mm_malloc(sizeof(uint32_t)*(sizeOfPrefixArray+1),16);
+    memset(arrPrefix,0,sizeof(uint32_t)*(sizeOfPrefixArray+1));
     uint32_t * arrResiduals = (uint32_t*)_mm_malloc(sizeof(uint32_t)*(elementsInDataBlock+1),16); //this padding actually waste less space than having a count array, +1 to avoid a branch later on when writing the remainder of the residuals
-    memset(arrResiduals,0,sizeof(uint32_t)*elementsInDataBlock);
+    memset(arrResiduals,0,sizeof(uint32_t)*(elementsInDataBlock+1));
 
     //Create difference array, count used bits (up to 3 bytes of leading zeros) and save prefixes
     uint32_t lshiftAmountPrefixes = storageIndiceCapacity - bitCountForRepresentation;
@@ -135,19 +135,23 @@ void compressionKernel(const float * data, uint32_t elementCount, uint32_t dataB
     for (uint32_t i = 0; i < elementsInDataBlock; ++i) {
 	uint32_t index = i+lowerBound;
         //save the prefixes:
-        uint32_t element = (_compressorIV[index] ^= ((uint32_t*)&(data[0]))[index]);
-	uint32_t prefix0 = imin(3,fastLZC (element) >> 3);
-        uint32_t iTimesBitCountForRepresentation = i*bitCountForRepresentation;
+	uint32_t element = (_compressorIV[index] ^= (((uint32_t*)&(data[0]))[index]));
+ 	uint32_t sign = (element >> 31) << 2;
+	uint32_t prefix0 = imin(3,fastLZC (element & 0x7FFFFFFF) >> 3);
+	uint32_t count = ((sizeof(uint32_t)-prefix0) << 3);
+	prefix0 |= sign;
+        uint32_t iTimesBitCountForRepresentation = i * bitCountForRepresentation;
         uint32_t startingIndex = (iTimesBitCountForRepresentation) >> 5;
         uint32_t rshiftAmount = (iTimesBitCountForRepresentation) % storageIndiceCapacity;
-        arrPrefix[startingIndex] |= ((prefix0 << lshiftAmountPrefixes) >> rshiftAmount);
-        uint32_t count = ((sizeof(uint32_t)-prefix0) << 3);
-        
+        uint8_t writtenBits = storageIndiceCapacity - lshiftAmountPrefixes - imax(rshiftAmount-lshiftAmountPrefixes,0);
+	arrPrefix[startingIndex] |= ((prefix0 << lshiftAmountPrefixes) >> rshiftAmount);
+	arrPrefix[startingIndex+1] |= (prefix0 << (lshiftAmountPrefixes + writtenBits - 1) << 1);
+	
 	//save the residuals:
         startingIndex = accumulatedIndex >> 5;
         uint8_t lshiftAmount = (storageIndiceCapacity - count);
         rshiftAmount = accumulatedIndex % storageIndiceCapacity;
-        uint8_t writtenBits = storageIndiceCapacity - lshiftAmount - imax(rshiftAmount-lshiftAmount,0);
+        writtenBits = storageIndiceCapacity - lshiftAmount - imax(rshiftAmount-lshiftAmount,0);
         element = _compressorIV[index]; //it seems after _lzcnt_u32 touches a memory location it is not optimized correctly this is a work arround
         arrResiduals[startingIndex] |= ( (element << lshiftAmount) >> rshiftAmount);
         arrResiduals[startingIndex+1] |= (element << (lshiftAmount + writtenBits - 1) << 1);
@@ -171,7 +175,6 @@ void compressionKernel(const float * data, uint32_t elementCount, uint32_t dataB
     //the prefixes and residluals will be freed by the caller
 }
 
-
 void decompressionKernel(uint32_t chunkSize, uint32_t dataBlockSize, 
 			  uint32_t * compressedPrefixes, uint32_t * compressedResiduals,
 			  uint32_t dataBlockIndex,uint32_t lowerBound) {
@@ -182,21 +185,27 @@ void decompressionKernel(uint32_t chunkSize, uint32_t dataBlockSize,
 	uint32_t prefixIndex = i*bitCountForRepresentation;
         uint32_t startingIndex = prefixIndex >> 5;
         uint8_t rshiftAmount = prefixIndex % storageIndiceCapacity;
-        uint8_t prefix = ((compressedPrefixes[startingIndex] << rshiftAmount) >> lshiftAmount);
+        uint8_t writtenBits = storageIndiceCapacity - lshiftAmount - imax(rshiftAmount-lshiftAmount,0);
+	uint8_t prefix = ((compressedPrefixes[startingIndex] << rshiftAmount) >> lshiftAmount);
+ 	prefix |= ( compressedPrefixes[startingIndex+(storageIndiceCapacity - lshiftAmount - writtenBits > 0)] >> (lshiftAmount + writtenBits - 1) >> 1);
+	uint32_t sign = (prefix >> 2) << 31;
+	prefix &= 0x03;
         uint32_t count = storageIndiceCapacity - (prefix << 3);
+	
 	//inflate its associated residual
 	startingIndex = accumulatedIndex >> 5;
         uint8_t residuallshiftAmount = (storageIndiceCapacity - count);
         rshiftAmount = accumulatedIndex % storageIndiceCapacity;
-        uint8_t writtenBits = storageIndiceCapacity - residuallshiftAmount - imax(rshiftAmount-residuallshiftAmount,0);
+        writtenBits = storageIndiceCapacity - residuallshiftAmount - imax(rshiftAmount-residuallshiftAmount,0);
         register uint32_t residual = ( (compressedResiduals[startingIndex] << rshiftAmount) >> residuallshiftAmount);
-        residual |= 
+	residual |= 
 	  ( compressedResiduals[startingIndex+(storageIndiceCapacity - residuallshiftAmount - writtenBits > 0)] >> (residuallshiftAmount + writtenBits - 1) >> 1);
-        _decompressorIV[lowerBound+i] ^= residual;
+	residual |= sign;
+        _decompressorIV[lowerBound+i] = (_decompressorIV[lowerBound+i] ^ (residual | sign));
+	
         accumulatedIndex += count;
     }
 }
-
 
 /*
  * Compresses a dataframe. This function will compress a dataframe in parallel and will call back with the compressed data when completed.
