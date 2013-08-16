@@ -8,8 +8,8 @@ Current Build Directory Index=0
 ProjectRootRelative=./
 
 [CMake][CMake Build Directory 0]
-Build Directory Path=file:///home/bhugo/projects/CompressionStreamer/build
-Build Type=Debug
+Build Directory Path=file:///home/benjamin/projects/CompressionStreamer/build
+Build Type=Release
 CMake Binary=file:///usr/bin/cmake
 Environment Profile=
 Extra Arguments=
