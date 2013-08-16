@@ -17,11 +17,12 @@
 */
 
 
-#include "cpuCodeNegDiffCoder.h"
-uint32_t * _compressorIV = NULL; 
+#include "cpuCodeLinearCoder.h"
+#define PREDICTOR_ORDER 4
+uint32_t ** _compressorIV = NULL; 
 uint64_t _compressorIVLength = -1;
 uint32_t _accumCompressedDataSize = 0;
-uint32_t * _decompressorIV = NULL; 
+uint32_t ** _decompressorIV = NULL; 
 uint64_t _decompressorIVLength = -1;
 double _compressorAccumulatedTime = 0;
 double _decompressorAccumulatedTime = 0;
@@ -81,10 +82,16 @@ inline uint32_t fastLZC (register uint32_t x){
 void cpuCode::compressor::initCompressor(const float* iv, uint64_t ivLength){
   if (ivLength < 1)
     throw invalidInitializationException();
-  if (_compressorIV != NULL)
-    _compressorIV = (uint32_t*)_mm_malloc(sizeof(uint32_t)*ivLength,16);
-  _compressorIV = new uint32_t[ivLength];
-  memcpy(_compressorIV,iv,ivLength*sizeof(float));
+  if (_compressorIV != NULL){
+    for (uint32_t i = 0; i < PREDICTOR_ORDER; ++i)
+      _mm_free(_compressorIV[i]);
+    delete[] _compressorIV;
+  }
+  _compressorIV = new uint32_t*[PREDICTOR_ORDER];
+  for (uint32_t i = 0; i < PREDICTOR_ORDER; ++i){
+    _compressorIV[i] = (uint32_t*)_mm_malloc(sizeof(uint32_t)*ivLength,16);
+    memcpy(_compressorIV[i],iv,ivLength*sizeof(uint32_t));
+  }
   _compressorIVLength = ivLength;
   _compressorAccumulatedTime = 0;
   _accumCompressedDataSize = ivLength+1;
@@ -95,7 +102,9 @@ void cpuCode::compressor::initCompressor(const float* iv, uint64_t ivLength){
  */
 void cpuCode::compressor::releaseResources(){
   if (_compressorIV != NULL){
-    _mm_free(_compressorIV);
+    for (uint32_t i = 0; i < PREDICTOR_ORDER; ++i)
+      _mm_free(_compressorIV[i]);
+    delete[] _compressorIV;
     _compressorIV = NULL;
     _compressorIVLength = -1;
   }
@@ -135,10 +144,17 @@ void compressionKernel(const float * data, uint32_t elementCount, uint32_t dataB
     for (uint32_t i = 0; i < elementsInDataBlock; ++i) {
 	uint32_t index = i+lowerBound;
         //save the prefixes:
-	uint32_t element = (_compressorIV[index] ^= (((uint32_t*)&(data[0]))[index]));
+	int32_t P = 0;
+	for (uint32_t j = 0; j < PREDICTOR_ORDER; ++j)
+	  P += (-2*(1-(int)j%2)+1)*_compressorIV[j][index];
+	P += _compressorIV[PREDICTOR_ORDER-1][index];
+	for (uint32_t j = 1; j < PREDICTOR_ORDER;++j)
+	  _compressorIV[j-1][index] = _compressorIV[j][index];
+	_compressorIV[PREDICTOR_ORDER-1][index] = *((int32_t*)&data[index]); 
+	uint32_t element = (*((int32_t*)&data[index]) ^ P);
  	uint32_t sign = (element >> 31) << 2;
 	uint32_t prefix0 = imin(3,lzc (element & 0x7FFFFFFF) >> 3);
-	element = _compressorIV[index]; //it seems after _lzcnt_u32 touches a memory location it is not optimized correctly this is a work arround
+	//element = _compressorIV[PREDICTOR_ORDER-1][index]; //it seems after _lzcnt_u32 touches a memory location it is not optimized correctly this is a work arround
 	uint32_t count = ((sizeof(uint32_t)-prefix0) << 3);
 	prefix0 |= sign;
         uint32_t iTimesBitCountForRepresentation = i * bitCountForRepresentation;
@@ -156,6 +172,7 @@ void compressionKernel(const float * data, uint32_t elementCount, uint32_t dataB
         arrResiduals[startingIndex] |= ( (element << lshiftAmount) >> rshiftAmount);
         arrResiduals[startingIndex+1] |= (element << (lshiftAmount + writtenBits - 1) << 1);
         accumulatedIndex += count;
+	}
     }
  
     //calculate storage space used by residuals:
@@ -169,9 +186,6 @@ void compressionKernel(const float * data, uint32_t elementCount, uint32_t dataB
     prefixSizeStore[dataBlockIndex] = sizeOfPrefixArray; 
     dataBlockSizes[dataBlockIndex] = elementsInDataBlock;
     
-    
-    //Copy the current data to the IV memory for the next round of compression
-     memcpy(_compressorIV+lowerBound,data+lowerBound,elementsInDataBlock*sizeof(float));
     //the prefixes and residluals will be freed by the caller
 }
 
@@ -181,6 +195,7 @@ void decompressionKernel(uint32_t chunkSize, uint32_t dataBlockSize,
     uint32_t accumulatedIndex = 0;
     uint8_t lshiftAmount = (storageIndiceCapacity - bitCountForRepresentation);
     for (uint32_t i = 0; i < dataBlockSize; ++i) {
+	uint32_t index = lowerBound+i;
 	//inflate prefix
 	uint32_t prefixIndex = i*bitCountForRepresentation;
         uint32_t startingIndex = prefixIndex >> 5;
@@ -197,11 +212,17 @@ void decompressionKernel(uint32_t chunkSize, uint32_t dataBlockSize,
         uint8_t residuallshiftAmount = (storageIndiceCapacity - count);
         rshiftAmount = accumulatedIndex % storageIndiceCapacity;
         writtenBits = storageIndiceCapacity - residuallshiftAmount - imax(rshiftAmount-residuallshiftAmount,0);
-        register uint32_t residual = ( (compressedResiduals[startingIndex] << rshiftAmount) >> residuallshiftAmount);
-	residual |= 
-	  ( compressedResiduals[startingIndex+(storageIndiceCapacity - residuallshiftAmount - writtenBits > 0)] >> (residuallshiftAmount + writtenBits - 1) >> 1);
-        _decompressorIV[lowerBound+i] = (_decompressorIV[lowerBound+i] ^ (residual | sign));
-	
+        uint32_t element = ( (compressedResiduals[startingIndex] << rshiftAmount) >> residuallshiftAmount) 
+	  | ( compressedResiduals[startingIndex+(storageIndiceCapacity - residuallshiftAmount - writtenBits > 0)] >> (residuallshiftAmount + writtenBits - 1) >> 1)
+	  | sign;
+	uint32_t residual = *((uint32_t*)&element);
+	int32_t P = 0;
+	for (uint32_t j = 0; j < PREDICTOR_ORDER; ++j)
+	  P += (-2*(1-(int)j%2)+1)*_decompressorIV[j][index];
+	P += _decompressorIV[PREDICTOR_ORDER-1][index];
+	for (uint32_t j = 1; j < PREDICTOR_ORDER;++j)
+	  _decompressorIV[j-1][index] = _decompressorIV[j][index];
+	_decompressorIV[PREDICTOR_ORDER-1][index] = P ^ residual;
         accumulatedIndex += count;
     }
 }
@@ -264,11 +285,17 @@ void cpuCode::compressor::compressData(const float * data, uint32_t elementCount
  */
 void cpuCode::decompressor::initDecompressor(const float* iv, uint64_t ivLength){
   if (ivLength < 1)
-    throw invalidInitializationException();
-  if (_decompressorIV != NULL)
+    throw invalidInitializationException(); 
+  if (_decompressorIV != NULL){
+    for (uint32_t i = 0; i < PREDICTOR_ORDER; ++i)
+      _mm_free(_decompressorIV[i]);
     delete[] _decompressorIV;
-  _decompressorIV = new uint32_t[ivLength];
-  memcpy(_decompressorIV,iv,ivLength*sizeof(float));
+  }
+  _decompressorIV = new uint32_t*[PREDICTOR_ORDER];
+  for (uint32_t i = 0; i < PREDICTOR_ORDER; ++i){
+    _decompressorIV[i] = (uint32_t*)_mm_malloc(sizeof(uint32_t)*ivLength,16);
+    memcpy(_decompressorIV[i],iv,ivLength*sizeof(uint32_t));
+  }
   _decompressorIVLength = ivLength;
   _decompressorAccumulatedTime = 0;
   _accumDecompressedDataSize = ivLength;
@@ -279,6 +306,8 @@ void cpuCode::decompressor::initDecompressor(const float* iv, uint64_t ivLength)
  */
 void cpuCode::decompressor::releaseResources(){
   if (_decompressorIV != NULL){
+    for (uint32_t i = 0; i < PREDICTOR_ORDER; ++i)
+      _mm_free(_decompressorIV[i]);
     delete[] _decompressorIV;
     _decompressorIV = NULL;
     _decompressorIVLength = -1;
@@ -319,6 +348,6 @@ void cpuCode::decompressor::decompressData(uint32_t elementCount, uint32_t chunk
 			compressedResiduals[dataBlockIndex],dataBlockIndex,dataBlockIndex*chunkSizes[0]);
   }
   _decompressorAccumulatedTime += timer::toc();
-  callBack(elementCount, _decompressorIV);
+  callBack(elementCount, (uint32_t*)_decompressorIV[PREDICTOR_ORDER-1]);
   _accumDecompressedDataSize += elementCount;
 }

@@ -8,7 +8,7 @@
 #include "AstroReader/file.h"
 #include "AstroReader/stride.h"
 #include "AstroReader/stridefactory.h"
-#include "Compressor/cpuCode.h"
+#include "Compressor/cpuCodeLinearCoder.h"
 #define MAX_READ_BUFFER_IN_MB 1024
 void usedBitCountTest(uint32_t * data, int countData, int maxLeadingZeroCount, uint32_t * out);
 void printBinaryRepresentation(void * data, int sizeInBytes);
@@ -91,7 +91,7 @@ void decompressCallback(uint32_t elementCount, uint32_t * decompressedData){
   //Automated test of the compression algorithm. Check decompressed data against original timeslice
   if (!skipValidation){ 
     for (uint32_t i = 0; i < elementCount; ++i){
-      int checkElement = *(uint32_t *)&currentUncompressedData[i];
+     int checkElement = *(uint32_t *)&currentUncompressedData[i];
       if (decompressedData[i] != checkElement){
 	std::cout << "SANITY CHECK FAILED at elem:" << i << std::endl;
 	std::cout << "Found:\t" << *(float*)&decompressedData[i] << std::endl;
