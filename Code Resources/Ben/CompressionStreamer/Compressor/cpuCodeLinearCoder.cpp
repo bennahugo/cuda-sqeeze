@@ -18,7 +18,7 @@
 
 
 #include "cpuCodeLinearCoder.h"
-#define PREDICTOR_ORDER 4
+#define PREDICTOR_ORDER 2
 uint32_t ** _compressorIV = NULL; 
 uint64_t _compressorIVLength = -1;
 uint32_t _accumCompressedDataSize = 0;
@@ -72,6 +72,129 @@ inline uint32_t fastLZC (register uint32_t x){
 	uint32_t result;
  	asm("LZCNT %0,%1" : "=r" (result) : "r" (x));	
  	return result;
+}
+
+inline int32_t compressorParallelogramPredictor(uint32_t index){
+#if (PREDICTOR_ORDER != 3)
+  std::cerr << "PARALLELOGRAM PREDICTOR CAN ONLY DEFINED FOR A 3 ELEMENT SCHEME" << std::endl;
+  exit(1);
+#endif  
+  int32_t P = 0;
+  for (uint32_t j = 0; j < PREDICTOR_ORDER; ++j)
+    P += (-2*(1-(int)j%2)+1)*((int32_t**)_compressorIV)[j][index];
+  return P;
+}
+inline int32_t decompressorParallelogramPredictor(uint32_t index){
+#if (PREDICTOR_ORDER != 3)
+  std::cerr << "PARALLELOGRAM PREDICTOR CAN ONLY DEFINED FOR A 3 ELEMENT SCHEME" << std::endl;
+  exit(1);
+#endif  
+  int32_t P = 0;
+  for (uint32_t j = 0; j < PREDICTOR_ORDER; ++j)
+    P += (-2*(1-(int)j%2)+1)*((int32_t**)_decompressorIV)[j][index];
+  return P;
+}
+inline int32_t compressorMeanPredictor(uint32_t index){
+  int32_t P = 0;
+  for (uint32_t j = 0; j < PREDICTOR_ORDER; ++j)
+    P += ((int32_t**)_compressorIV)[j][index];
+  return P/PREDICTOR_ORDER;
+}
+inline int32_t decompressorMeanPredictor(uint32_t index){
+  int32_t P = 0;
+  for (uint32_t j = 0; j < PREDICTOR_ORDER; ++j)
+    P += ((int32_t**)_decompressorIV)[j][index];
+  return P/PREDICTOR_ORDER;
+}
+inline int32_t compressorLagrangePredictor(uint32_t index){
+   uint32_t fStar = PREDICTOR_ORDER + 1;
+   int32_t y = 0;
+   for (uint32_t i = 1; i <= PREDICTOR_ORDER; ++i){
+       int32_t L = 1;
+       int32_t nom = 1;
+       int32_t denum = 1;
+       for (uint32_t j = 1; j <= i-1; ++j){
+	  nom *= (fStar-j);
+	  denum *= (i-j);
+       }
+       for (uint32_t j = i+1; j <= PREDICTOR_ORDER; ++j){
+	  nom *= (fStar-j);
+	  denum *= (i-j);
+       }
+       y += ((int32_t**)_compressorIV)[i-1][index]*(nom/denum);
+   }
+    return y;
+}
+inline int32_t decompressorLagrangePredictor(uint32_t index){
+   uint32_t fStar = PREDICTOR_ORDER + 1;
+   int32_t y = 0;
+   for (uint32_t i = 1; i <= PREDICTOR_ORDER; ++i){
+       int32_t nom = 1;
+       int32_t denum = 1;
+       for (uint32_t j = 1; j <= i-1; ++j){
+	  nom *= (fStar-j);
+	  denum *= (i-j);
+       }
+       for (uint32_t j = i+1; j <= PREDICTOR_ORDER; ++j){
+	  nom *= (fStar-j);
+	  denum *= (i-j);
+       }
+       y += ((int32_t**)_decompressorIV)[i-1][index]*(nom/denum);
+   }
+    return y;
+}
+/*---------------------------------------------------------------------------
+   Fast Pivot-based median (based on a kth-largest algorithm suggested by Niklaus Wirth)
+   The algorithm has been shown to have linear average complexity (which is faster than a
+   naive nlog(n) performance using sorting.
+    Reference:
+                  Author: Wirth, Niklaus 
+                   Title: Algorithms + data structures = programs 
+               Publisher: Englewood Cliffs: Prentice-Hall, 1976 
+    Physical description: 366 p. 
+                  Series: Prentice-Hall Series in Automatic Computation 
+ ---------------------------------------------------------------------------*/
+int32_t pivotMedian(int32_t *data, int n) {
+    int i, j, l, m, k = n/2-1;
+    int32_t x, s;
+
+    l=0;
+    m=n-1;
+    while(l<m) {
+        x=data[k];
+        i=l;
+        j=m;
+        do {
+            while(data[i]<x) i++;
+            while(x<data[j]) j--;
+            if(i<=j) {
+                s=data[i];
+                data[i]=data[j];
+                data[j]=s;
+                i++;
+                j--;
+            }
+        } while(i<=j);
+        if(j<k) l=i;
+        if(k<i) m=j;
+    }
+    return(data[k]);
+}
+inline int32_t compressorMedianPredictor(uint32_t index){
+  int32_t* prev = new int32_t[PREDICTOR_ORDER];
+  for (uint32_t j = 0; j < PREDICTOR_ORDER; ++j)
+    prev[j] = ((int32_t**)_compressorIV)[j][index];
+  int32_t P = pivotMedian(prev,PREDICTOR_ORDER);
+  delete[] prev;
+  return P;
+}
+inline int32_t decompressorMedianPredictor(uint32_t index){
+  int32_t* prev = new int32_t[PREDICTOR_ORDER];
+  for (uint32_t j = 0; j < PREDICTOR_ORDER; ++j)
+    prev[j] = ((int32_t**)_decompressorIV)[j][index];
+  int32_t P = pivotMedian(prev,PREDICTOR_ORDER);
+  delete[] prev;
+  return P;
 }
 /*
  * Inits the compressor
@@ -144,10 +267,7 @@ void compressionKernel(const float * data, uint32_t elementCount, uint32_t dataB
     for (uint32_t i = 0; i < elementsInDataBlock; ++i) {
 	uint32_t index = i+lowerBound;
         //save the prefixes:
-	int32_t P = 0;
-	for (uint32_t j = 0; j < PREDICTOR_ORDER; ++j)
-	  P += (-2*(1-(int)j%2)+1)*_compressorIV[j][index];
-	P += _compressorIV[PREDICTOR_ORDER-1][index];
+	int32_t P = compressorMedianPredictor(index);
 	for (uint32_t j = 1; j < PREDICTOR_ORDER;++j)
 	  _compressorIV[j-1][index] = _compressorIV[j][index];
 	_compressorIV[PREDICTOR_ORDER-1][index] = *((int32_t*)&data[index]); 
@@ -172,7 +292,6 @@ void compressionKernel(const float * data, uint32_t elementCount, uint32_t dataB
         arrResiduals[startingIndex] |= ( (element << lshiftAmount) >> rshiftAmount);
         arrResiduals[startingIndex+1] |= (element << (lshiftAmount + writtenBits - 1) << 1);
         accumulatedIndex += count;
-	}
     }
  
     //calculate storage space used by residuals:
@@ -216,10 +335,8 @@ void decompressionKernel(uint32_t chunkSize, uint32_t dataBlockSize,
 	  | ( compressedResiduals[startingIndex+(storageIndiceCapacity - residuallshiftAmount - writtenBits > 0)] >> (residuallshiftAmount + writtenBits - 1) >> 1)
 	  | sign;
 	uint32_t residual = *((uint32_t*)&element);
-	int32_t P = 0;
-	for (uint32_t j = 0; j < PREDICTOR_ORDER; ++j)
-	  P += (-2*(1-(int)j%2)+1)*_decompressorIV[j][index];
-	P += _decompressorIV[PREDICTOR_ORDER-1][index];
+	int32_t P = decompressorMedianPredictor(index);
+	//P += _decompressorIV[PREDICTOR_ORDER-1][index];
 	for (uint32_t j = 1; j < PREDICTOR_ORDER;++j)
 	  _decompressorIV[j-1][index] = _decompressorIV[j][index];
 	_decompressorIV[PREDICTOR_ORDER-1][index] = P ^ residual;
@@ -249,7 +366,7 @@ void cpuCode::compressor::compressData(const float * data, uint32_t elementCount
     uint32_t* residualSizesStore = new uint32_t[numStores];
     uint32_t* prefixSizesStore = new uint32_t[numStores];
     uint32_t* chunkSizes = new uint32_t[numStores];
-#pragma omp parallel for 
+ #pragma omp parallel for 
     for (uint32_t dataBlockIndex = 0; dataBlockIndex < NUMTHREADS; ++dataBlockIndex) {  
       compressionKernel(data,elementCount,dataBlockIndex,chunkSize,prefixStore,
 			residlualStore,prefixSizesStore,residualSizesStore,chunkSizes,
