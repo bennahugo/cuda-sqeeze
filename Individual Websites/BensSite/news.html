@@ -38,20 +38,22 @@
 		<h1 class="newsfeed">20 July 2013</h1>
 		<p>With my coursework and examinations now done I've completed my investigation into alternative prediction schemes (remember the fast scheme is simply xoring 
 		2 consecutive values to obtain a residual). In my initial attempts I used floating point operations. I soon learnt that this approach is not useful for lossless
-		schemes as we introduce rounding errors (even with only subtractions and additions to my surprise) that cannot be recovered from. In some second attempt
-		I constructed a parallelogram predictor (1D version of the well known Lorenzo family) which is able to use only integer arithmetic. This approach can 
-		successfully compress large mesh datasets, but wasn't very useful in our datasets (it actually caused inflation :(). Next I tried a running median scheme
-		with a well known linear average time median algorithm based on pivoting (Déjà vu quicksort!). I reaconed that due to the spikey nature of the data I would be 
-		able to use the statistical properties of the median (Stats 101: the median is not seriously affected by outliers) to reduce the error between the predicted value
-		and the actual value. Success was very margianal (it only improved the compression in the 3rd decimal place for some of the files --- others it increased the ratio). Sadface.
-		Then I tried computing an integer-division-based mean. This actually inflated the file size once again. Sadface x2. My last approach was a bit more radical in nature. One of
-		the papers I looked at for my litreview discuss the implimentation of a gradiant-based approach called the Lagrange polynomial extrapolation algorithm (its derivatives is 
-		more widely used to do polynomial interpolation in numerical methods). The method computes the coefficient of a polynomial approximation in O(nm) time where m is 
-		the number of monomials in the expression (so it is reasonably fast). I will give a fuller description in my report. In order to get a better understanding I quickly 
-		generated a smooth sinusoidal curve in a spreadsheet and wrote a macro (yes: in wonderful BASIC --- how anybody can like to program in a language that declares 
-		variables as Dim a As Integer is beyond me) to implement the Lagrange method. This worked very well for smooth data. However: when I plugged our data into it this soon
-		changed. Even after trying predictive orders up to 20 elements I couldn't get good results. It actually inflated the ratio.</p>
-		<b>"Drat, double drat and tripple drat" as Dick Dastardly would say (yes I watched too much Mutley and the Wacky Racers as a child)</b>
+		schemes as we introduce rounding errors (even with only subtractions and additions to my surprise) that cannot be recovered from.</p>
+		<p>In a second attempt I constructed a parallelogram predictor (1D version of the well known Lorenzo family) which is able to use only integer arithmetic. This approach can 
+		successfully compress large mesh datasets, but wasn't very useful in our datasets (it actually caused inflation :().</p> 
+		<p>Next I tried a running median scheme with a well known linear average time median algorithm based on pivoting (Deja vu quicksort!). I reaconed that due to the 
+		spikey nature of the data I would be able to use the statistical properties of the median <i>(Stats 101: the median is not seriously affected by outliers)</i> to 
+		reduce the error between the predicted value and the actual value. Success was very margianal --- it only improved the compression in the 3rd decimal place for 
+		some of the files while in others it increased the ratio). Sadface.</p>
+		<p>Then I tried computing an integer-division-based mean. This actually inflated the file size once again. Sadface x2.</p>
+		<p>My last approach was a bit more radical in nature. One of the papers I looked at for my litreview discuss the implimentation of a gradiant-based approach 
+		called the Lagrange polynomial extrapolation algorithm (its derivatives is more widely used to do polynomial interpolation in numerical methods). The method computes 
+		the coefficient of a polynomial approximation in O(nm) time where m is the number of monomials in the expression (so it is reasonably fast). I will give a fuller 
+		description in my report. In order to get a better understanding I quickly generated a smooth sinusoidal curve in a spreadsheet and wrote a macro 
+		(yes: in wonderful BASIC --- how anybody can like to program in a language that declares variables as Dim a As Integer is beyond me) to implement the Lagrange method. 
+		This worked very well for smooth data. However, when I plugged our data into it this soon changed. Even after trying predictive orders up to 20 elements I couldn't 
+		get good results. It actually inflated the ratio.</p>
+		<b align="center">"Drat, double drat and tripple drat" as Dick Dastardly would say (yes I watched too much Mutley and the Wacky Racers as a child)</b>
 		<p> (End rant). As per James' suggestion I will end my investigation into linear schemes and start my CUDA version tonight. </p>
 		<h1 class="newsfeed">12 July 2013</h1>
 		<p>I've made a lot of progress since the last update on this feed. I've added some assembler to do the leading zero counting
