@@ -33,8 +33,8 @@
 #include <cuda_runtime.h>
 #include "exceptions.h"
 #include "../timer.h"
-void initCUDA();
 namespace gpuCode{ 
+  void initCUDA();
   namespace compressor{
     void initCompressor(const float * iv, uint64_t ivLength);
     void compressData(const float * data, uint32_t elementCount,

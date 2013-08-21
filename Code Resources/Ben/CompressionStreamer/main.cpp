@@ -62,8 +62,9 @@ int main(int argc, char **argv) {
     }
     cout << omp_get_max_threads() << " CPU Processor Threads available" << endl;
     if (useCUDA)
-      initCUDA();
-    
+      gpuCode::initCUDA();
+    else
+      cout << "WARNING: USER REQUESTED TO SKIP GPGPU RUN" << endl;
     //Read in chunks:
     long maxBlockSizeBytes = MAX_READ_BUFFER_IN_MB*1024*1024;
     long pageSize = (f.getDimensionSize(1))*(f.getDimensionSize(2))*2*sizeof(float);
