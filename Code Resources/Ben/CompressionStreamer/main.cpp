@@ -8,7 +8,9 @@
 #include "AstroReader/file.h"
 #include "AstroReader/stride.h"
 #include "AstroReader/stridefactory.h"
-#include "Compressor/cpuCodeLinearCoder.h"
+#include "Compressor/cpuCode.h"
+// #include "gpuCode.h"
+#include "GPUCompressor/gpuCode.h"
 #define MAX_READ_BUFFER_IN_MB 1024
 void usedBitCountTest(uint32_t * data, int countData, int maxLeadingZeroCount, uint32_t * out);
 void printBinaryRepresentation(void * data, int sizeInBytes);
@@ -20,7 +22,7 @@ float * currentUncompressedData = NULL;
 bool skipDecompression = false;
 bool skipValidation = false;
 bool writeStream = false;
-
+bool useCUDA = true;
 double totalCompressTime = 0;
 double totalDecompressTime = 0;
 long totalCompressSize = 0;
@@ -55,7 +57,13 @@ int main(int argc, char **argv) {
     if (argc >= 6){
       writeStream = atoi(argv[5]);
     }
-    cout << "Processor Threads Available: " << omp_get_max_threads() << endl;
+    if (argc >= 7){
+      useCUDA = atoi(argv[6]);
+    }
+    cout << omp_get_max_threads() << " CPU Processor Threads available" << endl;
+    if (useCUDA)
+      initCUDA();
+    
     //Read in chunks:
     long maxBlockSizeBytes = MAX_READ_BUFFER_IN_MB*1024*1024;
     long pageSize = (f.getDimensionSize(1))*(f.getDimensionSize(2))*2*sizeof(float);
