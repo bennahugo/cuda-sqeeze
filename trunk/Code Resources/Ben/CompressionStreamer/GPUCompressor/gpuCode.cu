@@ -30,7 +30,7 @@ uint32_t _gpuAccumDecompressedDataSize = 0;
 const uint8_t gpuStorageIndiceCapacity = 8*sizeof(uint32_t);
 const uint8_t gpuBitCountForRepresentation = 2;
 
-void initCUDA(){
+void gpuCode::initCUDA(){
   int deviceCount, device;
     int gpuDeviceCount = 0;
     struct cudaDeviceProp properties;
