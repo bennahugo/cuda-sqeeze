@@ -26,6 +26,4 @@ endif()
 target_link_libraries(compressionstreamer gomp)
 
 set(CMAKE_BUILD_TYPE Release)
-#enable this if you need SSE AND XOP support!!!:
-#set( CMAKE_CXX_FLAGS "-Wall -m64 -O3 -fopenmp -mfpmath=sse -mmmx -msse -msse2 -msse3 -msse4 -msse4a -msse4.1 -msse4.2 -mavx -mxop" )
 set( CMAKE_CXX_FLAGS "-Wall -m64 -O3 -fopenmp -fno-stack-protector" )

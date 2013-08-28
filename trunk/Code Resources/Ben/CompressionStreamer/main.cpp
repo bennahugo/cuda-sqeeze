@@ -1,5 +1,7 @@
 #include <iostream>
+#include <stdio.h>
 #include <string>
+#include <sstream>
 #include <cstring>
 #include <math.h>
 #include <assert.h>
@@ -26,7 +28,11 @@ bool useCUDA = true;
 double totalCompressTime = 0;
 double totalDecompressTime = 0;
 long totalCompressSize = 0;
-
+FILE * fcomp;
+FILE * fdecomp;
+double totalCompressWriteTime = 0;
+double totalDecompressWriteTime = 0;
+double totalDiskReadTime = 0;
 int main(int argc, char **argv) {
     using namespace std;
     if (argc < 2){
@@ -54,8 +60,32 @@ int main(int argc, char **argv) {
 	  cout << "WARNING: USER REQUESTED TO SKIP VALIDATION" << endl;
       }
     }
-    if (argc >= 6){
-      writeStream = atoi(argv[5]);
+    if (argc >= 6) {
+        writeStream = atoi(argv[5]);
+        if (writeStream) {
+            {
+                std::stringstream concat;
+                concat << filename << ".comp";
+                std::string outName;
+                concat >> outName;
+                fcomp = fopen(outName.c_str(),"w");
+                if (fcomp == NULL) { //failure
+                    cout << "FATAL: USER DEMANDED FILE OUTPUT FROM PROGRAM, BUT THE DESTINATION IS FULL OR READ ONLY. GIVING UP." << endl;
+                    exit(1);
+                }
+            }
+            {
+                std::stringstream concat;
+                concat << filename << ".decomp";
+                std::string outName;
+                concat >> outName;
+                fdecomp = fopen(outName.c_str(),"w");
+                if (fdecomp == NULL) { //failure
+                    cout << "FATAL: USER DEMANDED FILE OUTPUT FROM PROGRAM, BUT THE DESTINATION IS FULL OR READ ONLY. GIVING UP." << endl;
+                    exit(1);
+                }
+            }
+        }
     }
     if (argc >= 7){
       useCUDA = atoi(argv[6]);
@@ -79,11 +109,13 @@ int main(int argc, char **argv) {
     cout << "Maximum number of pages per read: " << numPagesPerRead << endl;
     for (int i = 0; i < numReads; ++i){
       std::cout << "Processing file chunk " << i+1 << "/" << numReads << std::endl;
+      timer::tic();
       astroReader::stride data = astroReader::strideFactory::createStride(f,
 									  (i+1)*numPagesPerRead  > f.getDimensionSize(0)-1 ? f.getDimensionSize(0)-1 : (i+1)*numPagesPerRead,
 									  i*numPagesPerRead > f.getDimensionSize(0)-1 ? f.getDimensionSize(0)-1 : i*numPagesPerRead,
 									  f.getDimensionSize(1)-1,0,
 									  f.getDimensionSize(2)-1,0);	  
+      totalDiskReadTime += timer::toc();
       processStride(data);
     } 
     std::cout << "COMPRESSION RATIO: " << (totalCompressSize/(float)origSize) << std::endl;
@@ -92,6 +124,13 @@ int main(int argc, char **argv) {
     if (!skipDecompression){  
       std::cout << "DECOMPRESSED IN " << totalDecompressTime << " seconds @ " << 
 	origSize*sizeof(float)/1024.0f/1024.0f/1024.0f/totalDecompressTime << " GB/s" << std::endl;
+    }
+    if (writeStream){
+      std::cout << "DISK I/O READ TIME (PER STEP): " << totalDiskReadTime << std::endl; // I make the reasonable assumption that an HDF5 system reads the data in blocks --- the same we would have to do it if we read back before decompression
+      std::cout << "COMPRESSION DISK I/O WRITE TIME: " << totalCompressTime << std::endl;
+      if (!skipDecompression)
+	std::cout << "DECOMPRESSION DISK I/O WRITE TIME: " << totalDecompressTime << std::endl;
+      fclose(fcomp);
     }
     return 0;
 }
@@ -109,6 +148,11 @@ void decompressCallback(uint32_t elementCount, uint32_t * decompressedData){
       }
     }
   }
+  timer::tic();
+  if (writeStream){
+      fwrite(decompressedData,sizeof(uint32_t),elementCount,fdecomp);
+  }
+  totalDecompressWriteTime += timer::toc();
 }
 void compressCallback(uint32_t elementCount, uint32_t * compressedResidualsIntCounts, uint32_t ** compressedResiduals,
 			    uint32_t * compressedPrefixIntCounts, uint32_t ** compressedPrefixes, 
@@ -117,15 +161,15 @@ void compressCallback(uint32_t elementCount, uint32_t * compressedResidualsIntCo
       cpuCode::decompressor::decompressData(elementCount,chunkCount,chunkSizes,
  					 compressedResiduals,compressedPrefixes,decompressCallback);
     }
+    timer::tic();
     if (writeStream){
       for (uint32_t i = 0; i < chunkCount; ++i){
-	 std::cout << chunkSizes;
-	 for (uint32_t p = 0; p < compressedPrefixIntCounts[i]; ++p)
-	   std::cout << compressedPrefixes[i][p];
-	 for (uint32_t r = 0; r < compressedResidualsIntCounts[i]; ++r)
-	   std::cout << compressedResiduals[i][r];
+	 fwrite(&chunkSizes[i],sizeof(uint32_t),1,fcomp);
+	 fwrite(compressedPrefixes[i],sizeof(uint32_t),compressedPrefixIntCounts[i],fcomp);
+	 fwrite(compressedResiduals[i],sizeof(uint32_t),compressedResidualsIntCounts[i],fcomp);
       }
     }
+    totalCompressWriteTime += timer::toc();
 }
 
 void processStride(const astroReader::stride & data){
@@ -136,6 +180,19 @@ void processStride(const astroReader::stride & data){
     
     cpuCode::compressor::initCompressor(ts,tsSize);
     cpuCode::decompressor::initDecompressor(ts,tsSize);
+    
+    timer::tic();
+    if (writeStream){
+      fwrite(ts,sizeof(uint32_t),tsSize,fcomp);
+    }
+    totalCompressWriteTime += timer::toc();
+    
+    timer::tic();
+    if (writeStream){
+      fwrite(ts,sizeof(uint32_t),tsSize,fdecomp);
+    }
+    totalDecompressWriteTime += timer::toc();
+    
     for (int t = 1; t <= data.getMaxTimestampIndex() - data.getMinTimestampIndex(); ++t) {
         data.getTimeStampData(t,ts);
         cpuCode::compressor::compressData(ts,tsSize,compressCallback);

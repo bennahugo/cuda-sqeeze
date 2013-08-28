@@ -136,7 +136,7 @@ void compressionKernel(const float * data, uint32_t elementCount, uint32_t dataB
 	uint32_t index = i+lowerBound;
         //save the prefixes:
         uint32_t element = (_compressorIV[index] ^= ((uint32_t*)&(data[0]))[index]);
-	uint32_t prefix0 = imin(3,lzc (element) >> 3);
+	uint32_t prefix0 = imin(3,fastLZC (element) >> 3);
         uint32_t iTimesBitCountForRepresentation = i*bitCountForRepresentation;
         uint32_t startingIndex = (iTimesBitCountForRepresentation) >> 5;
         uint32_t rshiftAmount = (iTimesBitCountForRepresentation) % storageIndiceCapacity;
