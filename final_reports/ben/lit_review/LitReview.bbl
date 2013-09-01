@@ -1,0 +1,82 @@
+\begin{thebibliography}{10}
+
+\bibitem{abadi2006integrating}
+Daniel Abadi, Samuel Madden, and Miguel Ferreira.
+\newblock Integrating compression and execution in column-oriented database
+  systems.
+\newblock In {\em Proceedings of the 2006 ACM SIGMOD international conference
+  on Management of data}, pages 671--682. ACM, 2006.
+
+\bibitem{1701920}
+M.A. Bassiouni.
+\newblock Data compression in scientific and statistical databases.
+\newblock {\em Software Engineering, IEEE Transactions on},
+  SE-11(10):1047--1058, 1985.
+
+\bibitem{4589203}
+M.~Burtscher and P.~Ratanaworabhan.
+\newblock Fpc: A high-speed compressor for double-precision floating-point
+  data.
+\newblock {\em Computers, IEEE Transactions on}, 58(1):18--31, 2009.
+
+\bibitem{Cannane:2002:GCS:568727.568730}
+Adam Cannane and Hugh~E. Williams.
+\newblock A general-purpose compression scheme for large collections.
+\newblock {\em ACM Trans. Inf. Syst.}, 20(3):329--355, July 2002.
+
+\bibitem{engelson2000lossless}
+Vadim Engelson, Dag Fritzson, and Peter Fritzson.
+\newblock Lossless compression of high-volume numerical data from simulations.
+\newblock In {\em Data Compression Conference}, pages 574--586. Citeseer, 2000.
+
+\bibitem{lindstrom2006fast}
+Peter Lindstrom and Martin Isenburg.
+\newblock Fast and efficient compression of floating-point data.
+\newblock {\em Visualization and Computer Graphics, IEEE Transactions on},
+  12(5):1245--1250, 2006.
+
+\bibitem{1607248}
+P.~Ratanaworabhan, J.~Ke, and M.~Burtscher.
+\newblock Fast lossless compression of scientific floating-point data.
+\newblock In {\em Data Compression Conference, 2006. DCC 2006. Proceedings},
+  pages 133--142, 2006.
+
+\bibitem{ray1995database}
+Gautam Ray, Jayant~R Haritsa, and S~Seshadri.
+\newblock Database compression: A performance enhancement tool.
+\newblock In {\em International Conference on Management of Data}, page~4,
+  1995.
+
+\bibitem{Roth:1993:DC:163090.163096}
+Mark~A. Roth and Scott~J. Van~Horn.
+\newblock Database compression.
+\newblock {\em SIGMOD Rec.}, 22(3):31--39, September 1993.
+
+\bibitem{salomon2004data}
+D.~Salomon.
+\newblock {\em Data Compression.: The Complete Reference.}
+\newblock Springer-Verlag New York Incorporated, 2004.
+
+\bibitem{952804}
+A.~Skodras, C.~Christopoulos, and T.~Ebrahimi.
+\newblock The jpeg 2000 still image compression standard.
+\newblock {\em Signal Processing Magazine, IEEE}, 18(5):36--58, 2001.
+
+\bibitem{Tao:1994:PTS:951087.951108}
+Hai Tao and Robert~J. Moorhead.
+\newblock Progressive transmission of scientific data using biorthogonal
+  wavelet transform.
+\newblock In {\em Proceedings of the conference on Visualization '94}, VIS '94,
+  pages 93--99, Los Alamitos, CA, USA, 1994. IEEE Computer Society Press.
+
+\bibitem{williams1999compressing}
+Hugh~E Williams and Justin Zobel.
+\newblock Compressing integers for fast file access.
+\newblock {\em The Computer Journal}, 42(3):193--201, 1999.
+
+\bibitem{Witten:1987:ACD:214762.214771}
+Ian~H. Witten, Radford~M. Neal, and John~G. Cleary.
+\newblock Arithmetic coding for data compression.
+\newblock {\em Commun. ACM}, 30(6):520--540, June 1987.
+
+\end{thebibliography}
