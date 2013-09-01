@@ -3,44 +3,47 @@ Capacity: max_strings=35307, hash_size=35307, hash_prime=30011
 The top-level auxiliary file: thesis.aux
 The style file: plain.bst
 Database file #1: litRefs.bib
-You've used 3 entries,
+Warning--to sort, need author or key in 4610935
+Warning--empty author in 4610935
+You've used 12 entries,
             2118 wiz_defined-function locations,
-            519 strings with 4567 characters,
-and the built_in function-call counts, 1161 in all, are:
-= -- 122
-> -- 38
-< -- 2
-+ -- 15
-- -- 12
-* -- 65
-:= -- 180
-add.period$ -- 11
-call.type$ -- 3
-change.case$ -- 14
+            581 strings with 6036 characters,
+and the built_in function-call counts, 4475 in all, are:
+= -- 457
+> -- 158
+< -- 7
++ -- 62
+- -- 50
+* -- 290
+:= -- 683
+add.period$ -- 38
+call.type$ -- 12
+change.case$ -- 60
 chr.to.int$ -- 0
-cite$ -- 3
-duplicate$ -- 56
-empty$ -- 100
-format.name$ -- 12
-if$ -- 264
+cite$ -- 14
+duplicate$ -- 200
+empty$ -- 384
+format.name$ -- 50
+if$ -- 1002
 int.to.chr$ -- 0
-int.to.str$ -- 3
-missing$ -- 4
-newline$ -- 18
-num.names$ -- 6
-pop$ -- 22
+int.to.str$ -- 12
+missing$ -- 13
+newline$ -- 62
+num.names$ -- 22
+pop$ -- 71
 preamble$ -- 1
-purify$ -- 12
+purify$ -- 49
 quote$ -- 0
-skip$ -- 41
+skip$ -- 152
 stack$ -- 0
-substring$ -- 71
-swap$ -- 20
-text.length$ -- 2
+substring$ -- 309
+swap$ -- 65
+text.length$ -- 7
 text.prefix$ -- 0
 top$ -- 0
-type$ -- 10
-warning$ -- 0
-while$ -- 12
-width$ -- 4
-write$ -- 38
+type$ -- 46
+warning$ -- 2
+while$ -- 45
+width$ -- 14
+write$ -- 138
+(There were 2 warnings)

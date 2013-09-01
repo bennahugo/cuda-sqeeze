@@ -40,13 +40,16 @@ processes such transmission over a network or storage to disk. This is in contra
 form part of the primary work flow of a system. An online process are normally considered to be fast enough as not to slow the overall data processing capabilities of 
 a system.
 
-Compression performance is measured as a compression ratio described below \cite[p. 10]{salomon2004data}. A value closer to 0 will indicate a small output file and values greater than 1 will indicate
-that the algorithm inflated the data instead of shrinking it.
-\begin{equation*}
- \text{Compression ratio} = \frac{\text{size of the output stream}}{\text{size of the input stream}}
-\end{equation*}
-We will now discuss the relevance of our proposed solution and give a breakdown of the most commonly used compression techniques. We will then discuss a detailed design
-of our predictor, different implementation strategies along with technical details and a section with results.
+We will measure compression performance both in terms of effectiveness through a compression ratio described below \cite[p. 10]{salomon2004data} and throughput speed. A 
+compression ratio closer to 0 indicates a smaller output file and values greater than 1 indicates that the algorithm inflated the data instead of shrinking it.
+\begin{equation}
+ \text{Compression ratio} := \frac{\text{size of the output stream}}{\text{size of the input stream}}
+\end{equation}
+\begin{equation}
+ \text{Throughput} := \frac{\text{input processed (in GB)}}{\text{difference in time (in seconds)}}
+\end{equation}
+We will now discuss the relevance of our problem and give a breakdown of the most commonly used compression techniques. We will then discuss a detailed design
+of our predictive compression scheme, different implementation strategies along with technical details and a section with results and discussion.
 \section{Background}
 \subsection{KAT-7, MeerKAT and the SKA}
 South Africa and Australia are the two primary hosting countries for the largest radio telescope array in the world, known as the Square Kilometer Array. 
@@ -73,20 +76,64 @@ difference between each predicted succeeding value and the actual succeeding val
 Also commonly referred to as “LZ” or dictionary methods is a class of algorithms with many variants and is one of the more popular adaptive techniques in modern 
 compression utilities. In their simplest form these methods normally uses both a search and a lookahead buffer to encode recurrent phrases using fixed-size codes. An 
 adaptive compression technique is useful in circumstances where the probability distribution of the underlying dataset is not known in advance or may change over time. 
-One example of such an LZ method is the GNU compression utility Gzip which implements the Deflate algorithm.
+One example of such an LZ method is the GNU compression utility Gzip which implements the Deflate algorithm \cite[ch. 3]{salomon2004data}.
 \subsubsection{Statistical methods}
 This class of algorithms normally uses variable length codes to achieve an optimal (or near optimal) encoding of dataset. In information theory this optimal encoding is 
-described as an entropy encoding. As the name may suggest the techniques uses the probability of occurrence to assign shorter codes to frequently occurring values. The 
-class of statistical methods include two widely employed techniques known as Huffman and Arithmetic coding respectively.
+described as an entropy encoding. Entropy is the measurement of the information contained in a single base-n symbol (as transmitted per time unit by some source). Mathematically
+redundancy is defined as follows ($n$ is the size of a symbol set and $P_{i}$ is the probability that a symbol $c_{i}$ is transmitted from a source)\cite[p. 46 - 47]{salomon2004data}:
+\begin{equation}
+ R := \log_2n + \sum_1^nP_i\log_2P_i
+\end{equation}
+As the name may suggest the techniques uses the probability of occurrence to assign shorter codes to frequently occurring values in order to eliminate redundancy. The 
+class of statistical methods include two widely employed techniques known as Huffman and Arithmetic coding respectively. Huffman coding assigns shorter \textit{integral-length} codes, while arithmetic 
+coding assigns \textit{real-length} subintervals of [0,1) to frequently occurring symbols. Arithmetic coding is considered to approach a true entropy encoder because of this difference. It should be
+pointed out that the decompression step of Arithmetic coding is slow and unsuitable for cases where fast access is required \cite{Witten:1987:ACD:214762.214771,williams1999compressing}
+\cite[ch. 2]{salomon2004data}.
+
+Both approaches lead to variable-size codes. Both techniques have adaptive versions which are useful in situations where the probability distributions change or have to be estimated. This 
+approach is also applicable to the situation where the symbol table has to be computed on the fly, because it is impossible to perform multiple passes. \cite{ray1995database}\cite[ch. 2]{salomon2004data}.
+
 \subsubsection{Transforms}
 As the name suggest it can be useful to transform a dataset from one form to another in order to exploit its features for the purposes of compression. Such transformations 
 includes, for example, wavelet transforms. As the name suggests a wavelet is a small wave-like function that is only non-zero over a very small domain and can be used 
 to represent, for example, the high frequency components in an image (JPEG2000 and DjVu are popular formats using wavelet transforms). The coefficients within this 
 transformation can then be further compressed using other techniques, for example, Huffman coding. If lossy compression (loss of accuracy which cannot be recovered after 
-decompression)  is tolerable, quantization can be used to discard unimportant values (for example the high frequency features of an image).
+decompression)  is tolerable, quantization can be used to discard unimportant values (for example the high frequency features of an image) \cite[ch. 5]{salomon2004data}.
 
 Transforms are furthermore particularly useful where multiple levels of detail are desired. An example of this may include the transfer of scientific data over a network 
 for real-time analysis and observation. Low resolution samples can be constantly transferred, while higher resolution samples can be transferred upon request \cite{Tao:1994:PTS:951087.951108}.
+\subsection{IEEE 754}
+The IEEE 754 standard of 2008 defines 3 interchange formats (32-bit, 64-bit and 128-bit). See fig.~\ref{IEEE_FLOAT}. Each of these have a common construction with the following subfields:
+\begin{itemize}
+ \item A 1-bit sign
+ \item A w-bit length biased exponent
+ \item A (d-1)-bit significand, where the leading bit of the significand is implicitly encoded in the exponent.
+\end{itemize}
+\begin{figure}[h!]
+ \includegraphics[width=0.45\textwidth]{IEEEinterchangeFormat.png}
+ \caption{IEEE Interchange floating-point format \cite{4610935}}
+ \label{IEEE_FLOAT}
+\end{figure}
+
+
+\subsection{Overview of predictive compression}
+Previous research \cite{1607248,4589203,engelson2000lossless,lindstrom2006fast,O'Neil:2011:FDC:1964179.1964189,4976448} in this area has yielded good results both in terms of compression ratio and speed. 
+The common line of thought is to predict successive values. Depending on the accuracy the difference between the predicted and actual value will hopefully be much smaller than the actual value itself. 
+This difference can then be encoded using fewer bytes/bits of data (depending if compression occurs at a byte or bit level) by compressing the leading zeros after either an XOR or integer subtraction 
+operation. Machine instructions to count the leading zeros can be found on AMD and newer Intel Processors. The leading zero count is then encoded as a prefix stream while the remaining bits/bytes 
+are encoded as a residual stream.
+
+Previous research suggests several different constructions of predictors. The use of a Lorenzo predictor \cite{lindstrom2006fast} generalizes a parallelogram predictor used by \cite{engelson2000lossless}. This
+approach is particularly useful to compress large meshes of structures. Other approaches include the use of prediction history (via a simple lookup table construction) as suggested in \cite{1607248,4589203,4976448}. 
+The later reports a throughput of up to 670 MB/s on a CPU implementation of their FPC compressor. An even simpler scheme \cite{O'Neil:2011:FDC:1964179.1964189} reportedly achieved throughputs of up to 75GB/s in its 
+compression routine and up to 90GB/s in its decompression routine implemented in CUDA. In this scheme only the difference between successive values are encoded (this will clearly only work if the pairs of 
+data points varies very little from one time step to the next). It is duly noted that the speeds achieved by \cite{O'Neil:2011:FDC:1964179.1964189} is on the post processing of results already stored in 
+graphics memory. The implementations by \cite{O'Neil:2011:FDC:1964179.1964189,1607248,4589203,4976448,engelson2000lossless} targets 64-bit IEEE 754 \textit{double} precision floating-point data.
+
+The primary scheme we propose takes its inspiration from \cite{O'Neil:2011:FDC:1964179.1964189}, but will operate on 32-bit IEEE 754 \textit{single} precision floating-point values. The uncompressed data itself 
+is also structured slightly differently to the model used by \cite{O'Neil:2011:FDC:1964179.1964189}. Instead of compressing each consecutive value my compressor will compress consecutive blocks of data. Although 
+the predictor itself is very simple and may not yield as good a compression ratio as the schemes suggested by the other authors it should obtain the required throughput. Additionally I will test the effectiveness
+of a parallelogram predictor, a Lagrange extrapolation predictor \cite{engelson2000lossless} and a moving mean and median scheme.
 \section{Research questions}
 We are investigating the feasibility of adding a \textit{online} predictive compression step to the existing KAT-7 / MeerKAT pipeline. Such a step has to meet at least two primary
 criteria: high throughput and effective compression ratios. These are outlined below:
@@ -97,11 +144,23 @@ criteria: high throughput and effective compression ratios. These are outlined b
        be too noisy to expect great reductions, while maintaining the throughput rate we mentioned above.
  \item We will investigate the trade-off between throughput and size reduction.
 \end{enumerate}
+\section{Design and Methodology}
+{\color{red}TODO}
+\section{Implementation}
+{\color{red}TODO}
+\section{Findings}
+{\color{red}TODO}
+\section{Discussion}
+{\color{red}TODO}
+\section{Conclusion}
+{\color{red}TODO}
+\section{Future avenues of research}
+{\color{red}TODO}
 \section{Acknowledgements}
-I would like to acknowledge the continuous input from A/Prof. James Gain and Dr. Patrick Marais of the Department of Computer Science at the University of Cape Town.
+I would like to acknowledge A/Prof. James Gain and Dr. Patrick Marais of the Department of Computer Science at the University of Cape Town for their continuous, expert, input on the project.
 
-Secondly I would like to thank Jason Manley, a Digital Signals Processing specialist at the MeerKAT offices in Pinelands Cape Town for providing us with technical information
-on the MeerKAT project. Jason has also kindly prepared a 100 GB of sample of KAT-7 output data.
+Secondly I would like to thank Jason Manley, a Digital Signals Processing specialist at the MeerKAT offices in Pinelands, Cape Town for providing us with technical information
+on the MeerKAT project. Jason has also kindly prepared a 100 GB of sample of KAT-7 output data for testing purposes.
 
 Thirdly I would like to note that all tests were performed on the ICTS High Performance (\textit{HEX}) cluster at the University of Cape Town. The cluster has 4 DELL C6145 nodes each boasting 4 16-core
 AMD Opteron 6274 CPUs, clocked at 2200 MHz with 16 MB L3 cache memory. There are two additional GPU nodes with 4 Tesla M2090 GPU cards each. Each GPU card has 6 GB GDDR5 and 2048 CUDA cores. I want to 

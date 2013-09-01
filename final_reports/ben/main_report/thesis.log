@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.1415926-2.4-0.9998 (TeX Live 2012/Debian) (format=xelatex 2013.8.19)  1 SEP 2013 18:18
+This is XeTeX, Version 3.1415926-2.4-0.9998 (TeX Live 2012/Debian) (format=xelatex 2013.8.19)  1 SEP 2013 23:33
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -467,34 +467,35 @@ File: ulasy.fd 1998/08/17 v2.2e LaTeX symbol font definitions
 
 
 ]
-Overfull \hbox (10.16803pt too wide) in paragraph at lines 70--72
+Overfull \hbox (10.16803pt too wide) in paragraph at lines 73--75
 \T1/aer/m/n/9 ap-pli-ca-tion on nu-mer-i-cal data a pre-dic-tive com-pres-sion 
 scheme.
  []
 
 Missing character: There is no “ in font aer9!
 Missing character: There is no ” in font aer9!
-
-Overfull \hbox (5.0475pt too wide) in paragraph at lines 95--98
+File: IEEEinterchangeFormat.png Graphic file (type QTm)
+<use  "IEEEinterchangeFormat.png" > [2]
+Overfull \hbox (5.0475pt too wide) in paragraph at lines 154--157
 []\T1/aer/m/n/9 The tech-nique should be ef-fec-tive. The al-go-rithm should
  []
 
 
-Overfull \hbox (6.77411pt too wide) in paragraph at lines 115--117
+Overfull \hbox (6.77411pt too wide) in paragraph at lines 174--176
 \T1/aer/m/n/9 nals Pro-cess-ing spe-cial-ist at the MeerKAT of-fices in Pinelan
 ds,
  []
 
-(./thesis.bbl [2]) [3
+(./thesis.bbl [3]) [4
 
 ] (./thesis.aux) ) 
 Here is how much of TeX's memory you used:
- 3145 strings out of 495716
- 41895 string characters out of 3188883
- 105144 words of memory out of 3000000
- 6250 multiletter control sequences out of 15000+200000
+ 3163 strings out of 495716
+ 42190 string characters out of 3188883
+ 106144 words of memory out of 3000000
+ 6265 multiletter control sequences out of 15000+200000
  41299 words of font info for 52 fonts, out of 3000000 for 9000
  14 hyphenation exceptions out of 8191
- 39i,11n,38p,251b,256s stack positions out of 5000i,500n,10000p,200000b,50000s
+ 39i,11n,38p,261b,293s stack positions out of 5000i,500n,10000p,200000b,50000s
 
-Output written on thesis.pdf (3 pages).
+Output written on thesis.pdf (4 pages).
