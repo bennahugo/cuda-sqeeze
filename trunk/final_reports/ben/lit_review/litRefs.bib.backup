@@ -1,0 +1,27 @@
+@book{salomon2004data,
+  title={Data Compression.: The Complete Reference.},
+  author={Salomon, D.},
+  isbn={9780387406978},
+  lccn={2003065725},
+  url={http://books.google.co.za/books?id=FlWjiShUst0C},
+  year={2004},
+  publisher={Springer-Verlag New York Incorporated}
+}
+@INPROCEEDINGS{1607248,
+author={Ratanaworabhan, P. and Ke, J. and Burtscher, M.},
+booktitle={Data Compression Conference, 2006. DCC 2006. Proceedings}, title={Fast lossless compression of scientific floating-point data},
+year={2006},
+pages={133-142},
+keywords={data compression;Pentium 4 machine;lossless compression;run-time overhead;scientific floating-point data;short communication latencies;storage devices;Analytical models;Bandwidth;Compression algorithms;Computational modeling;Computer simulation;Concurrent computing;Data engineering;Delay;Libraries;Registers},
+doi={10.1109/DCC.2006.35},
+ISSN={1068-0314},}
+@ARTICLE{4589203,
+author={Burtscher, M. and Ratanaworabhan, P.},
+journal={Computers, IEEE Transactions on}, title={FPC: A High-Speed Compressor for Double-Precision Floating-Point Data},
+year={2009},
+volume={58},
+number={1},
+pages={18-31},
+keywords={data compression;geometry;BZIP2;DFCM;FSD;GZIP;PLMI;data compression;double-precision floating-point data;floating point compression;geometric-mean compression ratio;linear streams;lossless compression algorithm;scientific data sets compression;scientific programs;Compression algorithms;Computer crashes;Computer networks;Data compression;Data models;Flexible printed circuits;Impedance;Prediction methods;Steady-state;Throughput;Code tuning;Data compaction and compression},
+doi={10.1109/TC.2008.131},
+ISSN={0018-9340},} 

@@ -1,0 +1,20 @@
+\begin{thebibliography}{1}
+
+\bibitem{engelson2000lossless}
+Vadim Engelson, Dag Fritzson, and Peter Fritzson.
+\newblock Lossless compression of high-volume numerical data from simulations.
+\newblock In {\em Data Compression Conference}, pages 574--586. Citeseer, 2000.
+
+\bibitem{salomon2004data}
+D.~Salomon.
+\newblock {\em Data Compression.: The Complete Reference.}
+\newblock Springer-Verlag New York Incorporated, 2004.
+
+\bibitem{Tao:1994:PTS:951087.951108}
+Hai Tao and Robert~J. Moorhead.
+\newblock Progressive transmission of scientific data using biorthogonal
+  wavelet transform.
+\newblock In {\em Proceedings of the conference on Visualization '94}, VIS '94,
+  pages 93--99, Los Alamitos, CA, USA, 1994. IEEE Computer Society Press.
+
+\end{thebibliography}
