@@ -86,12 +86,12 @@ redundancy is defined as follows ($n$ is the size of a symbol set and $P_{i}$ is
 \end{equation}
 As the name may suggest the techniques uses the probability of occurrence to assign shorter codes to frequently occurring values in order to eliminate redundancy. The 
 class of statistical methods include two widely employed techniques known as Huffman and Arithmetic coding respectively. Huffman coding assigns shorter \textit{integral-length} codes, while arithmetic 
-coding assigns \textit{real-length} subintervals of [0,1) to frequently occurring symbols. Arithmetic coding is considered to approach a true entropy encoder because of this difference. It should be
-pointed out that the decompression step of Arithmetic coding is slow and unsuitable for cases where fast access is required \cite{Witten:1987:ACD:214762.214771,williams1999compressing}
-\cite[ch. 2]{salomon2004data}.
+coding assigns \textit{real-length} subintervals of [0,1) to frequently occurring symbols \cite{Witten:1987:ACD:214762.214771}\cite[ch. 2]{salomon2004data}.
 
 Both approaches lead to variable-size codes. Both techniques have adaptive versions which are useful in situations where the probability distributions change or have to be estimated. This 
-approach is also applicable to the situation where the symbol table has to be computed on the fly, because it is impossible to perform multiple passes. \cite{ray1995database}\cite[ch. 2]{salomon2004data}.
+approach is also applicable to the situation where the symbol table has to be computed on the fly, because it is impossible to perform multiple passes. Arithmetic coding is considered to approach 
+a true entropy encoder and achieves higher compression ratios in both adaptive and non-adaptive cases. It should be pointed out that the decompression step of Arithmetic coding is slow and 
+unsuitable for cases where fast access is required \cite{ray1995database,williams1999compressing}\cite[ch. 2]{salomon2004data}.
 
 \subsubsection{Transforms}
 As the name suggest it can be useful to transform a dataset from one form to another in order to exploit its features for the purposes of compression. Such transformations 
@@ -103,7 +103,8 @@ decompression)  is tolerable, quantization can be used to discard unimportant va
 Transforms are furthermore particularly useful where multiple levels of detail are desired. An example of this may include the transfer of scientific data over a network 
 for real-time analysis and observation. Low resolution samples can be constantly transferred, while higher resolution samples can be transferred upon request \cite{Tao:1994:PTS:951087.951108}.
 \subsection{IEEE 754}
-The IEEE 754 standard of 2008 defines 3 interchange formats (32-bit, 64-bit and 128-bit). See fig.~\ref{IEEE_FLOAT}. Each of these have a common construction with the following subfields:
+The IEEE 754 standard of 2008 defines 3 interchange formats (32-bit, 64-bit and 128-bit). See figs.~\ref{IEEE_FLOAT}~,~\ref{IEEE_FLOAT_TAB}. We will only refer to the 32- and 64-bit representations later in the paper.  
+Each of these have a common construction with the following subfields:
 \begin{itemize}
  \item A 1-bit sign
  \item A w-bit length biased exponent
@@ -114,8 +115,19 @@ The IEEE 754 standard of 2008 defines 3 interchange formats (32-bit, 64-bit and 
  \caption{IEEE Interchange floating-point format \cite{4610935}}
  \label{IEEE_FLOAT}
 \end{figure}
-
-
+\begin{figure}[h!]
+\begin{tabular}{|c|c|c|}
+ \hline
+ Precision & Exponent width & Significant precision \\
+ \hline
+ 32-bit & 8 bits & 23 bits \\
+ \hline
+ 64-bit & 11 bits & 52 bits \\
+ \hline
+\end{tabular}
+\caption{Specifications for the 32-bit and 64-bit interchange formats}
+ \label{IEEE_FLOAT_TAB}
+\end{figure}
 \subsection{Overview of predictive compression}
 Previous research \cite{1607248,4589203,engelson2000lossless,lindstrom2006fast,O'Neil:2011:FDC:1964179.1964189,4976448} in this area has yielded good results both in terms of compression ratio and speed. 
 The common line of thought is to predict successive values. Depending on the accuracy the difference between the predicted and actual value will hopefully be much smaller than the actual value itself. 
@@ -134,6 +146,9 @@ The primary scheme we propose takes its inspiration from \cite{O'Neil:2011:FDC:1
 is also structured slightly differently to the model used by \cite{O'Neil:2011:FDC:1964179.1964189}. Instead of compressing each consecutive value my compressor will compress consecutive blocks of data. Although 
 the predictor itself is very simple and may not yield as good a compression ratio as the schemes suggested by the other authors it should obtain the required throughput. Additionally I will test the effectiveness
 of a parallelogram predictor, a Lagrange extrapolation predictor \cite{engelson2000lossless} and a moving mean and median scheme.
+
+As pointed out in previous research \cite{engelson2000lossless,lindstrom2006fast} using floating point operations in the prediction step can cause an irreversible loss of information due to floating point
+rounding errors. A simple approach is proposed by \cite{engelson2000lossless}
 \section{Research questions}
 We are investigating the feasibility of adding a \textit{online} predictive compression step to the existing KAT-7 / MeerKAT pipeline. Such a step has to meet at least two primary
 criteria: high throughput and effective compression ratios. These are outlined below:
@@ -145,7 +160,7 @@ criteria: high throughput and effective compression ratios. These are outlined b
  \item We will investigate the trade-off between throughput and size reduction.
 \end{enumerate}
 \section{Design and Methodology}
-{\color{red}TODO}
+
 \section{Implementation}
 {\color{red}TODO}
 \section{Findings}

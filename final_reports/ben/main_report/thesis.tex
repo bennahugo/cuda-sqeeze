@@ -116,6 +116,7 @@ Each of these have a common construction with the following subfields:
  \label{IEEE_FLOAT}
 \end{figure}
 \begin{figure}[h!]
+\centering
 \begin{tabular}{|c|c|c|}
  \hline
  Precision & Exponent width & Significant precision \\
@@ -144,8 +145,31 @@ graphics memory. The implementations by \cite{O'Neil:2011:FDC:1964179.1964189,16
 
 The primary scheme we propose takes its inspiration from \cite{O'Neil:2011:FDC:1964179.1964189}, but will operate on 32-bit IEEE 754 \textit{single} precision floating-point values. The uncompressed data itself 
 is also structured slightly differently to the model used by \cite{O'Neil:2011:FDC:1964179.1964189}. Instead of compressing each consecutive value my compressor will compress consecutive blocks of data. Although 
-the predictor itself is very simple and may not yield as good a compression ratio as the schemes suggested by the other authors it should obtain the required throughput. Additionally I will test the effectiveness
+the predictor itself is very simple and may not yield as good a compression ratio as the schemes suggested by the other authors it should obtain the required throughput. Additionally we will test the effectiveness
 of a parallelogram predictor, a Lagrange extrapolation predictor \cite{engelson2000lossless} and a moving mean and median scheme.
+
+As pointed out in previous research \cite{engelson2000lossless,lindstrom2006fast} using floating point operations in the prediction step can cause an irreversible loss of information due to floating point
+rounding errors. A simple approach is proposed by \cite{engelson2000lossless}. Floating point memory is simply treated as integer memory and all operations performed on that memory are integer operations. This
+approach assures us of achieving lossless compression and we will consequently only consider using schemes that conform to this approach. A simple case to illustrate this approach is made by \cite{engelson2000lossless}.
+It is clearly visible in fig.~\ref{INT_REP} that if two floating-point numbers are relatively close to each other in terms of magnitude it is possible to discard some repeated bytes of information after performing 
+an XOR operation to extract the remaining, seemingly random, residual bits.
+
+\begin{figure}[h!]
+\begin{tabular}{|c|c|c|c|}
+ \hline
+  & & byte & 1\hspace{8 pt}2\hspace{8 pt}3\hspace{8 pt}4\hspace{8 pt}5\hspace{8 pt}6\hspace{8 pt}7\hspace{8 pt}8\\
+ \hline
+ $a_{1}$ & 2.3667\textbf{1}76745585676 & -> & 40 02 ef \textbf{09 ad 18 c0 f6} \\
+ \hline
+ $a_{2}$ & 2.3667\textbf{2}76745585676 & -> & 40 02 ef \textbf{0e eb 46 23 2f} \\
+ \hline
+ $a_{3}$ & 2.3667\textbf{3}76745585676 & -> & 40 02 ef \textbf{14 29 73 85 6a} \\
+ \hline
+\end{tabular}
+\caption{Treating 64-bit IEEE 754 double precision floating-points as integer memory \cite{engelson2000lossless}}
+ \label{INT_REP}
+\end{figure}
+
 \section{Research questions}
 We are investigating the feasibility of adding a \textit{online} predictive compression step to the existing KAT-7 / MeerKAT pipeline. Such a step has to meet at least two primary
 criteria: high throughput and effective compression ratios. These are outlined below:
@@ -157,7 +181,7 @@ criteria: high throughput and effective compression ratios. These are outlined b
  \item We will investigate the trade-off between throughput and size reduction.
 \end{enumerate}
 \section{Design and Methodology}
-{\color{red}TODO}
+
 \section{Implementation}
 {\color{red}TODO}
 \section{Findings}
