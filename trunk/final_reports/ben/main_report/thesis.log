@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.1415926-2.4-0.9998 (TeX Live 2012/Debian) (format=xelatex 2013.8.19)  1 SEP 2013 23:33
+This is XeTeX, Version 3.1415926-2.4-0.9998 (TeX Live 2012/Debian) (format=xelatex 2013.8.19)  2 SEP 2013 00:31
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -476,12 +476,22 @@ Missing character: There is no “ in font aer9!
 Missing character: There is no ” in font aer9!
 File: IEEEinterchangeFormat.png Graphic file (type QTm)
 <use  "IEEEinterchangeFormat.png" > [2]
-Overfull \hbox (5.0475pt too wide) in paragraph at lines 154--157
+Overfull \hbox (14.05254pt too wide) in paragraph at lines 158--169
+[][] 
+ []
+
+
+Underfull \hbox (badness 1199) in paragraph at lines 169--169
+[]\T1/aer/m/n/9 Figure 3: |Treat-ing 64-bit IEEE 754 dou-ble pre-ci-sion
+ []
+
+
+Overfull \hbox (5.0475pt too wide) in paragraph at lines 178--181
 []\T1/aer/m/n/9 The tech-nique should be ef-fec-tive. The al-go-rithm should
  []
 
 
-Overfull \hbox (6.77411pt too wide) in paragraph at lines 174--176
+Overfull \hbox (6.77411pt too wide) in paragraph at lines 198--200
 \T1/aer/m/n/9 nals Pro-cess-ing spe-cial-ist at the MeerKAT of-fices in Pinelan
 ds,
  []
@@ -490,11 +500,11 @@ ds,
 
 ] (./thesis.aux) ) 
 Here is how much of TeX's memory you used:
- 3163 strings out of 495716
- 42190 string characters out of 3188883
+ 3166 strings out of 495716
+ 42217 string characters out of 3188883
  106144 words of memory out of 3000000
- 6265 multiletter control sequences out of 15000+200000
- 41299 words of font info for 52 fonts, out of 3000000 for 9000
+ 6267 multiletter control sequences out of 15000+200000
+ 42809 words of font info for 53 fonts, out of 3000000 for 9000
  14 hyphenation exceptions out of 8191
  39i,11n,38p,261b,293s stack positions out of 5000i,500n,10000p,200000b,50000s
 
