@@ -5,45 +5,46 @@ The style file: plain.bst
 Database file #1: litRefs.bib
 Warning--to sort, need author or key in 4610935
 Warning--empty author in 4610935
-You've used 12 entries,
+Warning--empty journal in blelloch1990prefix
+You've used 14 entries,
             2118 wiz_defined-function locations,
-            581 strings with 6036 characters,
-and the built_in function-call counts, 4475 in all, are:
-= -- 457
-> -- 158
+            592 strings with 6239 characters,
+and the built_in function-call counts, 5042 in all, are:
+= -- 513
+> -- 183
 < -- 7
-+ -- 62
-- -- 50
-* -- 290
-:= -- 683
-add.period$ -- 38
-call.type$ -- 12
-change.case$ -- 60
++ -- 72
+- -- 58
+* -- 329
+:= -- 782
+add.period$ -- 44
+call.type$ -- 14
+change.case$ -- 70
 chr.to.int$ -- 0
-cite$ -- 14
-duplicate$ -- 200
-empty$ -- 384
-format.name$ -- 50
-if$ -- 1002
+cite$ -- 17
+duplicate$ -- 221
+empty$ -- 428
+format.name$ -- 58
+if$ -- 1115
 int.to.chr$ -- 0
-int.to.str$ -- 12
-missing$ -- 13
-newline$ -- 62
-num.names$ -- 22
-pop$ -- 71
+int.to.str$ -- 14
+missing$ -- 15
+newline$ -- 72
+num.names$ -- 26
+pop$ -- 81
 preamble$ -- 1
-purify$ -- 49
+purify$ -- 57
 quote$ -- 0
-skip$ -- 152
+skip$ -- 166
 stack$ -- 0
-substring$ -- 309
-swap$ -- 65
+substring$ -- 344
+swap$ -- 66
 text.length$ -- 7
 text.prefix$ -- 0
 top$ -- 0
-type$ -- 46
-warning$ -- 2
-while$ -- 45
-width$ -- 14
-write$ -- 138
-(There were 2 warnings)
+type$ -- 54
+warning$ -- 3
+while$ -- 51
+width$ -- 16
+write$ -- 158
+(There were 3 warnings)
