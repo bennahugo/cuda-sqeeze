@@ -1,10 +1,9 @@
 \relax 
 \citation{salomon2004data}
-\citation{salomon2004data}
 \@writefile{toc}{\contentsline {section}{\numberline {1}Introduction}{\thepage }}
 \@writefile{toc}{\contentsline {section}{\numberline {2}Background}{\thepage }}
 \@writefile{toc}{\contentsline {subsection}{\numberline {2.1}KAT-7, MeerKAT and the SKA}{\thepage }}
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.2}Overview of data compression techniques}{\thepage }}
+\citation{salomon2004data}
 \citation{engelson2000lossless}
 \citation{salomon2004data}
 \citation{salomon2004data}
@@ -13,6 +12,7 @@
 \citation{ray1995database}
 \citation{williams1999compressing}
 \citation{salomon2004data}
+\citation{952804}
 \citation{salomon2004data}
 \citation{Tao:1994:PTS:951087.951108}
 \citation{4610935}
@@ -23,16 +23,15 @@
 \citation{lindstrom2006fast}
 \citation{O'Neil:2011:FDC:1964179.1964189}
 \citation{4976448}
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces High-level overview of the MeerKAT pipeline\relax }}{\thepage }}
+\providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
+\newlabel{MeerKAT_PIPELINE}{{1}{\thepage }}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.2}Overview of data compression techniques}{\thepage }}
 \@writefile{toc}{\contentsline {subsubsection}{\numberline {2.2.1}Basic methods}{\thepage }}
 \@writefile{toc}{\contentsline {subsubsection}{\numberline {2.2.2}Lempel-Ziv methods}{\thepage }}
 \@writefile{toc}{\contentsline {subsubsection}{\numberline {2.2.3}Statistical methods}{\thepage }}
 \@writefile{toc}{\contentsline {subsubsection}{\numberline {2.2.4}Transforms}{\thepage }}
 \@writefile{toc}{\contentsline {subsection}{\numberline {2.3}IEEE 754}{\thepage }}
-\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces IEEE Interchange floating-point format \cite  {4610935}\relax }}{\thepage }}
-\providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
-\newlabel{IEEE_FLOAT}{{1}{\thepage }}
-\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Specifications for the 32-bit and 64-bit interchange formats\relax }}{\thepage }}
-\newlabel{IEEE_FLOAT_TAB}{{2}{\thepage }}
 \@writefile{toc}{\contentsline {subsection}{\numberline {2.4}Overview of predictive compression}{\thepage }}
 \citation{lindstrom2006fast}
 \citation{engelson2000lossless}
@@ -59,24 +58,24 @@
 \citation{blelloch1990prefix}
 \citation{harris2007parallel}
 \citation{O'Neil:2011:FDC:1964179.1964189}
-\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Treating 64-bit IEEE 754 double precision floating-points as integer memory \cite  {engelson2000lossless}\relax }}{\thepage }}
-\newlabel{INT_REP}{{3}{\thepage }}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces IEEE Interchange floating-point format \cite  {4610935}\relax }}{\thepage }}
+\newlabel{IEEE_FLOAT}{{2}{\thepage }}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Specifications for the 32-bit and 64-bit interchange formats\relax }}{\thepage }}
+\newlabel{IEEE_FLOAT_TAB}{{3}{\thepage }}
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Treating 64-bit IEEE 754 double precision floating-points as integer memory \cite  {engelson2000lossless}\relax }}{\thepage }}
+\newlabel{INT_REP}{{4}{\thepage }}
 \@writefile{toc}{\contentsline {subsection}{\numberline {2.5}Parallel prefix sums}{\thepage }}
 \@writefile{toc}{\contentsline {section}{\numberline {3}Research questions}{\thepage }}
 \@writefile{toc}{\contentsline {section}{\numberline {4}Design and Methodology}{\thepage }}
 \@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Packing algorithm}{\thepage }}
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Prediction and compaction process\relax }}{\thepage }}
+\newlabel{PACKING_ALGORITHM}{{5}{\thepage }}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Parallelizing compression and decompression steps}{\thepage }}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Porting the implementation to CUDA}{\thepage }}
+\citation{wittenbrink2011fermi}
+\citation{wittenbrink2011fermi}
 \bibstyle{plain}
 \bibdata{litRefs}
-\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Prediction and compaction process\relax }}{\thepage }}
-\newlabel{PACKING_ALGORITHM}{{4}{\thepage }}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Parallelizing compression and decompression steps}{\thepage }}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Test data}{\thepage }}
-\@writefile{toc}{\contentsline {section}{\numberline {5}Implementation}{\thepage }}
-\@writefile{toc}{\contentsline {section}{\numberline {6}Findings}{\thepage }}
-\@writefile{toc}{\contentsline {section}{\numberline {7}Discussion}{\thepage }}
-\@writefile{toc}{\contentsline {section}{\numberline {8}Conclusion}{\thepage }}
-\@writefile{toc}{\contentsline {section}{\numberline {9}Future avenues of research}{\thepage }}
-\@writefile{toc}{\contentsline {section}{\numberline {10}Acknowledgements}{\thepage }}
 \bibcite{4610935}{1}
 \bibcite{blelloch1990prefix}{2}
 \bibcite{4589203}{3}
@@ -85,10 +84,23 @@
 \bibcite{harris2007parallel}{6}
 \bibcite{lindstrom2006fast}{7}
 \bibcite{O'Neil:2011:FDC:1964179.1964189}{8}
+\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces Architecture of the Fermi family of Nvidia GPUs \cite  {wittenbrink2011fermi}\relax }}{\thepage }}
+\newlabel{FERMI_ARCH}{{6}{\thepage }}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.4}Test data}{\thepage }}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.5}Benchmarks}{\thepage }}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.6}Benchmarking platform}{\thepage }}
+\@writefile{toc}{\contentsline {section}{\numberline {5}Implementation}{\thepage }}
+\@writefile{toc}{\contentsline {section}{\numberline {6}Findings}{\thepage }}
+\@writefile{toc}{\contentsline {section}{\numberline {7}Discussion}{\thepage }}
+\@writefile{toc}{\contentsline {section}{\numberline {8}Conclusion}{\thepage }}
+\@writefile{toc}{\contentsline {section}{\numberline {9}Future avenues of research}{\thepage }}
+\@writefile{toc}{\contentsline {section}{\numberline {10}Acknowledgements}{\thepage }}
+\@writefile{toc}{\contentsline {section}{\numberline {11}References}{\thepage }}
 \bibcite{1607248}{9}
 \bibcite{ray1995database}{10}
 \bibcite{salomon2004data}{11}
-\bibcite{Tao:1994:PTS:951087.951108}{12}
-\bibcite{williams1999compressing}{13}
-\bibcite{Witten:1987:ACD:214762.214771}{14}
-\@writefile{toc}{\contentsline {section}{\numberline {11}References}{\thepage }}
+\bibcite{952804}{12}
+\bibcite{Tao:1994:PTS:951087.951108}{13}
+\bibcite{williams1999compressing}{14}
+\bibcite{Witten:1987:ACD:214762.214771}{15}
+\bibcite{wittenbrink2011fermi}{16}
