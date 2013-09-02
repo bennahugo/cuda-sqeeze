@@ -6,45 +6,45 @@ Database file #1: litRefs.bib
 Warning--to sort, need author or key in 4610935
 Warning--empty author in 4610935
 Warning--empty journal in blelloch1990prefix
-You've used 14 entries,
+You've used 16 entries,
             2118 wiz_defined-function locations,
-            592 strings with 6239 characters,
-and the built_in function-call counts, 5042 in all, are:
-= -- 513
-> -- 183
+            605 strings with 6511 characters,
+and the built_in function-call counts, 5726 in all, are:
+= -- 580
+> -- 219
 < -- 7
-+ -- 72
-- -- 58
-* -- 329
-:= -- 782
-add.period$ -- 44
-call.type$ -- 14
-change.case$ -- 70
++ -- 87
+- -- 70
+* -- 386
+:= -- 899
+add.period$ -- 50
+call.type$ -- 16
+change.case$ -- 82
 chr.to.int$ -- 0
-cite$ -- 17
-duplicate$ -- 221
-empty$ -- 428
-format.name$ -- 58
-if$ -- 1115
+cite$ -- 19
+duplicate$ -- 243
+empty$ -- 478
+format.name$ -- 70
+if$ -- 1253
 int.to.chr$ -- 0
-int.to.str$ -- 14
-missing$ -- 15
-newline$ -- 72
-num.names$ -- 26
-pop$ -- 81
+int.to.str$ -- 16
+missing$ -- 17
+newline$ -- 82
+num.names$ -- 30
+pop$ -- 89
 preamble$ -- 1
-purify$ -- 57
+purify$ -- 67
 quote$ -- 0
-skip$ -- 166
+skip$ -- 180
 stack$ -- 0
-substring$ -- 344
-swap$ -- 66
+substring$ -- 389
+swap$ -- 68
 text.length$ -- 7
 text.prefix$ -- 0
 top$ -- 0
-type$ -- 54
+type$ -- 62
 warning$ -- 3
-while$ -- 51
-width$ -- 16
-write$ -- 158
+while$ -- 58
+width$ -- 18
+write$ -- 180
 (There were 3 warnings)

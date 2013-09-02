@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.1415926-2.4-0.9998 (TeX Live 2012/Debian) (format=xelatex 2013.8.19)  2 SEP 2013 21:02
+This is XeTeX, Version 3.1415926-2.4-0.9998 (TeX Live 2012/Debian) (format=xelatex 2013.8.19)  2 SEP 2013 23:12
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -463,11 +463,21 @@ LaTeX Font Info:    Try loading font information for U+lasy on input line 21.
 
 (/usr/share/texlive/texmf-dist/tex/latex/base/ulasy.fd
 File: ulasy.fd 1998/08/17 v2.2e LaTeX symbol font definitions
-) [1
+)
+File: Process.png Graphic file (type QTm)
+ <use  "Process.png" >
+Overfull \hbox (12.0pt too wide) in paragraph at lines 70--71
+ [][] 
+ []
+
+
+LaTeX Warning: `!h' float specifier changed to `!ht'.
+
+[1
 
 
 ]
-Overfull \hbox (10.16803pt too wide) in paragraph at lines 73--75
+Overfull \hbox (10.16803pt too wide) in paragraph at lines 81--83
 \T1/aer/m/n/9 ap-pli-ca-tion on nu-mer-i-cal data a pre-dic-tive com-pres-sion 
 scheme.
  []
@@ -475,38 +485,58 @@ scheme.
 Missing character: There is no “ in font aer9!
 Missing character: There is no ” in font aer9!
 File: IEEEinterchangeFormat.png Graphic file (type QTm)
-<use  "IEEEinterchangeFormat.png" > [2]
-Overfull \hbox (14.05254pt too wide) in paragraph at lines 159--170
+<use  "IEEEinterchangeFormat.png" >
+
+LaTeX Warning: `!h' float specifier changed to `!ht'.
+
+
+LaTeX Warning: `!h' float specifier changed to `!ht'.
+
+[2]
+Overfull \hbox (14.05254pt too wide) in paragraph at lines 167--178
 [][] 
  []
 
 
-Underfull \hbox (badness 1199) in paragraph at lines 170--170
-[]\T1/aer/m/n/9 Figure 3: |Treat-ing 64-bit IEEE 754 dou-ble pre-ci-sion
- []
-
-File: Thesis_Alg.png Graphic file (type QTm)
-<use  "Thesis_Alg.png" >
-Overfull \hbox (12.0pt too wide) in paragraph at lines 205--206
- [][] 
+Underfull \hbox (badness 1199) in paragraph at lines 178--178
+[]\T1/aer/m/n/9 Figure 4: |Treat-ing 64-bit IEEE 754 dou-ble pre-ci-sion
  []
 
 [3]
-Overfull \hbox (6.77411pt too wide) in paragraph at lines 243--245
+File: Thesis_Alg.png Graphic file (type QTm)
+ <use  "Thesis_Alg.png" >
+Overfull \hbox (12.0pt too wide) in paragraph at lines 213--214
+ [][] 
+ []
+
+
+Overfull \hbox (2.41798pt too wide) in paragraph at lines 237--242
+\T1/aer/m/n/9 Units (GPGPU) brings a host of as-so-ci-ated chal-lenges. These
+ []
+
+[4]
+File: fermi_arch.png Graphic file (type QTm)
+ <use  "fermi_arch.png" >
+Overfull \hbox (12.0pt too wide) in paragraph at lines 251--252
+ [][] 
+ []
+
+
+Overfull \hbox (6.77411pt too wide) in paragraph at lines 274--276
 \T1/aer/m/n/9 nals Pro-cess-ing spe-cial-ist at the MeerKAT of-fices in Pinelan
 ds,
  []
 
-(./thesis.bbl [4]) [5
+(./thesis.bbl [5]) [6
 
 ] (./thesis.aux) ) 
 Here is how much of TeX's memory you used:
- 3171 strings out of 495716
- 42304 string characters out of 3188883
+ 3179 strings out of 495716
+ 42414 string characters out of 3188883
  107144 words of memory out of 3000000
- 6271 multiletter control sequences out of 15000+200000
+ 6277 multiletter control sequences out of 15000+200000
  42809 words of font info for 53 fonts, out of 3000000 for 9000
  14 hyphenation exceptions out of 8191
  39i,11n,38p,261b,305s stack positions out of 5000i,500n,10000p,200000b,50000s
 
-Output written on thesis.pdf (5 pages).
+Output written on thesis.pdf (6 pages).

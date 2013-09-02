@@ -61,6 +61,11 @@ D.~Salomon.
 \newblock {\em Data Compression.: The Complete Reference.}
 \newblock Springer-Verlag New York Incorporated, 2004.
 
+\bibitem{952804}
+A.~Skodras, C.~Christopoulos, and T.~Ebrahimi.
+\newblock The jpeg 2000 still image compression standard.
+\newblock {\em Signal Processing Magazine, IEEE}, 18(5):36--58, 2001.
+
 \bibitem{Tao:1994:PTS:951087.951108}
 Hai Tao and Robert~J. Moorhead.
 \newblock Progressive transmission of scientific data using biorthogonal
@@ -77,5 +82,10 @@ Hugh~E Williams and Justin Zobel.
 Ian~H. Witten, Radford~M. Neal, and John~G. Cleary.
 \newblock Arithmetic coding for data compression.
 \newblock {\em Commun. ACM}, 30(6):520--540, June 1987.
+
+\bibitem{wittenbrink2011fermi}
+Craig~M Wittenbrink, Emmett Kilgariff, and Arjun Prabhu.
+\newblock Fermi gf100 gpu architecture.
+\newblock {\em Micro, IEEE}, 31(2):50--59, 2011.
 
 \end{thebibliography}

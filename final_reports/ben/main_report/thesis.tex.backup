@@ -62,7 +62,15 @@ the remaining dishes and increase the baseline of the telescope to roughly 3000 
 Due to the high signal sampling rate it is expected that each of these dishes will produce data rates up to 420 GiB/s while the lower frequency aperture arrays 
 will produce up to 16 TiB/s. These rates, coupled with the scale of the SKA, will require a processing facility capable of handling as much as 1 Petabyte of 
 data every 20 seconds, necessitating the need for massive storage facilities. Innovative techniques are required to deal with this complex requirement of high 
-throughput rates while effectively reducing the large storage requirements by means of data compression.
+throughput rates while effectively reducing the large storage requirements by means of data compression. Refer to fig.~\ref{MeerKAT_PIPELINE} for an overview of
+the MeerKAT pipeline. Due to the limited scope of the project we propose that the compression step can be introduced as an additional step for each of the cluster
+nodes, although it may be suitable for introduction on the Field Programmable Gate Arrays in further research.
+\begin{figure}[h!]
+ \centering
+ \includegraphics[width=0.50\textwidth]{Process.png}
+ \caption{High-level overview of the MeerKAT pipeline}
+ \label{MeerKAT_PIPELINE}
+\end{figure}
 \subsection{Overview of data compression techniques}
 There are considered to be 4 broad categories of compression techniques \cite{salomon2004data}. These are some basic methods, Lempel-Ziv methods, statistical methods 
 and transforms.
@@ -98,7 +106,7 @@ As the name suggest it can be useful to transform a dataset from one form to ano
 includes, for example, wavelet transforms. As the name suggests a wavelet is a small wave-like function that is only non-zero over a very small domain and can be used 
 to represent, for example, the high frequency components in an image (JPEG2000 and DjVu are popular formats using wavelet transforms). The coefficients within this 
 transformation can then be further compressed using other techniques, for example, Huffman coding. If lossy compression (loss of accuracy which cannot be recovered after 
-decompression)  is tolerable, quantization can be used to discard unimportant values (for example the high frequency features of an image) \cite[ch. 5]{salomon2004data}.
+decompression)  is tolerable, quantization can be used to discard unimportant values (for example the high frequency features of an image) \cite{952804}\cite[ch. 5]{salomon2004data}.
 
 Transforms are furthermore particularly useful where multiple levels of detail are desired. An example of this may include the transfer of scientific data over a network 
 for real-time analysis and observation. Low resolution samples can be constantly transferred, while higher resolution samples can be transferred upon request \cite{Tao:1994:PTS:951087.951108}.
@@ -212,16 +220,35 @@ We note that there are three ways this can be achieved:
  \item Even though the residuals are of variable length it is possible to pack the them in parallel. However, it is duly noted that this adds an additional overhead to \textit{both} the packing and 
  unpacking process. The process requires a prefix sum to be computed for the array of element-wise leading zero counts. As we pointed out in the background chapter this prefix sum can be computed
  in parallel. After this the indexes have been accumulated using the prefix sum algorithm it is easy to see how different threads can pack residuals at the correct positions. We do, however, note that
- both a parallel bit and byte packing scheme will require atomic operations to ensure against the \textit{race condition} that arrises when multiple threads writes to the same memory location 
- simultaniously. This memory-level-synchronization mechanism adds additional overhead in terms of wasted machine clock cycles.
- \item We can separate incoming data into blocks and do multiple of these blocks in parallel (where each block is compressed/decompressed in serial). This overcomes the issue of additional overheads arrising
- from computing prefix sums and using atomics, but it should be noted that this approach may have a detremental effect on the compression ratio since we have to store the length of the residual array of each block.
+ both a parallel bit and byte packing scheme will require atomic operations to ensure against the \textit{race condition} that arises when multiple threads writes to the same memory location 
+ simultaneously. This memory-level-synchronization mechanism adds additional overhead in terms of wasted machine clock cycles.
+ \item We can separate incoming data into blocks and do multiple of these blocks in parallel (where each block is compressed/decompressed in serial). This overcomes the issue of additional overheads arising
+ from computing prefix sums and using atomics, but it should be noted that this approach may have a detrimental effect on the compression ratio since we have to store the length of the residual array of each block.
+ We will have to investigate which of 1 or 2 yields better results for CPU implementations.
  \item A more fine-grained parallelization is possible using vectorized instructions. The various Intel SSE, Steaming SIMD (Single Instruction Multiple Data) instruction set extensions (up to version 4.2) provide
- us the opportunity to perform 4 instructions (adds, multiplies, logarithms, rounding, etc.) simultaniously per core. However, the SSE instruction sets do not have any element-wise bitshift operations. We propose 
+ us the opportunity to perform 4 instructions (adds, multiplies, logarithms, rounding, etc.) simultaneously per core. However, the SSE instruction sets do not have any element-wise bit-shift operations. We propose 
  using a combination of the Intel SSE and AMD XOP instruction sets to achieve our goal. The XOP instruction set extends the SSE instruction set by adding these operations as one of its primary features. It should
- be duly noted that adding these instructions make the implementation dependent on the architecture of the machine it is runned on (and therefore less portable). If this 
+ be duly noted that adding these instructions make the implementation dependent on the architecture of the machine it is executed on (and therefore less portable). If this approach is successful we recommend 
+ that the vectorized code be extended to use the latest Intel AVX 2 instruction set in which Intel introduces element-wise shift operations and offset-loading operations. The AVX family of instructions
+ can compute up to 8 SIMD operations in parallel per core. It is duly noted that these instruction sets make use of a very limited number of 128- and 256-bit registers respectively. We will need to investigate
+ whether it is worthwhile to implement the proposed packing algorithm using these instructions.
 \end{enumerate}
+\subsection{Porting the implementation to CUDA}
+General Purpose programming using Graphics Processing Units (GPGPU) brings a host of associated challenges. These challenges arise primarily due to the widely differing architecture of GPUs compared (if compared
+with the classical architectures of Central Processing Units, CPUs). Refer to fig.~\ref{FERMI_ARCH} for a detailed overview of the microchip die structure of a Nvidia Fermi generation GPU. It is also worthwhile to note 
+that each generation of GPUs have varying architectures, making many optimizations architecture specific. Each generation for instance will have a different ratio and configuration of arithmetic cores to floating point
+and special operations cores.
+\begin{figure}[h!]
+ \centering
+ \includegraphics[width=0.50\textwidth]{fermi_arch.png}
+ \caption{Architecture of the Fermi family of Nvidia GPUs \cite{wittenbrink2011fermi}}
+ \label{FERMI_ARCH}
+\end{figure}
 \subsection{Test data}
+{\color{red}TODO}
+\subsection{Benchmarks}
+{\color{red}TODO}
+\subsection{Benchmarking platform}
 {\color{red}TODO}
 \section{Implementation}
 {\color{red}TODO}
