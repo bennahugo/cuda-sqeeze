@@ -241,11 +241,11 @@ and special operations cores per group of processing \textit{CUDA cores} also kn
 controller properties. These may determine how many warps of cores can be executed, when the warps are swapped in/out, along with many others. 
 
 We will provide a basic CUDA implementation to see if doing compression as a post-processing step on signal data already loaded to GPU as part of the current pipeline is a feasible alternative to a regular 
-multi-threaded CPU implementation. We will make use of shared memory and our implementation will take adequate precaution to coalesce memory accesses and to avoid bank conflicts when possible. More details 
-will be provided in the implementation section, but it is clear that a combination of the approaches (1 \& 2) taken with the CPU version will be required to make adequate use of the GPU architecture. Our 
-implementation will consider assigning a block of data to each SM, which will in turn process that block in parallel without regard to operations performed on other SMs. This ensures that we do not create 
-unnecessary overhead synchronizing SMs (this is considered to be a very costly synchronization for this type of architecture). Instead all atomic operations and synchronization steps will be performed on a 
-per-SM basis only.
+multi-threaded CPU implementation. We will make use of shared memory (as fig.~\ref{FERMI_ARCH} shows GPUs have very large L2 caches available per SM) and our implementation will take adequate precaution to 
+coalesce memory accesses and to avoid bank conflicts when possible. More details will be provided in the implementation section, but it is clear that a combination of the approaches (1 \& 2) taken with the CPU version 
+will be required to make adequate use of the GPU architecture. Our implementation will consider assigning a block of data to each SM, which will in turn process that block in parallel without regard to operations 
+performed on other SMs. This ensures that we do not create unnecessary overhead synchronizing SMs (this is considered to be a very costly synchronization for this type of architecture). Instead all atomic operations 
+and synchronization steps will be performed on a per-SM basis only.
 \begin{figure}[h!]
  \centering
  \includegraphics[width=0.50\textwidth]{fermi_arch.png}
@@ -253,11 +253,52 @@ per-SM basis only.
  \label{FERMI_ARCH}
 \end{figure}
 \subsection{Test data}
-{\color{red}TODO}
-\subsection{Benchmarks}
-{\color{red}TODO}
+The post-correlated data is provided to us in the form of HDF5 files. Each of these files store a 3 dimensional array of complex pairs. The first dimension is time. The second dimension is signal frequency (as we mentioned
+in the background section the telescope array will monitor a wide range of frequencies. The third dimension is a combination of two properties. Each number represents a correlation between two antennae. The antennae additionally
+have two modes of polarization (a horizontal and vertical polarization). We can specify the size of the last dimension as $2\times((n+1)\mathbf{P}2)$ elements where $n$ is the number of
+antennae in the array. The headers of the HDF5 files contain meta information on the state of the telescope and what it is currently observing (this will determine the characteristics of the data itself as well as 
+the number range of frequencies being monitored). We state for the record that the headers cannot be compressed with the algorithm we propose. An LZ variant / entropy encoder may be better tailored for this task.
+\subsection{Structure and scope of the benchmarks}
+Some of these HDF5 files measure more than 30GB in size and contains many timestamps over 4000 frequencies. We assume that once the number of correlations grow emphasis will be placed on processing each 
+time step (or portion thereof) as soon as it is received over the network. In future research the compressor may be integrated into the 7-layer OSI networking stack currently employed by the KAT-7 prototype. Due to the limited
+scope of this project we will only analyze the performance of the algorithms themselves and will not measure any disk I/O (except when comparing to other compression utilities for the sake of fairness).
+
+We propose that the following results should be collected:
+\begin{enumerate}
+ \item We will draw a comparison between the a CPU implementation of the parallel (prefix sum-based algorithm) and the blocked approach.
+ \item We will provide a detailed breakdown of how the algorithm perform on different numbers of cores of whichever method is determined most fit in step 1.
+ \item We will investigate the feasibility of an implementation using the Intel SSE and AMD XOP instruction sets.
+ \item We will benchmark the algorithm against the standard programs used for comparison: gzip, bzip2, zip and rar. In this case the disk I/O will be included for the sake of fairness.
+ \item We will investigate the feasibility of a CUDA implementation as we outlined earlier.
+ \item Finally we will compare results from concurrent research being done into entropy encoding and run-length encoding. This will include a break down of performance in terms of both throughput and compression ratios.
+\end{enumerate}
+
+In order to eliminate the influence of the external testing environment we specify the following special conditions:
+\begin{enumerate}
+ \item Files in excess of 500 MB will be used for benchmarking. This will greatly reduce variability in timings.
+ \item No other processes should be making intensive use of primary memory once benchmarking has commenced. The sheer quantity of data being processed makes benchmarking a memory-bound operation.
+\end{enumerate}
 \subsection{Benchmarking platform}
-{\color{red}TODO}
+The benchmarking platform is designed with two primary software engineering goals in mind:
+\begin{itemize}
+ \item It should be as \textit{decoupled} as possible, making use of predefined interfaces. This will assist in providing several implementations of the CPU version (for example SSE, different linear predictors and different parallelization
+ approaches) and simply swapping one implementation for another. Interactions between components must be kept to a minimum.
+ \item The components must be \textit{cohesive}. They should contain only relevant operations and should be considered as atomic units.
+\end{itemize}
+We propose that the architecture described in fig.~\ref{TOOL_ARCH} be used for the benchmarking platform. We will give more detailed implementation details in the next section. The benchmark process is relatively simple
+and its flow is depicted in fig.~\ref{TOOL_FLOW}.
+\begin{figure}[h!]
+ \centering
+ \includegraphics[width=0.50\textwidth]{Thesis_Arc.png}
+ \caption{Architecture of the benchmarking platform}
+ \label{TOOL_ARCH}
+\end{figure}
+\begin{figure}[h!]
+ \centering
+ \includegraphics[width=0.25\textwidth]{Thesis_Flow.png}
+ \caption{Behavioral model of the benchmarking platform}
+ \label{TOOL_FLOW}
+\end{figure}
 \section{Implementation}
 {\color{red}TODO}
 \section{Findings}
@@ -279,6 +320,8 @@ AMD Opteron 6274 CPUs, clocked at 2200 MHz with 16 MB L3 cache memory. There are
 especially thank Andrew Lewis from ICTS for his assistance and support during testing.
 
 This research is made possible under grant of the National Research Foundation (hereafter \textit{NRF}) of the Republic of South Africa. All views expressed in this report are those of the author and not the NRF.
+\section{Glossary}
+{\color{red}TODO}
 \bibliographystyle{plain}
 \bibliography{litRefs}
 \end{document}

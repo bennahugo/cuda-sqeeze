@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.1415926-2.4-0.9998 (TeX Live 2012/Debian) (format=xelatex 2013.8.19)  2 SEP 2013 23:12
+This is XeTeX, Version 3.1415926-2.4-0.9998 (TeX Live 2012/Debian) (format=xelatex 2013.8.19)  3 SEP 2013 01:03
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -522,21 +522,44 @@ Overfull \hbox (12.0pt too wide) in paragraph at lines 251--252
  []
 
 
-Overfull \hbox (6.77411pt too wide) in paragraph at lines 274--276
+Overfull \hbox (5.56987pt too wide) in paragraph at lines 269--270
+\T1/aer/m/n/9 rithm per-form on dif-fer-ent num-bers of cores of whichever
+ []
+
+
+Overfull \hbox (1.49222pt too wide) in paragraph at lines 273--274
+\T1/aer/m/n/9 search be-ing done into en-tropy en-cod-ing and run-length
+ []
+
+
+Overfull \hbox (6.28946pt too wide) in paragraph at lines 279--280
+\T1/aer/m/n/9 The sheer quan-tity of data be-ing pro-cessed makes bench-
+ []
+
+[5]
+File: Thesis_Arc.png Graphic file (type QTm)
+ <use  "Thesis_Arc.png" >
+Overfull \hbox (12.0pt too wide) in paragraph at lines 292--293
+ [][] 
+ []
+
+File: Thesis_Flow.png Graphic file (type QTm)
+<use  "Thesis_Flow.png" >
+Overfull \hbox (6.77411pt too wide) in paragraph at lines 315--317
 \T1/aer/m/n/9 nals Pro-cess-ing spe-cial-ist at the MeerKAT of-fices in Pinelan
 ds,
  []
 
-(./thesis.bbl [5]) [6
+(./thesis.bbl [6]) [7
 
 ] (./thesis.aux) ) 
 Here is how much of TeX's memory you used:
- 3179 strings out of 495716
- 42414 string characters out of 3188883
+ 3191 strings out of 495716
+ 42551 string characters out of 3188883
  107144 words of memory out of 3000000
- 6277 multiletter control sequences out of 15000+200000
- 42809 words of font info for 53 fonts, out of 3000000 for 9000
+ 6284 multiletter control sequences out of 15000+200000
+ 43738 words of font info for 56 fonts, out of 3000000 for 9000
  14 hyphenation exceptions out of 8191
- 39i,11n,38p,261b,305s stack positions out of 5000i,500n,10000p,200000b,50000s
+ 39i,11n,38p,267b,305s stack positions out of 5000i,500n,10000p,200000b,50000s
 
-Output written on thesis.pdf (6 pages).
+Output written on thesis.pdf (7 pages).
