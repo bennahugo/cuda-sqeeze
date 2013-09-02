@@ -160,11 +160,11 @@ savings in terms of compression ratio.
  \hline
   & & byte & 1\hspace{8 pt}2\hspace{8 pt}3\hspace{8 pt}4\hspace{8 pt}5\hspace{8 pt}6\hspace{8 pt}7\hspace{8 pt}8\\
  \hline
- $a_{1}$ & 2.3667\textbf{1}76745585676 & -> & 40 02 ef \textbf{09 ad 18 c0 f6} \\
+ $a_{1}$ & 2.3667\textbf{1}76745585676 & $\Rightarrow$ & 40 02 ef \textbf{09 ad 18 c0 f6} \\
  \hline
- $a_{2}$ & 2.3667\textbf{2}76745585676 & -> & 40 02 ef \textbf{0e eb 46 23 2f} \\
+ $a_{2}$ & 2.3667\textbf{2}76745585676 & $\Rightarrow$ & 40 02 ef \textbf{0e eb 46 23 2f} \\
  \hline
- $a_{3}$ & 2.3667\textbf{3}76745585676 & -> & 40 02 ef \textbf{14 29 73 85 6a} \\
+ $a_{3}$ & 2.3667\textbf{3}76745585676 & $\Rightarrow$ & 40 02 ef \textbf{14 29 73 85 6a} \\
  \hline
 \end{tabular}
 \caption{Treating 64-bit IEEE 754 double precision floating-points as integer memory \cite{engelson2000lossless}}
@@ -189,13 +189,41 @@ criteria: high throughput and effective compression ratios. These are outlined b
  \item Can throughput be traded for compression ratio using different predictors?
 \end{enumerate}
 \section{Design and Methodology}
-\subsection{The algorithm}
-{\color{red}TODO}
+\subsection{Packing algorithm}
+The compacting algorithm we propose is based on the same approach taken by \cite{O'Neil:2011:FDC:1964179.1964189}. The algorithm is almost \textit{symetrical} in its compression and 
+decompression stages. By symetrical we mean that  the algorithm is executed in the opposite direction when performing decompression. The primary difference is that we do not have to compute
+the leading zero count of each element being decompressed. Refer to fig.~\ref{PACKING_ALGORITHM} for more details.
+
+We use the construction specified in fig.~\ref{PACKING_ALGORITHM} because we can easily swap out one predictor for another. The predictor in this case can be any n-element predictor. As we mentioned
+earlier the predicted value is XORed with the actual value to get a residual which can be compacted at either bit or byte level. This compaction simply removes the leading zeros from each residual and
+store each as a fixed-length prefix count. We note that the number of bits needed to store $n$ leading zeros can be calculated as $\lfloor\log_2n\rfloor+1$ bits where $n\in\mathbb{N}_{>0}$. One aspact 
+of this compression scheme that must be investigated is to determine which residual compaction scheme gives better results: packing at bit or byte level. Although a bit-packing scheme can pack
+an arbitrary number of zeros it requires longer prefixes to store these counts. The opposite is true for byte-packing schemes. Since the prefixes are always short we use a bit-packing scheme to store
+these fixed-length codes.
+\begin{figure}[h!]
+ \centering
+ \includegraphics[width=0.50\textwidth]{Thesis_Alg.png}
+ \caption{Prediction and compaction process}
+ \label{PACKING_ALGORITHM}
+\end{figure}
 \subsection{Parallelizing compression and decompression steps}
-We note that there are two ways this can be achieved. 
+We note that there are three ways this can be achieved: 
 \begin{enumerate}
- \item It is possible to pack 
- \item We can separate incoming data into blocks and do multiple of these blocks in parallel (where each block is compressed/decompressed in serial).
+ \item Even though the residuals are of variable length it is possible to pack the them in parallel. However, it is duly noted that this adds an additional overhead to \textit{both} the packing and 
+ unpacking process. The process requires a prefix sum to be computed for the array of element-wise leading zero counts. As we pointed out in the background chapter this prefix sum can be computed
+ in parallel. After this the indexes have been accumulated using the prefix sum algorithm it is easy to see how different threads can pack residuals at the correct positions. We do, however, note that
+ both a parallel bit and byte packing scheme will require atomic operations to ensure against the \textit{race condition} that arrises when multiple threads writes to the same memory location 
+ simultaniously. This memory-level-synchronization mechanism adds additional overhead in terms of wasted machine clock cycles.
+ \item We can separate incoming data into blocks and do multiple of these blocks in parallel (where each block is compressed/decompressed in serial). This overcomes the issue of additional overheads arrising
+ from computing prefix sums and using atomics, but it should be noted that this approach may have a detremental effect on the compression ratio since we have to store the length of the residual array of each block.
+ We will have to investigate which of 1 or 2 yields better results for CPU implementations.
+ \item A more fine-grained parallelization is possible using vectorized instructions. The various Intel SSE, Steaming SIMD (Single Instruction Multiple Data) instruction set extensions (up to version 4.2) provide
+ us the opportunity to perform 4 instructions (adds, multiplies, logarithms, rounding, etc.) simultaniously per core. However, the SSE instruction sets do not have any element-wise bitshift operations. We propose 
+ using a combination of the Intel SSE and AMD XOP instruction sets to achieve our goal. The XOP instruction set extends the SSE instruction set by adding these operations as one of its primary features. It should
+ be duly noted that adding these instructions make the implementation dependent on the architecture of the machine it is runned on (and therefore less portable). If this approach is successful we recommend 
+ that the vectorized code be extended to use the latest Intel AVX 2 instruction set in which Intel introduces element-wise shift operations and offset-loading operations. The AVX family of instructions
+ can compute up to 8 SIMD operations in parallel. It is duely noted that these instruction sets make use of a very limited number of 128- and 256-bit registers respectively. We will need to investigate
+ whether it is worthwhile to implement the proposed packing algorithm using these instructions.
 \end{enumerate}
 \subsection{Test data}
 {\color{red}TODO}
