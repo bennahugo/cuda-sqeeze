@@ -35,12 +35,12 @@ instances where subtle changes in data is not considered problematic. Some examp
 voice data at a lower rate than music or to employ a commonly used technique called \textit{quantization} where data is simply binned into consecutive ranges 
 (or \textit{bins}).
 
-An online compression scheme refers to a process of compressing data on-the-fly or as it is being transmitted on the wire. The results are sent off to subsequent 
+An online compression scheme refers to a process of compressing data on-the-fly as it is being transmitted on the wire. The results are sent off to subsequent 
 processes such transmission over a network or storage to disk. This is in contrast to to an offline scheme where data is compressed as a separate process which doesn't
-form part of the primary work flow of a system. An online process are normally considered to be fast enough as not to slow the overall data processing capabilities of 
+form part of the primary work-flow of a system. An online process is normally required to be fast enough, as not to slow the overall data processing capabilities of 
 a system.
 
-We will measure compression performance both in terms of effectiveness through a compression ratio described below \cite[p. 10]{salomon2004data} and throughput speed. A 
+We will measure compression performance both in terms of effectiveness through a compression ratio described below \cite[p. 10]{salomon2004data} and throughput. A 
 compression ratio closer to 0 indicates a smaller output file and values greater than 1 indicates that the algorithm inflated the data instead of shrinking it.
 \begin{equation}
  \text{Compression ratio} := \frac{\text{size of the output stream}}{\text{size of the input stream}}
@@ -48,7 +48,7 @@ compression ratio closer to 0 indicates a smaller output file and values greater
 \begin{equation}
  \text{Throughput} := \frac{\text{input processed (in GB)}}{\text{difference in time (in seconds)}}
 \end{equation}
-We will now discuss the relevance of our problem and give a breakdown of the most commonly used compression techniques. We will then discuss a detailed design
+We will now discuss the relevance of our problem and give a breakdown of the most commonly used compression techniques. Thereafter we will then discuss a detailed design
 of our predictive compression scheme, different implementation strategies along with technical details and a section with results and discussion.
 \section{Background}
 \subsection{KAT-7, MeerKAT and the SKA}
@@ -56,15 +56,15 @@ South Africa and Australia are the two primary hosting countries for the largest
 The SKA will give astronomers the opportunity to capture very high resolution images, over a wide field of view, covering a wide range of frequencies ranging 
 from 70 MHz to 10 GHz. Upon completion in 2024 the array will consist of around 3000 dishes in the high frequency range and thousands of smaller antennae to 
 cover the low frequency band. The South African branch of the SKA will be completed in 3 main phases. Phase 1 is a fully operational prototype 7-dish array 
-called the KAT-7. The second phase, known as the MeerKAT, will consist of approximately 90 dishes to be erected in the central Karoo. The final phase add 
-the remaining dishes and increase the baseline of the telescope to roughly 3000 km.
+called the KAT-7. The second phase, known as the MeerKAT, will consist of approximately 90 dishes. These are to be erected in the central Karoo region of South Africa. 
+The final phase add the remaining dishes and increase the baseline of the telescope to roughly 3000 km.
 
-Due to the high signal sampling rate it is expected that each of these dishes will produce data rates up to 420 GiB/s while the lower frequency aperture arrays 
+Due to the high signal sampling rate it is expected that each of these dishes will produce data rates of up to 420 GiB/s, while the lower frequency aperture arrays 
 will produce up to 16 TiB/s. These rates, coupled with the scale of the SKA, will require a processing facility capable of handling as much as 1 Petabyte of 
-data every 20 seconds, necessitating the need for massive storage facilities. Innovative techniques are required to deal with this complex requirement of high 
+data every 20 seconds, necessitating for massive storage facilities. Innovative techniques are required to deal with this complex duel-requirement of high 
 throughput rates while effectively reducing the large storage requirements by means of data compression. Refer to fig.~\ref{MeerKAT_PIPELINE} for an overview of
 the MeerKAT pipeline. Due to the limited scope of the project we propose that the compression step can be introduced as an additional step for each of the cluster
-nodes, although it may be suitable for introduction on the Field Programmable Gate Arrays in further research.
+nodes, although it may be suitable for introduction on the Field Programmable Gate Arrays in future research.
 \begin{figure}[h!]
  \centering
  \includegraphics[width=0.50\textwidth]{Process.png}
@@ -75,29 +75,29 @@ nodes, although it may be suitable for introduction on the Field Programmable Ga
 There are considered to be 4 broad categories of compression techniques \cite{salomon2004data}. These are some basic methods, Lempel-Ziv methods, statistical methods 
 and transforms.
 \subsubsection{Basic methods}
-The more intuitive methods include commonly employed methods such as Run-Length Encoding (RLE) which, simply put encodes runs of characters using some reserved 
+The more intuitive methods include commonly employed methods such as Run-Length Encoding (RLE), which, simply put, encodes runs of characters using some reserved 
 character and a number indicating the length of the run.
 
 Another basic technique which is particularly relevant for application on numerical data a predictive compression scheme. Such a compression scheme encodes the 
 difference between each predicted succeeding value and the actual succeeding value. This can be quite successfully employed to compress data generated from time series \cite{engelson2000lossless}.
 \subsubsection{Lempel-Ziv methods}
-Also commonly referred to as “LZ” or dictionary methods is a class of algorithms with many variants and is one of the more popular adaptive techniques in modern 
-compression utilities. In their simplest form these methods normally uses both a search and a lookahead buffer to encode recurrent phrases using fixed-size codes. An 
+Also commonly referred to as “LZ” or dictionary methods is a class of algorithms with many variants, and is one of the more popular \textit{adaptive} techniques in modern 
+compression utilities. In their simplest form these methods normally use both a search- and lookahead buffer to encode recurrent phrases using fixed-size codes. An 
 adaptive compression technique is useful in circumstances where the probability distribution of the underlying dataset is not known in advance or may change over time. 
 One example of such an LZ method is the GNU compression utility Gzip which implements the Deflate algorithm \cite[ch. 3]{salomon2004data}.
 \subsubsection{Statistical methods}
 This class of algorithms normally uses variable length codes to achieve an optimal (or near optimal) encoding of dataset. In information theory this optimal encoding is 
-described as an entropy encoding. Entropy is the measurement of the information contained in a single base-n symbol (as transmitted per time unit by some source). Mathematically
+described as an \textit{entropy} encoding. Entropy is the measurement of the information contained in a single base-n symbol (as transmitted per unit time by some source). Mathematically
 redundancy is defined as follows ($n$ is the size of a symbol set and $P_{i}$ is the probability that a symbol $c_{i}$ is transmitted from a source)\cite[p. 46 - 47]{salomon2004data}:
 \begin{equation}
  R := \log_2n + \sum_1^nP_i\log_2P_i
 \end{equation}
-As the name may suggest the techniques uses the probability of occurrence to assign shorter codes to frequently occurring values in order to eliminate redundancy. The 
+As the name may suggest these techniques use the probability of occurrence to assign shorter codes to frequently occurring values in order to eliminate redundancy. The 
 class of statistical methods include two widely employed techniques known as Huffman and Arithmetic coding respectively. Huffman coding assigns shorter \textit{integral-length} codes, while arithmetic 
 coding assigns \textit{real-length} subintervals of [0,1) to frequently occurring symbols \cite{Witten:1987:ACD:214762.214771}\cite[ch. 2]{salomon2004data}.
 
 Both approaches lead to variable-size codes. Both techniques have adaptive versions which are useful in situations where the probability distributions change or have to be estimated. This 
-approach is also applicable to the situation where the symbol table has to be computed on the fly, because it is impossible to perform multiple passes. Arithmetic coding is considered to approach 
+approach is also applicable to the situation where the symbol table has to be computed on the fly, because it is impossible to perform multiple passes over data. Arithmetic coding is considered to approach 
 a true entropy encoder and achieves higher compression ratios in both adaptive and non-adaptive cases. It should be pointed out that the decompression step of Arithmetic coding is slow and 
 unsuitable for cases where fast access is required \cite{ray1995database,williams1999compressing}\cite[ch. 2]{salomon2004data}.
 
@@ -197,9 +197,25 @@ criteria: high throughput and effective compression ratios. These are outlined b
  \item Can throughput be traded for compression ratio using different predictors?
 \end{enumerate}
 \section{Design and Methodology}
+\subsection{Overview}
+In light of our research questions and the limited scope of this report we will investigate the usefulness of a predictive data compression 
+step in the context of the MeerKAT project. We will focus solely on investigating whether the algorithm can operate at the desired line rate of
+40 GiB/s and whether it provides reasonable compression ratios. By reasonable here we mean if we can get similar compression ratios to industry standard tools
+like Gzip and Bzip2. We will also investigate the possibility of using alternative predictive schemes to trade some throughput for a better compression ratio.
+These schemes will include the following (we will provide notes on their efficient implementation in the implementation section):
+\begin{enumerate}
+ \item A Lagrange polynomial extrapolation.
+ \item A parallelogram predictor.
+ \item Moving mean \& median predictors.
+\end{enumerate}
+We will evaluate the success of our undertaking depending on the following criteria:
+\begin{enumerate}
+ \item Throughput in excess of 40 GiB/s is achieved by both the compressor and decompressor.
+ \item Effective compression ratios, comparable to those achieved by gzip and bzip2 are achieved.
+\end{enumerate}
 \subsection{Packing algorithm}
-The compacting algorithm we propose is based on the same approach taken by \cite{O'Neil:2011:FDC:1964179.1964189}. The algorithm is almost \textit{symetrical} in its compression and 
-decompression stages. By symetrical we mean that  the algorithm is executed in the opposite direction when performing decompression. The primary difference is that we do not have to compute
+The compacting algorithm we propose is based on the same approach taken by \cite{O'Neil:2011:FDC:1964179.1964189}. The algorithm is almost \textit{symmetrical} in its compression and 
+decompression stages. By symmetrical we mean that  the algorithm is executed in the opposite direction when performing decompression. The primary difference is that we do not have to compute
 the leading zero count of each element being decompressed. Refer to fig.~\ref{PACKING_ALGORITHM} for more details.
 
 We use the construction specified in fig.~\ref{PACKING_ALGORITHM} because we can easily swap out one predictor for another. The predictor in this case can be any n-element predictor. As we mentioned
@@ -273,10 +289,10 @@ We propose that the following results should be collected:
  \item Finally we will compare results from concurrent research being done into entropy encoding and run-length encoding. This will include a break down of performance in terms of both throughput and compression ratios.
 \end{enumerate}
 
-In order to eliminate the influence of the external testing environment we specify the following conditions:
+In order to eliminate the influence of the external testing environment we specify the following special conditions:
 \begin{enumerate}
  \item Files in excess of 500 MB will be used for benchmarking. This will greatly reduce variability in timings.
- \item No other processes should be making intensive use of primary memory once benchmarking has commenced.
+ \item No other processes should be making intensive use of primary memory once benchmarking has commenced. The sheer quantity of data being processed makes benchmarking a memory-bound operation.
 \end{enumerate}
 \subsection{Benchmarking platform}
 The benchmarking platform is designed with two primary software engineering goals in mind:
@@ -285,12 +301,19 @@ The benchmarking platform is designed with two primary software engineering goal
  approaches) and simply swapping one implementation for another. Interactions between components must be kept to a minimum.
  \item The components must be \textit{cohesive}. They should contain only relevant operations and should be considered as atomic units.
 \end{itemize}
-We propose that the architecture described in fig.~\ref{TOOL_ARCH} be used for the benchmarking platform. We will give more detailed implementation details in the next section.
+We propose that the architecture described in fig.~\ref{TOOL_ARCH} be used for the benchmarking platform. We will give more detailed implementation details in the next section. The benchmark process is relatively simple
+and its flow is depicted in fig.~\ref{TOOL_FLOW}.
 \begin{figure}[h!]
  \centering
  \includegraphics[width=0.50\textwidth]{Thesis_Arc.png}
  \caption{Architecture of the benchmarking platform}
  \label{TOOL_ARCH}
+\end{figure}
+\begin{figure}[h!]
+ \centering
+ \includegraphics[width=0.25\textwidth]{Thesis_Flow.png}
+ \caption{Behavioral model of the benchmarking platform}
+ \label{TOOL_FLOW}
 \end{figure}
 \section{Implementation}
 {\color{red}TODO}

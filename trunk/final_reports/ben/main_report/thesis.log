@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.1415926-2.4-0.9998 (TeX Live 2012/Debian) (format=xelatex 2013.8.19)  3 SEP 2013 01:03
+This is pdfTeX, Version 3.1415926-2.4-1.40.13 (TeX Live 2012/Debian) (format=pdflatex 2013.8.19)  3 SEP 2013 14:11
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -27,11 +27,18 @@ Package: trig 1999/03/16 v1.09 sin cos tan (DPC)
 (/usr/share/texlive/texmf-dist/tex/latex/latexconfig/graphics.cfg
 File: graphics.cfg 2010/04/23 v1.9 graphics configuration of TeX Live
 )
-Package graphics Info: Driver file: xetex.def on input line 91.
+Package graphics Info: Driver file: pdftex.def on input line 91.
 
-(/usr/share/texlive/texmf-dist/tex/xelatex/xetex-def/xetex.def
-File: xetex.def 2009/11/22 v0.94 LaTeX color/graphics driver for XeTeX (RRM/JK)
+(/usr/share/texlive/texmf-dist/tex/latex/pdftex-def/pdftex.def
+File: pdftex.def 2011/05/27 v0.06d Graphics/color for pdfTeX
 
+(/usr/share/texlive/texmf-dist/tex/generic/oberdiek/infwarerr.sty
+Package: infwarerr 2010/04/08 v1.3 Providing info/warning/error messages (HO)
+)
+(/usr/share/texlive/texmf-dist/tex/generic/oberdiek/ltxcmds.sty
+Package: ltxcmds 2011/11/09 v1.22 LaTeX kernel commands for general use (HO)
+)
+\Gread@gobject=\count79
 ))
 \Gin@req@height=\dimen102
 \Gin@req@width=\dimen103
@@ -167,7 +174,7 @@ LaTeX Info: Redefining \cite on input line 1236.
 \acmcopyr=\toks33
 \boilerplate=\toks34
 \copyrightetc=\toks35
-(/home/benjamin/texmf/tex/latex/fontenc.sty
+(/usr/share/texlive/texmf-dist/tex/latex/base/fontenc.sty
 Package: fontenc 2005/09/27 v1.99g Standard LaTeX package
 
 (/usr/share/texlive/texmf-dist/tex/latex/base/t1enc.def
@@ -432,7 +439,7 @@ Package: color 2005/11/14 v1.0j Standard LaTeX Color (DPC)
 (/usr/share/texlive/texmf-dist/tex/latex/latexconfig/color.cfg
 File: color.cfg 2007/01/18 v1.5 color configuration of teTeX/TeXLive
 )
-Package color Info: Driver file: xetex.def on input line 130.
+Package color Info: Driver file: pdftex.def on input line 130.
 ) (./thesis.aux)
 \openout1 = `thesis.aux'.
 
@@ -448,9 +455,71 @@ LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 19.
 LaTeX Font Info:    ... okay on input line 19.
 LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 19.
 LaTeX Font Info:    ... okay on input line 19.
+(/usr/share/texlive/texmf-dist/tex/context/base/supp-pdf.mkii
+[Loading MPS to PDF converter (version 2006.09.02).]
+\scratchcounter=\count112
+\scratchdimen=\dimen129
+\scratchbox=\box30
+\nofMPsegments=\count113
+\nofMParguments=\count114
+\everyMPshowfont=\toks38
+\MPscratchCnt=\count115
+\MPscratchDim=\dimen130
+\MPnumerator=\count116
+\makeMPintoPDFobject=\count117
+\everyMPtoPDFconversion=\toks39
+) (/usr/share/texlive/texmf-dist/tex/generic/oberdiek/pdftexcmds.sty
+Package: pdftexcmds 2011/11/29 v0.20 Utility functions of pdfTeX for LuaTeX (HO
+)
+
+(/usr/share/texlive/texmf-dist/tex/generic/oberdiek/ifluatex.sty
+Package: ifluatex 2010/03/01 v1.3 Provides the ifluatex switch (HO)
+Package ifluatex Info: LuaTeX not detected.
+)
+(/usr/share/texlive/texmf-dist/tex/generic/oberdiek/ifpdf.sty
+Package: ifpdf 2011/01/30 v2.3 Provides the ifpdf switch (HO)
+Package ifpdf Info: pdfTeX in PDF mode is detected.
+)
+Package pdftexcmds Info: LuaTeX not detected.
+Package pdftexcmds Info: \pdf@primitive is available.
+Package pdftexcmds Info: \pdf@ifprimitive is available.
+Package pdftexcmds Info: \pdfdraftmode found.
+)
+(/usr/share/texlive/texmf-dist/tex/latex/oberdiek/epstopdf-base.sty
+Package: epstopdf-base 2010/02/09 v2.5 Base part for package epstopdf
+
+(/usr/share/texlive/texmf-dist/tex/latex/oberdiek/grfext.sty
+Package: grfext 2010/08/19 v1.1 Manage graphics extensions (HO)
+
+(/usr/share/texlive/texmf-dist/tex/generic/oberdiek/kvdefinekeys.sty
+Package: kvdefinekeys 2011/04/07 v1.3 Define keys (HO)
+))
+(/usr/share/texlive/texmf-dist/tex/latex/oberdiek/kvoptions.sty
+Package: kvoptions 2011/06/30 v3.11 Key value format for package options (HO)
+
+(/usr/share/texlive/texmf-dist/tex/generic/oberdiek/kvsetkeys.sty
+Package: kvsetkeys 2012/04/25 v1.16 Key value parser (HO)
+
+(/usr/share/texlive/texmf-dist/tex/generic/oberdiek/etexcmds.sty
+Package: etexcmds 2011/02/16 v1.5 Avoid name clashes with e-TeX commands (HO)
+Package etexcmds Info: Could not find \expanded.
+(etexcmds)             That can mean that you are not using pdfTeX 1.50 or
+(etexcmds)             that some package has redefined \expanded.
+(etexcmds)             In the latter case, load this package earlier.
+)))
+Package grfext Info: Graphics extension search list:
+(grfext)             [.png,.pdf,.jpg,.mps,.jpeg,.jbig2,.jb2,.PNG,.PDF,.JPG,.JPE
+G,.JBIG2,.JB2,.eps]
+(grfext)             \AppendGraphicsExtensions on input line 452.
+
+(/usr/share/texlive/texmf-dist/tex/latex/latexconfig/epstopdf-sys.cfg
+File: epstopdf-sys.cfg 2010/07/13 v1.3 Configuration of (r)epstopdf for TeX Liv
+e
+))
 Package caption Info: Begin \AtBeginDocument code.
 Package caption Info: End \AtBeginDocument code.
 LaTeX Font Info:    Try loading font information for U+msa on input line 21.
+
 (/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsa.fd
 File: umsa.fd 2009/06/22 v3.00 AMS symbols A
 )
@@ -464,16 +533,17 @@ LaTeX Font Info:    Try loading font information for U+lasy on input line 21.
 (/usr/share/texlive/texmf-dist/tex/latex/base/ulasy.fd
 File: ulasy.fd 1998/08/17 v2.2e LaTeX symbol font definitions
 )
-File: Process.png Graphic file (type QTm)
- <use  "Process.png" >
+<Process.png, id=1, 986.9372pt x 526.96875pt>
+File: Process.png Graphic file (type png)
+ <use Process.png>
+Package pdftex.def Info: Process.png used on input line 70.
+(pdftex.def)             Requested size: 252.0pt x 134.54813pt.
+
 Overfull \hbox (12.0pt too wide) in paragraph at lines 70--71
  [][] 
  []
 
-
-LaTeX Warning: `!h' float specifier changed to `!ht'.
-
-[1
+[1{/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}
 
 
 ]
@@ -482,17 +552,13 @@ Overfull \hbox (10.16803pt too wide) in paragraph at lines 81--83
 scheme.
  []
 
-Missing character: There is no “ in font aer9!
-Missing character: There is no ” in font aer9!
-File: IEEEinterchangeFormat.png Graphic file (type QTm)
-<use  "IEEEinterchangeFormat.png" >
+<IEEEinterchangeFormat.png, id=12, 422.32782pt x 63.98906pt>
+File: IEEEinterchangeFormat.png Graphic file (type png)
 
-LaTeX Warning: `!h' float specifier changed to `!ht'.
-
-
-LaTeX Warning: `!h' float specifier changed to `!ht'.
-
-[2]
+<use IEEEinterchangeFormat.png>
+Package pdftex.def Info: IEEEinterchangeFormat.png used on input line 123.
+(pdftex.def)             Requested size: 226.79846pt x 34.36415pt.
+ [2 <./Process.png>]
 Overfull \hbox (14.05254pt too wide) in paragraph at lines 167--178
 [][] 
  []
@@ -502,64 +568,109 @@ Underfull \hbox (badness 1199) in paragraph at lines 178--178
 []\T1/aer/m/n/9 Figure 4: |Treat-ing 64-bit IEEE 754 dou-ble pre-ci-sion
  []
 
-[3]
-File: Thesis_Alg.png Graphic file (type QTm)
- <use  "Thesis_Alg.png" >
-Overfull \hbox (12.0pt too wide) in paragraph at lines 213--214
+[3 <./IEEEinterchangeFormat.png>]
+Overfull \hbox (13.5778pt too wide) in paragraph at lines 215--216
+[]\T1/aer/m/n/9 Effective com-pres-sion ra-tios, com-pa-ra-ble to those achieve
+d
+ []
+
+<Thesis_Alg.png, id=27, 354.857pt x 256.89726pt>
+File: Thesis_Alg.png Graphic file (type png)
+ <use Thesis_Alg.png>
+Package pdftex.def Info: Thesis_Alg.png used on input line 230.
+(pdftex.def)             Requested size: 252.0pt x 182.43753pt.
+
+Overfull \hbox (12.0pt too wide) in paragraph at lines 230--231
  [][] 
  []
 
 
-Overfull \hbox (2.41798pt too wide) in paragraph at lines 237--242
+LaTeX Warning: `!h' float specifier changed to `!ht'.
+
+[4 <./Thesis_Alg.png>]
+Overfull \hbox (2.41798pt too wide) in paragraph at lines 254--259
 \T1/aer/m/n/9 Units (GPGPU) brings a host of as-so-ci-ated chal-lenges. These
  []
 
-[4]
-File: fermi_arch.png Graphic file (type QTm)
- <use  "fermi_arch.png" >
-Overfull \hbox (12.0pt too wide) in paragraph at lines 251--252
+<fermi_arch.png, id=32, 629.8901pt x 578.92883pt>
+File: fermi_arch.png Graphic file (type png)
+ <use fermi_arch.png>
+Package pdftex.def Info: fermi_arch.png used on input line 268.
+(pdftex.def)             Requested size: 252.0pt x 231.61159pt.
+
+Overfull \hbox (12.0pt too wide) in paragraph at lines 268--269
  [][] 
  []
 
 
-Overfull \hbox (5.56987pt too wide) in paragraph at lines 269--270
+LaTeX Warning: `!h' float specifier changed to `!ht'.
+
+
+Overfull \hbox (5.56987pt too wide) in paragraph at lines 286--287
 \T1/aer/m/n/9 rithm per-form on dif-fer-ent num-bers of cores of whichever
  []
 
-
-Overfull \hbox (1.49222pt too wide) in paragraph at lines 273--274
-\T1/aer/m/n/9 search be-ing done into en-tropy en-cod-ing and run-length
- []
-
-
-Overfull \hbox (6.28946pt too wide) in paragraph at lines 279--280
+[5 <./fermi_arch.png>]
+Overfull \hbox (6.28946pt too wide) in paragraph at lines 296--297
 \T1/aer/m/n/9 The sheer quan-tity of data be-ing pro-cessed makes bench-
  []
 
-[5]
-File: Thesis_Arc.png Graphic file (type QTm)
- <use  "Thesis_Arc.png" >
-Overfull \hbox (12.0pt too wide) in paragraph at lines 292--293
+<Thesis_Arc.png, id=36, 353.44547pt x 242.78203pt>
+File: Thesis_Arc.png Graphic file (type png)
+ <use Thesis_Arc.png>
+Package pdftex.def Info: Thesis_Arc.png used on input line 309.
+(pdftex.def)             Requested size: 252.0pt x 173.09883pt.
+
+Overfull \hbox (12.0pt too wide) in paragraph at lines 309--310
  [][] 
  []
 
-File: Thesis_Flow.png Graphic file (type QTm)
-<use  "Thesis_Flow.png" >
-Overfull \hbox (6.77411pt too wide) in paragraph at lines 315--317
+<Thesis_Flow.png, id=37, 180.1104pt x 310.53516pt>
+File: Thesis_Flow.png Graphic file (type png)
+ <use Thesis_Flow.png>
+Package pdftex.def Info: Thesis_Flow.png used on input line 315.
+(pdftex.def)             Requested size: 126.0pt x 217.24043pt.
+
+
+LaTeX Warning: `!h' float specifier changed to `!ht'.
+
+
+LaTeX Warning: `!h' float specifier changed to `!ht'.
+
+
+Overfull \hbox (6.77411pt too wide) in paragraph at lines 332--334
 \T1/aer/m/n/9 nals Pro-cess-ing spe-cial-ist at the MeerKAT of-fices in Pinelan
 ds,
  []
 
-(./thesis.bbl [6]) [7
-
-] (./thesis.aux) ) 
+[6 <./Thesis_Arc.png> <./Thesis_Flow.png>] (./thesis.bbl) [7] (./thesis.aux) ) 
 Here is how much of TeX's memory you used:
- 3191 strings out of 495716
- 42551 string characters out of 3188883
- 107144 words of memory out of 3000000
- 6284 multiletter control sequences out of 15000+200000
- 43738 words of font info for 56 fonts, out of 3000000 for 9000
+ 4139 strings out of 495059
+ 57413 string characters out of 3182030
+ 121999 words of memory out of 3000000
+ 7218 multiletter control sequences out of 15000+200000
+ 52066 words of font info for 69 fonts, out of 3000000 for 9000
  14 hyphenation exceptions out of 8191
- 39i,11n,38p,267b,305s stack positions out of 5000i,500n,10000p,200000b,50000s
+ 41i,11n,38p,281b,305s stack positions out of 5000i,500n,10000p,200000b,50000s
+{
+/usr/share/texlive/texmf-dist/fonts/enc/dvips/base/8r.enc}</usr/share/texlive/t
+exmf-dist/fonts/type1/public/amsfonts/cm/cmbx9.pfb></usr/share/texlive/texmf-di
+st/fonts/type1/public/amsfonts/cmextra/cmex9.pfb></usr/share/texlive/texmf-dist
+/fonts/type1/public/amsfonts/cm/cmmi6.pfb></usr/share/texlive/texmf-dist/fonts/
+type1/public/amsfonts/cm/cmmi9.pfb></usr/share/texlive/texmf-dist/fonts/type1/p
+ublic/amsfonts/cm/cmr6.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/am
+sfonts/cm/cmr9.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/c
+m/cmsy6.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy9
+.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmti9.pfb></
+usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb></u
+sr/share/texlive/texmf-dist/fonts/type1/urw/helvetic/uhvb8a.pfb></usr/share/tex
+live/texmf-dist/fonts/type1/urw/helvetic/uhvr8a.pfb></usr/share/texlive/texmf-d
+ist/fonts/type1/urw/times/utmb8a.pfb></usr/share/texlive/texmf-dist/fonts/type1
+/urw/times/utmri8a.pfb>
+Output written on thesis.pdf (7 pages, 363846 bytes).
+PDF statistics:
+ 91 PDF objects out of 1000 (max. 8388607)
+ 61 compressed objects within 1 object stream
+ 0 named destinations out of 1000 (max. 500000)
+ 31 words of extra memory for PDF output out of 10000 (max. 10000000)
 
-Output written on thesis.pdf (7 pages).

@@ -35,12 +35,12 @@ instances where subtle changes in data is not considered problematic. Some examp
 voice data at a lower rate than music or to employ a commonly used technique called \textit{quantization} where data is simply binned into consecutive ranges 
 (or \textit{bins}).
 
-An online compression scheme refers to a process of compressing data on-the-fly or as it is being transmitted on the wire. The results are sent off to subsequent 
+An online compression scheme refers to a process of compressing data on-the-fly as it is being transmitted on the wire. The results are sent off to subsequent 
 processes such transmission over a network or storage to disk. This is in contrast to to an offline scheme where data is compressed as a separate process which doesn't
-form part of the primary work flow of a system. An online process are normally considered to be fast enough as not to slow the overall data processing capabilities of 
+form part of the primary work-flow of a system. An online process is normally required to be fast enough, as not to slow the overall data processing capabilities of 
 a system.
 
-We will measure compression performance both in terms of effectiveness through a compression ratio described below \cite[p. 10]{salomon2004data} and throughput speed. A 
+We will measure compression performance both in terms of effectiveness through a compression ratio described below \cite[p. 10]{salomon2004data} and throughput. A 
 compression ratio closer to 0 indicates a smaller output file and values greater than 1 indicates that the algorithm inflated the data instead of shrinking it.
 \begin{equation}
  \text{Compression ratio} := \frac{\text{size of the output stream}}{\text{size of the input stream}}
@@ -48,7 +48,7 @@ compression ratio closer to 0 indicates a smaller output file and values greater
 \begin{equation}
  \text{Throughput} := \frac{\text{input processed (in GB)}}{\text{difference in time (in seconds)}}
 \end{equation}
-We will now discuss the relevance of our problem and give a breakdown of the most commonly used compression techniques. We will then discuss a detailed design
+We will now discuss the relevance of our problem and give a breakdown of the most commonly used compression techniques. Thereafter we will then discuss a detailed design
 of our predictive compression scheme, different implementation strategies along with technical details and a section with results and discussion.
 \section{Background}
 \subsection{KAT-7, MeerKAT and the SKA}
@@ -56,15 +56,15 @@ South Africa and Australia are the two primary hosting countries for the largest
 The SKA will give astronomers the opportunity to capture very high resolution images, over a wide field of view, covering a wide range of frequencies ranging 
 from 70 MHz to 10 GHz. Upon completion in 2024 the array will consist of around 3000 dishes in the high frequency range and thousands of smaller antennae to 
 cover the low frequency band. The South African branch of the SKA will be completed in 3 main phases. Phase 1 is a fully operational prototype 7-dish array 
-called the KAT-7. The second phase, known as the MeerKAT, will consist of approximately 90 dishes to be erected in the central Karoo. The final phase add 
-the remaining dishes and increase the baseline of the telescope to roughly 3000 km.
+called the KAT-7. The second phase, known as the MeerKAT, will consist of approximately 90 dishes. These are to be erected in the central Karoo region of South Africa. 
+The final phase add the remaining dishes and increase the baseline of the telescope to roughly 3000 km.
 
-Due to the high signal sampling rate it is expected that each of these dishes will produce data rates up to 420 GiB/s while the lower frequency aperture arrays 
+Due to the high signal sampling rate it is expected that each of these dishes will produce data rates of up to 420 GiB/s, while the lower frequency aperture arrays 
 will produce up to 16 TiB/s. These rates, coupled with the scale of the SKA, will require a processing facility capable of handling as much as 1 Petabyte of 
-data every 20 seconds, necessitating the need for massive storage facilities. Innovative techniques are required to deal with this complex requirement of high 
+data every 20 seconds, necessitating for massive storage facilities. Innovative techniques are required to deal with this complex duel-requirement of high 
 throughput rates while effectively reducing the large storage requirements by means of data compression. Refer to fig.~\ref{MeerKAT_PIPELINE} for an overview of
 the MeerKAT pipeline. Due to the limited scope of the project we propose that the compression step can be introduced as an additional step for each of the cluster
-nodes, although it may be suitable for introduction on the Field Programmable Gate Arrays in further research.
+nodes, although it may be suitable for introduction on the Field Programmable Gate Arrays in future research.
 \begin{figure}[h!]
  \centering
  \includegraphics[width=0.50\textwidth]{Process.png}
@@ -75,31 +75,31 @@ nodes, although it may be suitable for introduction on the Field Programmable Ga
 There are considered to be 4 broad categories of compression techniques \cite{salomon2004data}. These are some basic methods, Lempel-Ziv methods, statistical methods 
 and transforms.
 \subsubsection{Basic methods}
-The more intuitive methods include commonly employed methods such as Run-Length Encoding (RLE) which, simply put encodes runs of characters using some reserved 
+The more intuitive methods include commonly employed methods such as Run-Length Encoding (RLE), which, simply put, encodes runs of characters using some reserved 
 character and a number indicating the length of the run.
 
 Another basic technique which is particularly relevant for application on numerical data a predictive compression scheme. Such a compression scheme encodes the 
 difference between each predicted succeeding value and the actual succeeding value. This can be quite successfully employed to compress data generated from time series \cite{engelson2000lossless}.
 \subsubsection{Lempel-Ziv methods}
-Also commonly referred to as “LZ” or dictionary methods is a class of algorithms with many variants and is one of the more popular adaptive techniques in modern 
-compression utilities. In their simplest form these methods normally uses both a search and a lookahead buffer to encode recurrent phrases using fixed-size codes. An 
+Also commonly referred to as “LZ” or dictionary methods is a class of algorithms with many variants, and is one of the more popular \textit{adaptive} techniques in modern 
+compression utilities. In their simplest form these methods normally use both a search- and lookahead buffer to encode recurrent phrases using fixed-size codes. An 
 adaptive compression technique is useful in circumstances where the probability distribution of the underlying dataset is not known in advance or may change over time. 
 One example of such an LZ method is the GNU compression utility Gzip which implements the Deflate algorithm \cite[ch. 3]{salomon2004data}.
 \subsubsection{Statistical methods}
 This class of algorithms normally uses variable length codes to achieve an optimal (or near optimal) encoding of dataset. In information theory this optimal encoding is 
-described as an entropy encoding. Entropy is the measurement of the information contained in a single base-n symbol (as transmitted per time unit by some source). Mathematically
+described as an \textit{entropy} encoding. Entropy is the measurement of the information contained in a single base-n symbol (as transmitted per unit time by some source). Mathematically
 redundancy is defined as follows ($n$ is the size of a symbol set and $P_{i}$ is the probability that a symbol $c_{i}$ is transmitted from a source)\cite[p. 46 - 47]{salomon2004data}:
 \begin{equation}
  R := \log_2n + \sum_1^nP_i\log_2P_i
 \end{equation}
-As the name may suggest the techniques uses the probability of occurrence to assign shorter codes to frequently occurring values in order to eliminate redundancy. The 
+As the name may suggest these techniques use the probability of occurrence to assign shorter codes to frequently occurring values in order to eliminate redundancy. The 
 class of statistical methods include two widely employed techniques known as Huffman and Arithmetic coding respectively. Huffman coding assigns shorter \textit{integral-length} codes, while arithmetic 
 coding assigns \textit{real-length} subintervals of [0,1) to frequently occurring symbols \cite{Witten:1987:ACD:214762.214771}\cite[ch. 2]{salomon2004data}.
 
 Both approaches lead to variable-size codes. Both techniques have adaptive versions which are useful in situations where the probability distributions change or have to be estimated. This 
-approach is also applicable to the situation where the symbol table has to be computed on the fly, because it is impossible to perform multiple passes. Arithmetic coding is considered to approach 
-a true entropy encoder and achieves higher compression ratios in both adaptive and non-adaptive cases. It should be pointed out that the decompression step of Arithmetic coding is slow and 
-unsuitable for cases where fast access is required \cite{ray1995database,williams1999compressing}\cite[ch. 2]{salomon2004data}.
+approach is also applicable to the situation where the symbol table has to be computed on the fly, because it is impossible to perform multiple passes over data. Arithmetic 
+coding is considered to approach a true entropy encoder and achieves higher compression ratios in both adaptive and non-adaptive cases when compared to Huffman coding. It should be 
+pointed out that the decompression step of Arithmetic coding is slow and unsuitable for cases where fast access is required \cite{ray1995database,williams1999compressing}\cite[ch. 2]{salomon2004data}.
 
 \subsubsection{Transforms}
 As the name suggest it can be useful to transform a dataset from one form to another in order to exploit its features for the purposes of compression. Such transformations 
@@ -140,25 +140,25 @@ Each of these have a common construction with the following subfields:
 \end{figure}
 \subsection{Overview of predictive compression}
 Previous research \cite{1607248,4589203,engelson2000lossless,lindstrom2006fast,O'Neil:2011:FDC:1964179.1964189,4976448} in this area has yielded good results both in terms of compression ratio and speed. 
-The common line of thought is to predict successive values. Depending on the accuracy the difference between the predicted and actual value will hopefully be much smaller than the actual value itself. 
+The common line of thought is to predict successive values. Depending on the accuracy of the prediction, the difference between the predicted and actual value will be much smaller than the actual value itself. 
 This difference can then be encoded using fewer bytes/bits of data (depending if compression occurs at a byte or bit level) by compressing the leading zeros after either an XOR or integer subtraction 
 operation. Machine instructions to count the leading zeros can be found on AMD and newer Intel Processors. The leading zero count is then encoded as a prefix stream while the remaining bits/bytes 
 are encoded as a residual stream.
 
-Previous research suggests several different constructions of predictors. The use of a Lorenzo predictor \cite{lindstrom2006fast} generalizes a parallelogram predictor used by \cite{engelson2000lossless}. This
-approach is particularly useful to compress large meshes of structures. Other approaches include the use of prediction history (via a simple lookup table construction) as suggested in \cite{1607248,4589203,4976448}. 
+Previous research suggests several different constructions of predictors. The use of a Lorenzo predictor \cite{lindstrom2006fast} generalizes the well known parallelogram predictor used by \cite{engelson2000lossless}. This
+approach is particularly useful to compress large meshes. Other approaches include the use of prediction history (via a simple lookup table construction) as suggested in \cite{1607248,4589203,4976448}. 
 The later reports a throughput of up to 670 MB/s on a CPU implementation of their FPC compressor. An even simpler scheme \cite{O'Neil:2011:FDC:1964179.1964189} reportedly achieved throughputs of up to 75GB/s in its 
 compression routine and up to 90GB/s in its decompression routine implemented in CUDA. In this scheme only the difference between successive values are encoded (this will clearly only work if the pairs of 
 data points varies very little from one time step to the next). It is duly noted that the speeds achieved by \cite{O'Neil:2011:FDC:1964179.1964189} is on the post processing of results already stored in 
 graphics memory. The implementations by \cite{O'Neil:2011:FDC:1964179.1964189,1607248,4589203,4976448,engelson2000lossless} targets 64-bit IEEE 754 \textit{double} precision floating-point data.
 
 The primary scheme we propose takes its inspiration from \cite{O'Neil:2011:FDC:1964179.1964189}, but will operate on 32-bit IEEE 754 \textit{single} precision floating-point values. The uncompressed data itself 
-is also structured slightly differently to the model used by \cite{O'Neil:2011:FDC:1964179.1964189}. Instead of compressing each consecutive value my compressor will compress consecutive blocks of data. Although 
+is also structured slightly differently to the model used by \cite{O'Neil:2011:FDC:1964179.1964189}. Instead of compressing each consecutive value our compressor will operate over consecutive blocks of data. Although 
 the predictor itself is very simple and may not yield as good a compression ratio as the schemes suggested by the other authors it should obtain the required throughput. Additionally we will test the effectiveness
 of a parallelogram predictor, a Lagrange extrapolation predictor \cite{engelson2000lossless} and a moving mean and median scheme. We will describe each implementation to greater extent in the implementation section.
 
 As pointed out in previous research \cite{engelson2000lossless,lindstrom2006fast} using floating point operations in the prediction step can cause an irreversible loss of information due to floating point
-rounding errors. A simple approach is proposed by \cite{engelson2000lossless}. Floating point memory is simply treated as integer memory and all operations performed on that memory are integer operations. This
+rounding errors. A simple approach is proposed by \cite{engelson2000lossless}: floating point memory is simply treated as integer memory and all operations performed on that memory are integer operations. This
 approach assures us of achieving lossless compression and we will consequently only consider using schemes that conform to this approach. A simple case to illustrate this approach is made by \cite{engelson2000lossless}.
 It is clearly visible in fig.~\ref{INT_REP} that if two floating-point numbers are relatively close to each other in terms of magnitude it is possible to discard some repeated bytes of information after performing 
 an XOR operation to extract the remaining, seemingly random, residual bits. Therefore if we can accurately predict consecutive numbers we should be able to make reasonable
@@ -185,7 +185,7 @@ sum scan is defined as $scan(A):=[I,a_{0},(a_{0} \oplus a_{1}),\dots,(a_{0} \opl
 
 This scan operation can be computed in parallel. Blelloch suggests such an approach in \cite{blelloch1990prefix}. We will discuss the algorithm in more detail in the section on implementation.
 Additionally a work-efficient CUDA version of the algorithm is discussed in \cite{harris2007parallel}. In this version the algorithm is optimized to avoid bank conflicts and has been
-shown to be 6 times faster than a sequential CPU implementation.
+shown to be up to 6 times faster than a sequential CPU implementation for large arrays.
 \section{Research questions}
 We are investigating the feasibility of adding a \textit{online} predictive compression step to the existing KAT-7 / MeerKAT pipeline. Such a step has to meet at least two primary
 criteria: high throughput and effective compression ratios. These are outlined below:
@@ -197,14 +197,31 @@ criteria: high throughput and effective compression ratios. These are outlined b
  \item Can throughput be traded for compression ratio using different predictors?
 \end{enumerate}
 \section{Design and Methodology}
+\subsection{Overview}
+In light of our research questions and the limited scope of this report we will investigate the usefulness of a predictive data compression 
+step in the context of the MeerKAT project. We will focus solely on investigating whether the algorithm can operate at the desired line rate of
+40 GiB/s and whether it provides reasonable compression ratios. We will not investigate implementing the algorithm as part of the networking stack 
+employed in the KAT-7 pipeline. By reasonable here we mean if we can get similar compression ratios to industry standard tools like Gzip and Bzip2. 
+We will also investigate the possibility of using alternative predictive schemes to trade some throughput for a better compression ratio.
+These schemes will include the following (we will provide notes on their efficient implementation in the implementation section):
+\begin{enumerate}
+ \item A Lagrange polynomial extrapolation.
+ \item A parallelogram predictor.
+ \item Moving mean \& median predictors.
+\end{enumerate}
+We will evaluate the success of our undertaking depending on the following criteria:
+\begin{enumerate}
+ \item Throughput in excess of 40 GiB/s is achieved by both the compressor and decompressor.
+ \item Effective compression ratios, comparable to those achieved by gzip and bzip2 are achieved.
+\end{enumerate}
 \subsection{Packing algorithm}
-The compacting algorithm we propose is based on the same approach taken by \cite{O'Neil:2011:FDC:1964179.1964189}. The algorithm is almost \textit{symetrical} in its compression and 
-decompression stages. By symetrical we mean that  the algorithm is executed in the opposite direction when performing decompression. The primary difference is that we do not have to compute
+The compacting algorithm we propose is based on the approach taken by \cite{O'Neil:2011:FDC:1964179.1964189}. The algorithm is almost \textit{symmetrical} in its compression and 
+decompression stages. By symmetrical we infer that  the algorithm is executed in the opposite direction when performing decompression. The primary difference is that we do not have to compute
 the leading zero count of each element being decompressed. Refer to fig.~\ref{PACKING_ALGORITHM} for more details.
 
 We use the construction specified in fig.~\ref{PACKING_ALGORITHM} because we can easily swap out one predictor for another. The predictor in this case can be any n-element predictor. As we mentioned
 earlier the predicted value is XORed with the actual value to get a residual which can be compacted at either bit or byte level. This compaction simply removes the leading zeros from each residual and
-store each as a fixed-length prefix count. We note that the number of bits needed to store $n$ leading zeros can be calculated as $\lfloor\log_2n\rfloor+1$ bits where $n\in\mathbb{N}_{>0}$. One aspact 
+store each residual as a fixed-length prefix count. We note that the number of bits needed to store $n$ leading zeros can be calculated as $\lfloor\log_2n\rfloor+1$ bits where $n\in\mathbb{N}_{>0}$. One aspact 
 of this compression scheme that must be investigated is to determine which residual compaction scheme gives better results: packing at bit or byte level. Although a bit-packing scheme can pack
 an arbitrary number of zeros it requires longer prefixes to store these counts. The opposite is true for byte-packing schemes. Since the prefixes are always short we use a bit-packing scheme to store
 these fixed-length codes.
@@ -217,30 +234,30 @@ these fixed-length codes.
 \subsection{Parallelizing compression and decompression steps}
 We note that there are three ways this can be achieved: 
 \begin{enumerate}
- \item Even though the residuals are of variable length it is possible to pack the them in parallel. However, it is duly noted that this adds an additional overhead to \textit{both} the packing and 
+ \item Even though the residuals are of variable length it is possible to pack them in parallel. However, it is duly noted that this adds an additional overhead to \textit{both} the packing and 
  unpacking process. The process requires a prefix sum to be computed for the array of element-wise leading zero counts. As we pointed out in the background chapter this prefix sum can be computed
- in parallel. After this the indexes have been accumulated using the prefix sum algorithm it is easy to see how different threads can pack residuals at the correct positions. We do, however, note that
- both a parallel bit and byte packing scheme will require atomic operations to ensure against the \textit{race condition} that arises when multiple threads writes to the same memory location 
+ in parallel. After the indexes have been accumulated using the prefix sum algorithm it is easy to see how different threads can pack residuals at the correct positions. We do, however, note that
+ both a parallel bit and byte packing scheme will require \textit{atomic} operations to ensure against the \textit{race condition} that arises when multiple threads writes to the same memory location 
  simultaneously. This memory-level-synchronization mechanism adds additional overhead in terms of wasted machine clock cycles.
  \item We can separate incoming data into blocks and do multiple of these blocks in parallel (where each block is compressed/decompressed in serial). This overcomes the issue of additional overheads arising
  from computing prefix sums and using atomics, but it should be noted that this approach may have a detrimental effect on the compression ratio since we have to store the length of the residual array of each block.
  We will have to investigate which of 1 or 2 yields better results for CPU implementations.
  \item A more fine-grained parallelization is possible using vectorized instructions. The various Intel SSE, Steaming SIMD (Single Instruction Multiple Data) instruction set extensions (up to version 4.2) provide
- us the opportunity to perform 4 instructions (adds, multiplies, logarithms, rounding, etc.) simultaneously per core. However, the SSE instruction sets do not have any element-wise bit-shift operations. We propose 
- using a combination of the Intel SSE and AMD XOP instruction sets to achieve our goal. The XOP instruction set extends the SSE instruction set by adding these operations as one of its primary features. It should
- be duly noted that adding these instructions make the implementation dependent on the architecture of the machine it is executed on (and therefore less portable). If this approach is successful we recommend 
+ us with the opportunity to perform 4 instructions (adds, multiplies, logarithms, rounding, etc.) simultaneously per core. However, the SSE instruction sets do not have any element-wise bit-shift operations. We propose 
+ using a combination of the Intel SSE and AMD XOP instruction sets to achieve our goal. The XOP instruction set extends the SSE instruction set by adding these operations as one of its primary features. It is
+ duly noted that adding these instructions make the implementation dependent on the architecture of the machine it is executed on (and therefore less portable). If this approach is successful we recommend 
  that the vectorized code be extended to use the latest Intel AVX 2 instruction set in which Intel introduces element-wise shift operations and offset-loading operations. The AVX family of instructions
  can compute up to 8 SIMD operations in parallel per core. It is duly noted that these instruction sets make use of a very limited number of 128- and 256-bit registers respectively. We will need to investigate
- whether it is worthwhile to implement the proposed packing algorithm using these instructions.
+ whether it is worthwhile to implement the proposed packing algorithm using SSE and XOP instructions.
 \end{enumerate}
 \subsection{Porting the implementation to CUDA}
-General Purpose programming using Graphics Processing Units (GPGPU) brings a host of associated challenges. These challenges arise primarily due to the widely differing architecture of GPUs compared (if compared
-with the classical architectures of Central Processing Units, CPUs). Refer to fig.~\ref{FERMI_ARCH} for a detailed overview of the microchip die structure of a Nvidia Fermi generation GPU. It is also worthwhile to note 
-that each generation of GPUs have varying architectures, making many optimizations architecture specific. Each generation, for instance, will have a different ratio and configuration of arithmetic cores to floating point
-and special operations cores per group of processing \textit{CUDA cores} also known as \textit{SMs} or \textit{SMXs} on the latest \textit{Kepler} generation. Each generation also have widely differing memory 
+General Purpose programming using Graphics Processing Units (GPGPU) brings a host of associated challenges. These challenges arise primarily due to the widely differing architecture of GPUs if compared
+with the classical architectures of Central Processing Units, CPUs. Refer to fig.~\ref{FERMI_ARCH} for a detailed overview of the microchip die structure of a Nvidia Fermi generation GPU. It is also worthwhile to note 
+that each generation of GPUs have widely differing architectures, making many optimizations architecture specific. Each generation, for instance, will have a different ratio and configuration of arithmetic cores to floating point
+and special operations cores per group of processing \textit{CUDA cores} also known as \textit{SMs} (or \textit{SMXs} on the latest \textit{Kepler} generation). Each generation also has widely differing memory 
 controller properties. These may determine how many warps of cores can be executed, when the warps are swapped in/out, along with many others. 
 
-We will provide a basic CUDA implementation to see if doing compression as a post-processing step on signal data already loaded to GPU as part of the current pipeline is a feasible alternative to a regular 
+We will provide a basic CUDA implementation to see if doing compression as a post-processing step on signal data already loaded to GPU (as part of the current pipeline) is a feasible alternative to a regular 
 multi-threaded CPU implementation. We will make use of shared memory (as fig.~\ref{FERMI_ARCH} shows GPUs have very large L2 caches available per SM) and our implementation will take adequate precaution to 
 coalesce memory accesses and to avoid bank conflicts when possible. More details will be provided in the implementation section, but it is clear that a combination of the approaches (1 \& 2) taken with the CPU version 
 will be required to make adequate use of the GPU architecture. Our implementation will consider assigning a block of data to each SM, which will in turn process that block in parallel without regard to operations 
@@ -254,13 +271,13 @@ and synchronization steps will be performed on a per-SM basis only.
 \end{figure}
 \subsection{Test data}
 The post-correlated data is provided to us in the form of HDF5 files. Each of these files store a 3 dimensional array of complex pairs. The first dimension is time. The second dimension is signal frequency (as we mentioned
-in the background section the telescope array will monitor a wide range of frequencies. The third dimension is a combination of two properties. Each number represents a correlation between two antennae. The antennae additionally
+in the background section the telescope array will monitor a wide range of frequencies). The third dimension is a combination of two properties. Each number represents a correlation between two antennae. The antennae additionally
 have two modes of polarization (a horizontal and vertical polarization). We can specify the size of the last dimension as $2\times((n+1)\mathbf{P}2)$ elements where $n$ is the number of
 antennae in the array. The headers of the HDF5 files contain meta information on the state of the telescope and what it is currently observing (this will determine the characteristics of the data itself as well as 
-the number range of frequencies being monitored). We state for the record that the headers cannot be compressed with the algorithm we propose. An LZ variant / entropy encoder may be better tailored for this task.
+the range of frequencies being monitored). We state for the record that the headers cannot be compressed with the algorithm we propose. An LZ variant / entropy encoder may be better tailored for this task.
 \subsection{Structure and scope of the benchmarks}
-Some of these HDF5 files measure more than 30GB in size and contains many timestamps over 4000 frequencies. We assume that once the number of correlations grow emphasis will be placed on processing each 
-time step (or portion thereof) as soon as it is received over the network. In future research the compressor may be integrated into the 7-layer OSI networking stack currently employed by the KAT-7 prototype. Due to the limited
+Some of these HDF5 files measure more than 30GB in size and contains many timestamps, some over 4000 frequencies. We assume that once the number of correlations grow, emphasis will be placed on processing each 
+time step (or portion thereof), as soon as it is received over the network. In future research the compressor may be integrated into the 7-layer OSI networking stack currently employed by the KAT-7 prototype. Due to the limited
 scope of this project we will only analyze the performance of the algorithms themselves and will not measure any disk I/O (except when comparing to other compression utilities for the sake of fairness).
 
 We propose that the following results should be collected:
@@ -270,7 +287,7 @@ We propose that the following results should be collected:
  \item We will investigate the feasibility of an implementation using the Intel SSE and AMD XOP instruction sets.
  \item We will benchmark the algorithm against the standard programs used for comparison: gzip, bzip2, zip and rar. In this case the disk I/O will be included for the sake of fairness.
  \item We will investigate the feasibility of a CUDA implementation as we outlined earlier.
- \item Finally we will compare results from concurrent research being done into entropy encoding and run-length encoding. This will include a break down of performance in terms of both throughput and compression ratios.
+ \item Finally we will compare results from concurrent research being conducted into entropy encoding and run-length encoding. This will include a break down of performance in terms of both throughput and compression ratios.
 \end{enumerate}
 
 In order to eliminate the influence of the external testing environment we specify the following special conditions:
