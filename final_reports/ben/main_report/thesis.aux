@@ -17,12 +17,6 @@
 \citation{Tao:1994:PTS:951087.951108}
 \citation{4610935}
 \citation{4610935}
-\citation{1607248}
-\citation{4589203}
-\citation{engelson2000lossless}
-\citation{lindstrom2006fast}
-\citation{O'Neil:2011:FDC:1964179.1964189}
-\citation{4976448}
 \@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces High-level overview of the MeerKAT pipeline\relax }}{\thepage }}
 \providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
 \newlabel{MeerKAT_PIPELINE}{{1}{\thepage }}
@@ -32,7 +26,12 @@
 \@writefile{toc}{\contentsline {subsubsection}{\numberline {2.2.3}Statistical methods}{\thepage }}
 \@writefile{toc}{\contentsline {subsubsection}{\numberline {2.2.4}Transforms}{\thepage }}
 \@writefile{toc}{\contentsline {subsection}{\numberline {2.3}IEEE 754}{\thepage }}
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.4}Overview of predictive compression}{\thepage }}
+\citation{1607248}
+\citation{4589203}
+\citation{engelson2000lossless}
+\citation{lindstrom2006fast}
+\citation{O'Neil:2011:FDC:1964179.1964189}
+\citation{4976448}
 \citation{lindstrom2006fast}
 \citation{engelson2000lossless}
 \citation{1607248}
@@ -57,28 +56,40 @@
 \citation{O'Neil:2011:FDC:1964179.1964189}
 \citation{blelloch1990prefix}
 \citation{harris2007parallel}
-\citation{O'Neil:2011:FDC:1964179.1964189}
 \@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces IEEE Interchange floating-point format \cite  {4610935}\relax }}{\thepage }}
 \newlabel{IEEE_FLOAT}{{2}{\thepage }}
 \@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Specifications for the 32-bit and 64-bit interchange formats\relax }}{\thepage }}
 \newlabel{IEEE_FLOAT_TAB}{{3}{\thepage }}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.4}Overview of predictive compression}{\thepage }}
 \@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Treating 64-bit IEEE 754 double precision floating-points as integer memory \cite  {engelson2000lossless}\relax }}{\thepage }}
 \newlabel{INT_REP}{{4}{\thepage }}
 \@writefile{toc}{\contentsline {subsection}{\numberline {2.5}Parallel prefix sums}{\thepage }}
 \@writefile{toc}{\contentsline {section}{\numberline {3}Research questions}{\thepage }}
+\citation{O'Neil:2011:FDC:1964179.1964189}
 \@writefile{toc}{\contentsline {section}{\numberline {4}Design and Methodology}{\thepage }}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Packing algorithm}{\thepage }}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Overview}{\thepage }}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Packing algorithm}{\thepage }}
 \@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Prediction and compaction process\relax }}{\thepage }}
 \newlabel{PACKING_ALGORITHM}{{5}{\thepage }}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Parallelizing compression and decompression steps}{\thepage }}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Porting the implementation to CUDA}{\thepage }}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Parallelizing compression and decompression steps}{\thepage }}
 \citation{wittenbrink2011fermi}
 \citation{wittenbrink2011fermi}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.4}Porting the implementation to CUDA}{\thepage }}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.5}Test data}{\thepage }}
 \@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces Architecture of the Fermi family of Nvidia GPUs \cite  {wittenbrink2011fermi}\relax }}{\thepage }}
 \newlabel{FERMI_ARCH}{{6}{\thepage }}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.4}Test data}{\thepage }}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.5}Structure and scope of the benchmarks}{\thepage }}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.6}Benchmarking platform}{\thepage }}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.6}Structure and scope of the benchmarks}{\thepage }}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.7}Benchmarking platform}{\thepage }}
+\@writefile{toc}{\contentsline {section}{\numberline {5}Implementation}{\thepage }}
+\@writefile{toc}{\contentsline {section}{\numberline {6}Findings}{\thepage }}
+\@writefile{toc}{\contentsline {section}{\numberline {7}Discussion}{\thepage }}
+\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces Architecture of the benchmarking platform\relax }}{\thepage }}
+\newlabel{TOOL_ARCH}{{7}{\thepage }}
+\@writefile{lof}{\contentsline {figure}{\numberline {8}{\ignorespaces Behavioral model of the benchmarking platform\relax }}{\thepage }}
+\newlabel{TOOL_FLOW}{{8}{\thepage }}
+\@writefile{toc}{\contentsline {section}{\numberline {8}Conclusion}{\thepage }}
+\@writefile{toc}{\contentsline {section}{\numberline {9}Future avenues of research}{\thepage }}
+\@writefile{toc}{\contentsline {section}{\numberline {10}Acknowledgements}{\thepage }}
 \bibstyle{plain}
 \bibdata{litRefs}
 \bibcite{4610935}{1}
@@ -87,18 +98,6 @@
 \bibcite{4976448}{4}
 \bibcite{engelson2000lossless}{5}
 \bibcite{harris2007parallel}{6}
-\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces Architecture of the benchmarking platform\relax }}{\thepage }}
-\newlabel{TOOL_ARCH}{{7}{\thepage }}
-\@writefile{lof}{\contentsline {figure}{\numberline {8}{\ignorespaces Behavioral model of the benchmarking platform\relax }}{\thepage }}
-\newlabel{TOOL_FLOW}{{8}{\thepage }}
-\@writefile{toc}{\contentsline {section}{\numberline {5}Implementation}{\thepage }}
-\@writefile{toc}{\contentsline {section}{\numberline {6}Findings}{\thepage }}
-\@writefile{toc}{\contentsline {section}{\numberline {7}Discussion}{\thepage }}
-\@writefile{toc}{\contentsline {section}{\numberline {8}Conclusion}{\thepage }}
-\@writefile{toc}{\contentsline {section}{\numberline {9}Future avenues of research}{\thepage }}
-\@writefile{toc}{\contentsline {section}{\numberline {10}Acknowledgements}{\thepage }}
-\@writefile{toc}{\contentsline {section}{\numberline {11}Glossary}{\thepage }}
-\@writefile{toc}{\contentsline {section}{\numberline {12}References}{\thepage }}
 \bibcite{lindstrom2006fast}{7}
 \bibcite{O'Neil:2011:FDC:1964179.1964189}{8}
 \bibcite{1607248}{9}
@@ -109,3 +108,5 @@
 \bibcite{williams1999compressing}{14}
 \bibcite{Witten:1987:ACD:214762.214771}{15}
 \bibcite{wittenbrink2011fermi}{16}
+\@writefile{toc}{\contentsline {section}{\numberline {11}Glossary}{\thepage }}
+\@writefile{toc}{\contentsline {section}{\numberline {12}References}{\thepage }}
