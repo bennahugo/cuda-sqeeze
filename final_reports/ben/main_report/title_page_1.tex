@@ -180,10 +180,10 @@ All compression techniques build on the central concept of reducing redundant da
 dependent. In the case of the KAT-7 / MeerKAT array this redundancy may be defined in terms of the coherency of consecutive observations from each pair of dishes 
 (or \textit{correlated} pairs). If the observations made are not particularly noisy it is reasonable to assume that the differences between consecutive values will be small.
 Rather than storing each value it is possible to store the differences between observations (over a fixed time interval) instead. See figure~\ref{MeerKAT_PIPELINE}. 
-The array observes a large spectrum of frequencies over a large number of correlated pairs, as indicated in the illustration. We consider each of these correlated frequency 
-observations as steps of a time series. This report investigates how linear prediction can be employed to predict consecutive values for each of these time series. The goal is
-to minimise the difference between consecutive values, which can then be encoded using fewer bits than the original 32-bit sample size that is received by the processing and 
-storage cluster. Such a scheme has the additional requirements of being \textit{lossless}, \textit{online} and fast.
+The array observes a large spectrum of frequencies over a large number of correlated pairs, as indicated in the illustration. Each of these correlated frequency 
+observations can be considered as steps of a time series. This report investigates how linear prediction can be employed to predict consecutive values for each of these time 
+series. The goal is to minimise the difference between consecutive values, which can then be encoded using fewer bits than the original 32-bit sample size that is received 
+by the processing and storage cluster. Such a scheme has the additional requirements of being \textit{lossless}, \textit{online} and fast.
 
 \begin{figure}[h!]
  \centering
@@ -203,7 +203,7 @@ processes such transmission over a network or storage to disk. This is in contra
 form part of the primary work-flow of a system. An online process is normally required to be fast enough, as not to slow the overall data processing capabilities of 
 a system.
 
-We will measure compression performance both in terms of effectiveness through a compression ratio described below \cite[p. 10]{salomon2004data} and throughput. A 
+Compression performance will be measured both in terms of effectiveness through a compression ratio described below \cite[p. 10]{salomon2004data} and throughput. A 
 compression ratio closer to 0 indicates a smaller output file and values greater than 1 indicates that the algorithm inflated the data instead of shrinking it.
 \begin{equation}
  \text{Compression ratio} := \frac{\text{size of the output stream}}{\text{size of the input stream}}
@@ -213,8 +213,8 @@ compression ratio closer to 0 indicates a smaller output file and values greater
 \end{equation}
 \subsection{Research questions}
 Due to the limited scope of the project this report will only focus on evaluating algorithm performance and not algorithm integration into the KAT-7 / MeerKAT processing
-pipeline. We will consider fully exploiting parallelizm in such a cluster and investigate the feasibility of porting this algorithm to the General Purpose Graphics Processing 
-Unit (GPGPU)-accelerated nodes currently employed by the KAT-7 signal processing nodes as illustrated in figure~\ref{MeerKAT_PIPELINE}.
+pipeline. This research will include the construction of a parallel algorithm, as well as the investigation of the feasibility of porting this algorithm to the General 
+Purpose Graphics Processing Unit (GPGPU)-accelerated nodes currently employed by the KAT-7 signal processing nodes as illustrated in figure~\ref{MeerKAT_PIPELINE}.
 
 The algorithm will have to meet two primary criteria: high throughput and effective compression ratios. These are outlined below:
 \begin{enumerate}
@@ -222,19 +222,19 @@ The algorithm will have to meet two primary criteria: high throughput and effect
  and represents a reasonable first milestone towards achieving compression at line rates.
  \item Are predictive techniques effective? The algorithm should reduce the size of transmissions by several percent and hopefully this reduction can take the form of 
        double digit figures. It has, however, been pointed out by the SKA office that the data may be too noisy to expect great reductions, while maintaining the throughput 
-       rate we mentioned above.
+       rate mentioned above.
  \item Can throughput be traded for compression ratio using different predictors?
 \end{enumerate}
 
-Next a detailed breakdown of the most commonly used compression techniques is given. Thereafter we will then discuss a detailed design of a predictive compression scheme, 
-different implementation strategies along with technical details and a section with results and discussion.
+Next a detailed breakdown of the most commonly used compression techniques is given. Thereafter a discussion will be given on a design of a predictive compression scheme, 
+different implementation strategies, along with technical details, and a section with results and discussion.
 \section{Background}
 \subsection{Overview of data compression techniques}
 There are considered to be 4 broad categories of compression techniques \cite{salomon2004data}. These are the basic methods, Lempel-Ziv methods, statistical methods 
 and transforms.
 \subsubsection{Basic methods}
 The more intuitive methods include commonly employed methods such as Run-Length Encoding, which, simply put, encodes runs of characters using some reserved 
-character and a number indicating the length of the run. In the context of compressing floating point data such a scheme will focus on encoding runs of zeros and ones
+character and a number indicating the length of the run. In the context of compressing floating-point data such a scheme will focus on encoding runs of zeros and ones
 at a bit level.
 
 Another basic technique which is particularly relevant for application on numerical data is a predictive compression scheme. Such a compression scheme encodes the 
@@ -289,9 +289,9 @@ required \cite{ray1995database,williams1999compressing}\cite[ch. 2]{salomon2004d
 
 \subsubsection{Transforms}
 As the name suggest it can be useful to transform a dataset from one form to another in order to exploit its features for the purposes of compression. Such transformations 
-includes, for example, wavelet transforms. As the name suggests a wavelet is a small wave-like function that is only non-zero over a very small domain and can be used 
-to represent, for example, it can be used to separate the low frequency components from the high frequency components of an image. JPEG2000 and DjVu are popular formats that use 
-wavelet transforms. The dataset is generally sampled at increasing frequencies to produce a series of representation that gradually increases in resolution. When added together 
+includes, for example, wavelet transforms. As the name suggests a wavelet is a small wave-like function that is only non-zero over a very small domain and is useful
+to separate the low frequency components from the high frequency components of, for example, an image. JPEG2000 and DjVu are popular formats that use 
+wavelet transforms. The dataset is generally sampled at increasing frequencies to produce a series of representations that gradually increases in resolution. When added together 
 these representations will reconstruct the original dataset. A sample of the discrete cosine transform of an image (as employed by JPEG2000) is shown in figure~\ref{TRANSFORM_SAMPLE}. 
 Only the transformation coefficients have to be stored in order to reconstruct each value in this series. The coefficients within this transformation can then be further compressed 
 using other techniques, for example, Huffman coding and Run-Length Encoding (as is done in JPEG2000). If lossy compression (loss of accuracy which cannot be recovered after 
@@ -307,7 +307,7 @@ Transforms are furthermore particularly useful where multiple levels of detail a
 for real-time analysis and observation. Low resolution samples can be consistently transferred, while higher resolution samples can be transferred upon request \cite{Tao:1994:PTS:951087.951108}.
 \subsection{Overview of predictive compression}
 Previous research \cite{1607248,4589203,engelson2000lossless,lindstrom2006fast,O'Neil:2011:FDC:1964179.1964189,4976448} in this area has yielded good results both in terms of compression ratio and speed. 
-The common line of thought is to predict successive values. Depending on the accuracy of the prediction, the difference between the predicted and actual value will be much smaller than the actual value itself. 
+The common line of thought is to predict successive values with reasonable precision. Depending on the accuracy of the prediction, the difference between the predicted and actual value will be much smaller than the actual value itself. 
 This difference can then be encoded using fewer bytes/bits of data (depending if compression occurs at a byte or bit level) by compressing the leading zeros after either an XOR or integer subtraction 
 operation. Machine instructions to count the leading zeros can be found on AMD and newer Intel Processors. The leading zero count is then encoded as a prefix stream while the remaining bits/bytes 
 are encoded as a residual stream.
@@ -354,9 +354,9 @@ IEEE 754 \textit{single} precision floating-point values, as pointed out in the 
 differently to the model used by O'Neil et al. \cite{O'Neil:2011:FDC:1964179.1964189}. Instead of compressing each consecutive value the proposed compressor will operate 
 over consecutive time slices (refer to figure~\ref{MeerKAT_PIPELINE}).
 
-As pointed out in previous research \cite{engelson2000lossless,lindstrom2006fast} using floating-point operations in the prediction step can cause an irreversible loss of information due to floating point
-rounding errors. A simple alternative approach is proposed by Engelson et al. \cite{engelson2000lossless}: floating point memory is simply treated as integer memory and all operations performed on that memory are integer operations. This
-approach ensures the predictive scheme achieves lossless compression. In light of this only schemes that conform to this approach will be considered. Engelson et al. \cite{engelson2000lossless} gives an example of how floating point numbers
+As pointed out in previous research \cite{engelson2000lossless,lindstrom2006fast} using floating-point operations in the prediction step can cause an irreversible loss of information due to floating-point
+rounding errors. A simple alternative approach is proposed by Engelson et al. \cite{engelson2000lossless}: floating-point memory is simply treated as integer memory and all operations performed on that memory are integer operations. This
+approach ensures the predictive scheme achieves lossless compression. In light of this only schemes that conform to this approach will be considered. Engelson et al. \cite{engelson2000lossless} gives an example of how floating-point numbers
 can be treated with integer operations. Figure~\ref{INT_REP} shows that if two floating-point numbers are relatively close to each other in terms of magnitude it is possible to discard some repeated bytes of information after performing 
 an XOR operation to extract the remaining, seemingly random, residual bits. Therefore if an accurate prediction can be made for consecutive numbers a reasonable
 saving in terms of compression ratio can be made.
@@ -395,9 +395,9 @@ The key success criteria for this investigation are the following:
  \item Effective compression ratios, comparable to those achieved by GZIP and BZIP2 are achieved.
 \end{enumerate}
 \subsection{Packing algorithm}
-The compacting algorithm being proposed is based on the approach taken by \cite{O'Neil:2011:FDC:1964179.1964189}. The algorithm is almost \textit{symmetrical} in its compression and 
+The compacting algorithm being proposed is based on the approach taken by O'Neil et al. \cite{O'Neil:2011:FDC:1964179.1964189}. The algorithm is almost \textit{symmetrical} in its compression and 
 decompression stages. In this context symmetry means the algorithm is executed in the opposite direction when performing decompression. The primary difference is that the leading 
-zero count does not have to be computed for each element being decompressed. Refer to fig.~\ref{PACKING_ALGORITHM} for more details.
+zero count does not have to be computed for each element being decompressed. Refer to figure~\ref{PACKING_ALGORITHM} for more details.
 
 \begin{figure}[h!]
  \centering
@@ -406,12 +406,12 @@ zero count does not have to be computed for each element being decompressed. Ref
  \label{PACKING_ALGORITHM}
 \end{figure}
 
-The construction of the algorithm being specified in fig.~\ref{PACKING_ALGORITHM} is used because it allows for easy swapping between different predictors. The predictor in this case 
+The construction of the algorithm being specified in figure~\ref{PACKING_ALGORITHM} is used because it allows for easy swapping between different predictors. The predictor in this case 
 can be any n-element predictor. As mentioned earlier the predicted value is XORed with the actual value to get a residual which can be compacted at either bit or byte level. This 
 compaction simply removes the leading zeros from each residual and stores each residual as a fixed-length prefix count. The number of bits needed to store $n$ leading 
 zeros can be calculated as $\lfloor\log_2n\rfloor+1$ bits where $n\in\mathbb{N}_{>0}$. It remains to find the residual compaction scheme that gives the best results: packing at 
 bit or byte level. Although a bit-packing scheme can pack an arbitrary number of zeros it requires longer prefixes to store the leading zero counts. The opposite is true 
-for byte-packing schemes. Since the prefixes are always short we use a bit-packing scheme to store these fixed-length codes. Basic pseudo code is given in the implementation section.
+for byte-packing schemes. Since the prefixes are always short a bit-packing scheme is used to store these fixed-length codes. Basic pseudo code is given in the implementation section.
 
 Suppose the following two converted float values have to be compacted (the left-most byte is the most significant byte):
 \begin{center}
@@ -440,7 +440,7 @@ There are three ways this can be achieved:
  A prefix sum (or \textit{scan}) can be defined on any binary associative operator, $\oplus$ over an ordered set with $I$ as its identity. If $A=[a_{0},a_{1},\dots,a_{n-1}]$ 
  is an ordered set then the prefix sum scan is defined as $scan(A):=[I,a_{0},(a_{0} \oplus a_{1}),\dots,(a_{0} \oplus a_{1} \oplus ... \oplus a_{n-2})]$. 
  
- In the context of the packing scheme proposed here we define the scan over the normal integer addition operator. An example of this will be $scan[2,1,3,4] = [0,2,3,6,10]$ 
+ In the context of the packing scheme proposed here, the prefix scan is defined over the normal integer addition operator. An example of this will be $scan[2,1,3,4] = [0,2,3,6]$ 
  under normal integer addition. The leading zero counts are saved to an array, \textit{A}, after which the scan operation is computed on the array. The accumulated values are 
  stored in place and hence the algorithm has a \textit{constant} memory overhead (uses no extra memory). Each index \textit{A}[\textit{i}] will therefore store the starting 
  position (in bits) of the residual of the $i^{th}$ element \cite{blelloch1990prefix}. 
@@ -468,7 +468,7 @@ There are three ways this can be achieved:
 General Purpose programming using Graphics Processing Units (GPGPU) brings a host of associated challenges. These challenges arise primarily due to the widely differing architecture of GPUs if compared
 with the classical architectures of Central Processing Units (CPUs). Refer to figure~\ref{FERMI_ARCH} for a detailed overview of the microchip die structure of a Nvidia Fermi generation GPU. 
 However, each generation of GPUs have widely differing architectures, each making many architecture specific optimizations. Each generation, for instance, will have both a 
-different ratio and configuration of arithmetic cores to floating point and special operations cores, per group of processing \textit{CUDA cores}. These cores are also known as 
+different ratio and configuration of arithmetic cores to floating-point and special operations cores, per group of processing \textit{CUDA cores}. These cores are also known as 
 \textit{SMs} (or \textit{SMXs} on the latest \textit{Kepler} generation). Additionally each generation has widely differing memory controller layouts. These may determine 
 how many \textit{warps} of threads can be executed, when the warps are swapped in/out, along with many others. Each SM is split into atomic groups of threads which are executed
 in parallel (normally this is specified as 32 threads per warp). Even if only a subset of these threads have work the entire warp will be executed on the same machine clock cycle.
@@ -496,7 +496,7 @@ operations and synchronization steps will be performed per-SM only.
 \end{figure}
 \subsection{Test data}
 The correlated data is provided in the form of HDF5 files. Each of these files stores a three dimensional array of complex pairs. The first dimension is time. The second 
-is signal frequency (as we mentioned in the background section the telescope array will monitor a wide range of frequencies). The third dimension is a combination of two 
+is signal frequency (as mentioned in the background section the telescope array will monitor a wide range of frequencies). The third dimension is a combination of two 
 properties. Each number represents a correlation between two antennae. The antennae additionally have two modes of polarization (a horizontal and vertical polarization). 
 The size of the last dimension is specified as two times the number of permutations of $n + 1$: $2\times((n+1)\mathbf{P}2)$ elements where $n$ is the number of
 antennae in the array. The headers of the HDF5 files contain meta-information on the state of the telescope and what it is currently observing (this will determine the 
@@ -507,26 +507,21 @@ The headers vary between 13-14\% of the total h5 file size. However, the data is
 figure~\ref{MeerKAT_PIPELINE}). Therefore if the algorithm being proposed is integrated into the front end of the pipeline as seen in figure~\ref{MeerKAT_PIPELINE} (as part of 
 future work) it may still provide a significant saving in network I/O. 
 \subsection{Structure and scope of the benchmarks}
-Some of these HDF5 files measure more than 30GB in size and contains many timestamps, some over 4000 frequencies. We assume that once the number of correlations grow, emphasis will be placed on processing each 
-time step (or portion thereof), as soon as it is received over the network. In future research the compressor may be integrated into the 7-layer OSI networking stack currently employed by the KAT-7 prototype. Due to the limited
-scope of this project we will only analyze the performance of the algorithms themselves and will not measure any disk I/O (except when comparing to other compression utilities for the sake of fairness).
+Some of these HDF5 files measure more than 30GB in size, each containing many timestamps, some spread over 4000 frequencies. It is reasonable to assume that once the number of correlations grow, emphasis will be placed on processing each 
+time step (or portion thereof) as soon as it is received over the network. In future research the compressor may be integrated into the 7-layer OSI networking stack currently employed by the KAT-7 prototype. Due to the limited
+scope of this project focus will be on analyzing the performance of the algorithms themselves and not to measure any disk I/O (except when comparing to other compression utilities for the sake of fairness).
 
-We propose that the following results should be collected:
+This report will focus on the following analysis:
 \begin{enumerate}
- \item We will draw a comparison between the a CPU implementation of the parallel (prefix sum-based algorithm) and the blocked approach.
- \item We will provide a detailed breakdown of how the algorithm perform on different numbers of cores of whichever method is determined most fit in step 1.
- \item We will test the effectiveness of a parallelogram predictor, a Lagrange extrapolation predictor \cite{engelson2000lossless} and a moving mean and median scheme. We will 
-       describe each implementation in greater detail in the implementation section.
- \item We will investigate the feasibility of an implementation using the Intel SSE and AMD XOP instruction sets.
- \item We will benchmark the algorithm against the standard programs used for comparison: gzip, bzip2, zip and rar. In this case the disk I/O will be included for the sake of fairness.
- \item We will investigate the feasibility of a CUDA implementation as we outlined earlier.
- \item Finally we will compare results from concurrent research being conducted into entropy encoding and run-length encoding. This will include a break down of performance in terms of both throughput and compression ratios.
-\end{enumerate}
-
-In order to eliminate the influence of the external testing environment we specify the following special conditions:
-\begin{enumerate}
- \item Files in excess of 500 MB will be used for benchmarking. This will greatly reduce variability in timings.
- \item No other processes should be making intensive use of primary memory once benchmarking has commenced. The sheer quantity of data being processed makes benchmarking a memory-bound operation.
+ \item A comparison between the a CPU implementation of the parallel (prefix sum-based algorithm) and the blocked approach (as specified previously) will be made.
+ \item A detailed breakdown of how the algorithm performs on different numbers of cores (of whichever method is determined most fit in step 1) will be provided.
+ \item The effectiveness of a parallelogram predictor, a Lagrange extrapolation predictor \cite{engelson2000lossless} and a moving mean and median scheme will be determined. 
+       Each of these methods will be described in greater detail in the implementation chapter.
+ \item The feasibility of implementation using the Intel SSE and AMD XOP vectorized instruction sets will be investigated.
+ \item Benchmarks of the algorithm against the standard programs used for comparison: GZIP, BZIP2, ZIP and RAR. In this case the disk I/O will be included for the sake of fairness.
+ \item The feasibility of a CUDA implementation, as outlined earlier will be determined.
+ \item Finally results from concurrent research being conducted into entropy encoding and run-length encoding will be compared to those achieved in this investigation. This comparison will include a 
+       breakdown of performance in terms of both throughput and compression ratios.
 \end{enumerate}
 \subsection{Benchmarking platform}
 The benchmarking platform is designed with two primary software engineering goals in mind:
@@ -535,12 +530,13 @@ The benchmarking platform is designed with two primary software engineering goal
  approaches) and simply swapping one implementation for another. Interactions between components must be kept to a minimum.
  \item The components must be \textit{cohesive}. They should contain only relevant operations and should be considered as atomic units.
 \end{itemize}
-We propose that the architecture described in fig.~\ref{TOOL_ARCH} be used for the benchmarking platform. We will give more detailed implementation details in the next section. The benchmark process is relatively simple
-and its flow is depicted in fig.~\ref{TOOL_FLOW}.
+The architecture described in figure~\ref{TOOL_ARCH} is used for the benchmarking platform. All the external dependencies depicted in the component model is freely available
+and are actively maintained. There is no considerable technical risk in using these libraries. More detailed implementation details will be provided in the next section. The 
+benchmark process is relatively simple and its flow is depicted in figure~\ref{TOOL_FLOW}.
 \begin{figure}[h!]
  \centering
  \includegraphics[width=0.6\textwidth]{Thesis_Arc.png}
- \caption{Architecture of the benchmarking platform}
+ \caption{Architecture of the loosely coupled benchmarking platform, including external library dependencies}
  \label{TOOL_ARCH}
 \end{figure}
 \begin{figure}[h!]
@@ -589,14 +585,33 @@ BEGIN
 	 END FOR
 END SUBROUTINE
 \end{verbatim}
+ \subsection{Alternative linear prediction schemes}
+  {\color{red}TODO}
+ \subsubsection{Parallelogram predictor}
+  {\color{red}TODO}
+ \subsubsection{Moving average and moving mean}
+  {\color{red}TODO}
+ \subsubsection{Lagrange prediction}
+  {\color{red}TODO: Self.note.add also  include notes about the smoothness of data}
  \subsection{Algorithm parallelization}
   {\color{red}TODO}
- \subsection{Implementation using SSE and XOP} 
-  {\color{red}TODO}
+ \subsection{SSE and XOP intrinsics} 
+  {\color{red}TODO} 
  \subsection{GPGPU implementation in CUDA}
   {\color{red}TODO}
-\section{Findings}
-{\color{red}TODO}
+\section{Results}
+\subsection{Constraints on benchmarking environment}
+In order to eliminate the influence of the external testing environment the following special conditions are specified:
+\begin{enumerate}
+ \item Files in excess of 500 MB will be used for benchmarking. This will greatly reduce variability in timings.
+ \item No other processes should be making intensive use of primary memory once benchmarking has commenced. The sheer quantity of data being processed makes benchmarking a memory-bound operation.
+\end{enumerate}
+\subsection{Parallelization approach}
+\subsection{Performance of the block-based parallel scheme}
+\subsection{Feasibility of including vector intrinsics}
+\subsection{Benchmark against standard compression utilities}
+\subsection{Feasibility of a CUDA implementation}
+\subsection{Comparison to what was achieved in concurrent research}
 \section{Discussion}
 {\color{red}TODO}
 \section{Conclusion}
