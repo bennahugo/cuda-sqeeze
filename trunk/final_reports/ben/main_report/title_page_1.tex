@@ -43,7 +43,7 @@
 \usepackage{fullpage}
 \usepackage{parskip}
 \usepackage{tikz}
-
+\usepackage{hyperref}
 \begin{document}
 
 \begin{titlepage}
@@ -306,14 +306,14 @@ decompression) is tolerable, quantization can be used to discard unimportant val
 Transforms are furthermore particularly useful where multiple levels of detail are desired. An example of this may include the transfer of scientific data over a network 
 for real-time analysis and observation. Low resolution samples can be consistently transferred, while higher resolution samples can be transferred upon request \cite{Tao:1994:PTS:951087.951108}.
 \subsection{Overview of predictive compression}
-Previous research \cite{1607248,4589203,engelson2000lossless,lindstrom2006fast,O'Neil:2011:FDC:1964179.1964189,4976448} in this area has yielded good results both in terms of compression ratio and speed. 
+Previous research \cite{1607248,4589203,engelson2000lossless,lindstrom2006fast,O'Neil:2011:FDC:1964179.1964189,4976448,CGF:CGF681} in this area has yielded good results both in terms of compression ratio and speed. 
 The common line of thought is to predict successive values with reasonable precision. Depending on the accuracy of the prediction, the difference between the predicted and actual value will be much smaller than the actual value itself. 
 This difference can then be encoded using fewer bytes/bits of data (depending if compression occurs at a byte or bit level) by compressing the leading zeros after either an XOR or integer subtraction 
 operation. Machine instructions to count the leading zeros can be found on AMD and newer Intel Processors. The leading zero count is then encoded as a prefix stream while the remaining bits/bytes 
 are encoded as a residual stream.
 
-Previous research suggests several different constructions of predictors. The use of a \textit{Lorenzo} predictor \cite{lindstrom2006fast} generalizes the well known parallelogram predictor used by 
-Engelson et al. \cite{engelson2000lossless}. The Lorenzo predictor extends the parallelogram to arbitrary dimensions. More detail on the parallelogram predictor will be given
+Previous research suggests several different constructions of predictors. The use of a \textit{Lorenzo} predictor \cite{lindstrom2006fast,CGF:CGF681} generalizes the well known parallelogram predictor. 
+The Lorenzo predictor extends the parallelogram to arbitrary dimensions. More detail on the parallelogram predictor will be given
 in the implementation section, but it is useful to note that this approach is particularly useful for compressing large meshes. Other approaches include the use of prediction history 
 (via a simple lookup table construction) as suggested by Burtscher et al. \cite{1607248,4589203,4976448}. Burtscher et al. reports a throughput of up to 670 MB/s on a CPU implementation of their FPC 
 compressor. An even simpler scheme by O'Neil et al. \cite{O'Neil:2011:FDC:1964179.1964189} reportedly achieved throughputs of up to 75GB/s for compression and up to 90GB/s 
@@ -398,14 +398,12 @@ The key success criteria for this investigation are the following:
 The compacting algorithm being proposed is based on the approach taken by O'Neil et al. \cite{O'Neil:2011:FDC:1964179.1964189}. The algorithm is almost \textit{symmetrical} in its compression and 
 decompression stages. In this context symmetry means the algorithm is executed in the opposite direction when performing decompression. The primary difference is that the leading 
 zero count does not have to be computed for each element being decompressed. Refer to figure~\ref{PACKING_ALGORITHM} for more details.
-
 \begin{figure}[h!]
  \centering
  \includegraphics[width=0.7\textwidth]{Thesis_Alg.png}
  \caption{Prediction and compaction process}
  \label{PACKING_ALGORITHM}
 \end{figure}
-
 The construction of the algorithm being specified in figure~\ref{PACKING_ALGORITHM} is used because it allows for easy swapping between different predictors. The predictor in this case 
 can be any n-element predictor. As mentioned earlier the predicted value is XORed with the actual value to get a residual which can be compacted at either bit or byte level. This 
 compaction simply removes the leading zeros from each residual and stores each residual as a fixed-length prefix count. The number of bits needed to store $n$ leading 
@@ -586,11 +584,65 @@ BEGIN
 END SUBROUTINE
 \end{verbatim}
  \subsection{Alternative linear prediction schemes}
-  {\color{red}TODO}
- \subsubsection{Parallelogram predictor}
-  {\color{red}TODO}
+  The most basic prediction scheme simply encodes the difference between observations at time \textit{t} and $t+1$. This difference is given as $O[t]$ xor $O[t-1]$. This 
+  scheme is sensitive to the structure of the underlying data. Such a scheme will only work if most consecutive values varies slowly over time. Using an n-element 
+  predictor may help mitigate the effects of noise. However, as pointed out earlier: any operations over these n-elements have to be integer operations and not 
+  floating point operations due to the rounding errors they may introduce (as pointed out in the background section). All floating-point memory are therefore cast to 
+  integer-typed memory before values are retrieved.
+  
+  These predictions, however, still have to be fast and preferably have an average linear computational complexity, $\theta(n)$. The predictor will only 
+  store the previous \textit{n} observations in a fixed-length queue. This implies that the memory overhead for the predictor is $nxm$ where m is the total 
+  number of elements being processed at time $t$.
+ \subsubsection{Lorenzo predictor}
+ The n-dimensional Lorenzo predictor is a generalization of the two dimensional parallelogram predictor (see figure~\ref{LORENZO}). It can be used to predict scalar 
+ functions that are polynomials of degree $n - 1$ and has been proven useful in scalar field compression \cite{CGF:CGF681}. In each of the 3 cases below only simple
+ integer additions and subtractions are needed: the sum of the values in red are subtracted from the sum of the values in green. In the two dimensional case this 
+ addition and subtraction is known as the \textit{parallelogram rule}. The predicted value is computed from previous observations as as $P = O[t-1] + O[t-2] - O[t-3]$.
+  \begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.3\textwidth]{lorenzo.png}
+    \caption{Lorenzo predictor for 2D (upper left), 3D (upper right) and 4D (lower left) data \cite{CGF:CGF681}}
+    \label{LORENZO}
+  \end{figure} 
  \subsubsection{Moving average and moving mean}
-  {\color{red}TODO}
+  An integer-based moving mean is simple to implement and involves only a sumation and an integer division and therefore clearly has a linear computational complexity.
+  However, the mean of a sample is sensitive to outliers, and therefore will not work well for noisy data. A simple solution will be to use a median based scheme
+  where the predicted value is the center value of a \textit{sorted} list of observations. However, a naive implementation of such a median-based scheme will
+  be slow due to the overheads of sorting. Wirth \cite{wirth76} suggests an algorithm to select the median using a basic \textit{pivoting} scheme in $\theta(n)$
+  time. A pivot divides a dataset into two groups. The elements in the group to the right of the pivot is larger than the pivot and the elements in the group to
+  the left of the pivot is smaller or equal to the pivot. The two groups do \emph{not} necessarily have to be ordered. The median is chosen through the following
+  method that selects the \textit{k-th largest value} \cite{wirth76}:
+  \begin{verbatim}
+FUNCTION INT32 pivotMedian(INT32[] data, int n) {
+    INT32 i, j, l, m, k = n/2-1 //k is the kth largest element in the array
+    INT32 x, s
+
+    l=0 //lower bound
+    m=n-1 //upper bound
+    WHILE l<m: //swap elements in group L and M until the two indexers cross
+        x=data[k]
+        i=l
+        j=m
+        REPEAT
+	    //find 1 element in each sub-array that has to be swapped
+	    //to the other sub-array:
+            WHILE data[i]<x: i++
+            WHILE x<data[j]: j--
+            IF i<=j THEN
+		    //swap:
+                s=data[i]
+                data[i]=data[j]
+                data[j]=s
+                i++
+                j--
+            END IF
+        WHILE i<=j
+        if(j<k) l=i
+        if(k<i) m=j
+    END WHILE
+    RETURN data[k] //mid-point in the array
+}
+  \end{verbatim}
  \subsubsection{Lagrange prediction}
   {\color{red}TODO: Self.note.add also  include notes about the smoothness of data}
  \subsection{Algorithm parallelization}
