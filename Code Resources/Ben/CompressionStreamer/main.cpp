@@ -35,6 +35,61 @@ double totalDecompressWriteTime = 0;
 double totalDiskReadTime = 0;
 int main(int argc, char **argv) {
     using namespace std;
+    /*gpuCode::initCUDA();
+    float* iv = new float[15];
+    float* n = new float[15];
+    
+    iv[0] = 0.4235811f;
+    iv[1] = 3.5687154f;
+    iv[2] =-1.2547897f;
+    iv[3] = 3.5687154f;
+    iv[4] =-1.2547897f;
+    iv[5] = 3.5687154f;
+    iv[6] =-1.2547897f;
+    iv[7] = 3.5687154f;
+    iv[8] =-1.2547897f;
+    iv[9] = 3.5687154f;
+    iv[10] =-1.2547897f;
+    iv[11] = 3.5687154f;
+    iv[12] =-1.2547897f;
+    iv[13] = 3.5687154f;
+    iv[14] =-1.2547897f;
+    
+    n[0] = 0.4335811f;
+    n[1] = 3.5587154f;
+    n[2] =-1.2447897f;
+    n[3] = 3.5587154f;
+    n[4] =-1.2447897f;
+    n[5] = 3.5587154f;
+    n[6] =-1.2447897f;
+    n[7] = 3.5587154f;
+    n[8] =-1.2447897f;
+    n[9] = 3.5587154f;
+    n[10] =-1.2447897f;
+    n[11] = 3.5587154f;
+    n[12] =-1.2447897f;
+    n[13] = 3.5587154f;
+    n[14] =-1.2447897f;
+    
+    for (int i = 0; i < 15; ++i){
+      uint32_t ivElm = *((uint32_t*)&iv[0] + i);
+      uint32_t nElm = *((uint32_t*)&n[0] + i);
+      uint32_t x = ivElm ^ nElm;
+      printf("%d:::",i);
+      printBinaryRepresentation((void*)&ivElm,sizeof(uint32_t));
+      printf("(%d)",ivElm);
+      cout << " ^ ";
+      printBinaryRepresentation((void*)&nElm,sizeof(uint32_t));
+      printf("(%d)",nElm);
+      cout << " = ";
+      printBinaryRepresentation((void*)&x,sizeof(uint32_t));
+      cout << '\n';
+    }
+    gpuCode::compressor::initCompressor(iv,15);
+    gpuCode::compressor::compressData(n,15,compressCallback);
+    gpuCode::releaseCard();
+    delete[] iv;
+    delete[] n;*/
     if (argc < 2){
       cout << "FATAL: PLEASE SPECIFY MEERKAT HDF5 FILE LOCATION" << endl;
       exit(1);
@@ -132,6 +187,8 @@ int main(int argc, char **argv) {
 	std::cout << "DECOMPRESSION DISK I/O WRITE TIME: " << totalDecompressTime << std::endl;
       fclose(fcomp);
     }
+    if (useCUDA)
+      gpuCode::releaseCard();
     return 0;
 }
 void decompressCallback(uint32_t elementCount, uint32_t * decompressedData){
@@ -158,9 +215,25 @@ void compressCallback(uint32_t elementCount, uint32_t * compressedResidualsIntCo
 			    uint32_t * compressedPrefixIntCounts, uint32_t ** compressedPrefixes, 
 			    uint32_t chunkCount, uint32_t * chunkSizes){
     if (!skipDecompression){ 
-      cpuCode::decompressor::decompressData(elementCount,chunkCount,chunkSizes,
+      gpuCode::decompressor::decompressData(elementCount,chunkCount,chunkSizes,
  					 compressedResiduals,compressedPrefixes,decompressCallback);
     }
+    /*std::cout << "PREFIX ARRAY:" << std::endl;
+    for (int i = 0; i < chunkCount; ++i){
+      std::cout << ">>" << i << std::endl;
+      for (int eI = 0; eI < compressedPrefixIntCounts[i]; ++eI){
+	printBinaryRepresentation((void*)&compressedPrefixes[i][eI],sizeof(uint32_t));
+	std::cout << std::endl;
+      }
+    }
+    std::cout << "RESIDUAL ARRAY:" << std::endl;
+    for (int i = 0; i < chunkCount; ++i){
+      std::cout << ">>" << i << std::endl;
+      for (int eI = 0; eI < compressedResidualsIntCounts[i]; ++eI){
+	printBinaryRepresentation((void*)&compressedResiduals[i][eI],sizeof(uint32_t));
+	std::cout << std::endl;
+      }
+    }*/
     timer::tic();
     if (writeStream){
       for (uint32_t i = 0; i < chunkCount; ++i){
@@ -178,8 +251,8 @@ void processStride(const astroReader::stride & data){
     currentUncompressedData = ts;
     data.getTimeStampData(0,ts);
     
-    cpuCode::compressor::initCompressor(ts,tsSize);
-    cpuCode::decompressor::initDecompressor(ts,tsSize);
+    gpuCode::compressor::initCompressor(ts,tsSize);
+    gpuCode::decompressor::initDecompressor(ts,tsSize);
     
     timer::tic();
     if (writeStream){
@@ -195,13 +268,13 @@ void processStride(const astroReader::stride & data){
     
     for (int t = 1; t <= data.getMaxTimestampIndex() - data.getMinTimestampIndex(); ++t) {
         data.getTimeStampData(t,ts);
-        cpuCode::compressor::compressData(ts,tsSize,compressCallback);
+        gpuCode::compressor::compressData(ts,tsSize,compressCallback);
     }
-    totalCompressTime += cpuCode::compressor::getAccumulatedRunTimeSinceInit();
-    totalDecompressTime += cpuCode::decompressor::getAccumulatedRunTimeSinceInit();
-    totalCompressSize += cpuCode::compressor::getAccumulatedCompressedDataSize();
-    cpuCode::compressor::releaseResources();
-    cpuCode::decompressor::releaseResources();
+    totalCompressTime += gpuCode::compressor::getAccumulatedRunTimeSinceInit();
+    totalDecompressTime += gpuCode::decompressor::getAccumulatedRunTimeSinceInit();
+    totalCompressSize += gpuCode::compressor::getAccumulatedCompressedDataSize();
+    gpuCode::compressor::releaseResources();
+    gpuCode::decompressor::releaseResources();
     _mm_free(ts);
 }
 
@@ -213,5 +286,5 @@ void printBinaryRepresentation(void * data, int sizeInBytes){
       cout << (0x1 << b & temp[i] ? '1' : '0');
     cout << ' ';
   }
-  cout << endl;
+  //cout << endl;
 }

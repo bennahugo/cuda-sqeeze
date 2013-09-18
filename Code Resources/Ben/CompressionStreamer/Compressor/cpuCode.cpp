@@ -82,7 +82,7 @@ void cpuCode::compressor::initCompressor(const float* iv, uint64_t ivLength){
   if (ivLength < 1)
     throw invalidInitializationException();
   if (_compressorIV != NULL)
-    _compressorIV = (uint32_t*)_mm_malloc(sizeof(uint32_t)*ivLength,16);
+    delete[] _compressorIV;
   _compressorIV = new uint32_t[ivLength];
   memcpy(_compressorIV,iv,ivLength*sizeof(float));
   _compressorIVLength = ivLength;
@@ -95,7 +95,7 @@ void cpuCode::compressor::initCompressor(const float* iv, uint64_t ivLength){
  */
 void cpuCode::compressor::releaseResources(){
   if (_compressorIV != NULL){
-    _mm_free(_compressorIV);
+    delete[] _compressorIV;
     _compressorIV = NULL;
     _compressorIVLength = -1;
   }
@@ -124,9 +124,9 @@ void compressionKernel(const float * data, uint32_t elementCount, uint32_t dataB
     //create storage for counts and prefixes:
     uint32_t sizeOfPrefixArray = (elementsInDataBlock * bitCountForRepresentation) / storageIndiceCapacity +
                                  ((elementsInDataBlock * bitCountForRepresentation) % storageIndiceCapacity != 0);
-    uint32_t * arrPrefix = (uint32_t*)_mm_malloc(sizeof(uint32_t)*sizeOfPrefixArray,16);
+    uint32_t * arrPrefix = new uint32_t[sizeOfPrefixArray];
     memset(arrPrefix,0,sizeof(uint32_t)*sizeOfPrefixArray);
-    uint32_t * arrResiduals = (uint32_t*)_mm_malloc(sizeof(uint32_t)*(elementsInDataBlock+1),16); //this padding actually waste less space than having a count array, +1 to avoid a branch later on when writing the remainder of the residuals
+    uint32_t * arrResiduals = new uint32_t[elementsInDataBlock+1]; //this padding actually waste less space than having a count array, +1 to avoid a branch later on when writing the remainder of the residuals
     memset(arrResiduals,0,sizeof(uint32_t)*elementsInDataBlock);
 
     //Create difference array, count used bits (up to 3 bytes of leading zeros) and save prefixes
@@ -136,7 +136,7 @@ void compressionKernel(const float * data, uint32_t elementCount, uint32_t dataB
 	uint32_t index = i+lowerBound;
         //save the prefixes:
         uint32_t element = (_compressorIV[index] ^= ((uint32_t*)&(data[0]))[index]);
-	uint32_t prefix0 = imin(3,fastLZC (element) >> 3);
+	uint32_t prefix0 = imin(3,lzc (element) >> 3);
         uint32_t iTimesBitCountForRepresentation = i*bitCountForRepresentation;
         uint32_t startingIndex = (iTimesBitCountForRepresentation) >> 5;
         uint32_t rshiftAmount = (iTimesBitCountForRepresentation) % storageIndiceCapacity;
@@ -238,8 +238,8 @@ void cpuCode::compressor::compressData(const float * data, uint32_t elementCount
     }
     callBack(elementCount,residualSizesStore,residlualStore,prefixSizesStore,prefixStore,numStores,chunkSizes);
     for (uint32_t i = 0; i < numStores; ++i){
-       _mm_free(residlualStore[i]);
-       _mm_free(prefixStore[i]);
+       delete[] residlualStore[i];
+       delete[] prefixStore[i];
     }
     delete[] residlualStore;
     delete[] prefixStore;
