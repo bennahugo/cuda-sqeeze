@@ -22,6 +22,8 @@
 
 #include <cstdlib>
 #include <cstring>
+#include <stdio.h>
+#include <stdlib.h>
 #include <stdint.h>
 #include <math.h>
 #include <omp.h>
@@ -35,6 +37,7 @@
 #include "../timer.h"
 namespace gpuCode{ 
   void initCUDA();
+  void releaseCard();
   namespace compressor{
     void initCompressor(const float * iv, uint64_t ivLength);
     void compressData(const float * data, uint32_t elementCount,
