@@ -564,7 +564,7 @@ BEGIN
 		  UNSIGNED INT8 leadingZeroCount = clz(data[index])
 		  UNSIGNED INT32 difference = predictedValue XOR data[index]
 		  //save the prefix:
-		  prefixes[index*3 INT_DIV 32] = SHIFT (leadingZeroCount INT_DIV 32) to \\
+		  prefixes[index*3 INT_DIV 32] = SHIFT (leadingZeroCount INT_DIV 8) to \\
 		    the index*3 MODULO 32 th bit
 		  IF there are remaining bits that couldn't be fitted THEN
 		    prefixes[index*3 INT_DIV 32 + 1] = SHIFT remaining bits that couldn't \\
@@ -581,8 +581,11 @@ BEGIN
 		  //increment position in the residual array
 		  bitPosInResidualArray += leadingZeroCount INT_DIV 8
 	 END FOR
-END SUBROUTINE
+END SUBROUTINE 
 \end{verbatim}
+The decompression algorithm is remarkably similar except that the leading zero count does is not computed, but instead retrieved from the prefix array. The shift
+operations are inverted to retrieve the bits that may be split over two consecutive elements in both the prefix and residual arrays. The prediction step is moved towards
+the end of the routine, where the predicted value is XORed with the residual to restore the original, uncompressed, value.
  \subsection{Alternative linear prediction schemes}
   The most basic prediction scheme simply encodes the difference between observations at time \textit{t} and $t+1$. This difference is given as $O[t]$ xor $O[t-1]$. This 
   scheme is sensitive to the structure of the underlying data. Such a scheme will only work if most consecutive values varies slowly over time. Using an n-element 
@@ -598,6 +601,10 @@ END SUBROUTINE
  functions that are polynomials of degree $n - 1$ and has been proven useful in scalar field compression \cite{CGF:CGF681}. In each of the 3 cases below only simple
  integer additions and subtractions are needed: the sum of the values in red are subtracted from the sum of the values in green. In the two dimensional case this 
  addition and subtraction is known as the \textit{parallelogram rule}. The predicted value is computed from previous observations as as $P = O[t-1] + O[t-2] - O[t-3]$.
+ Considerable savings in compression ratio will, however, only be achieved for extrapolation of \textit{smooth data}.
+ 
+ If a function $f:[1\dots n]\rightarrow\mathbb{R}$ is evaluated over a time interval $[1\dots n]$ and the results are stored in a sequence $a_1\dots a_n$, where 
+ $a_i = f(i)$
   \begin{figure}[h!]
     \centering
     \includegraphics[width=0.3\textwidth]{lorenzo.png}
@@ -619,15 +626,15 @@ FUNCTION INT32 pivotMedian(INT32[] data, int n) {
 
     l=0 //lower bound
     m=n-1 //upper bound
-    WHILE l<m: //swap elements in group L and M until the two indexers cross
+    WHILE l<m DO //swap elements in group L and M until the two indexers cross
         x=data[k]
         i=l
         j=m
         REPEAT
 	    //find 1 element in each sub-array that has to be swapped
 	    //to the other sub-array:
-            WHILE data[i]<x: i++
-            WHILE x<data[j]: j--
+            WHILE data[i]<x DO i++
+            WHILE x<data[j] DO j--
             IF i<=j THEN
 		    //swap:
                 s=data[i]
@@ -644,7 +651,25 @@ FUNCTION INT32 pivotMedian(INT32[] data, int n) {
 }
   \end{verbatim}
  \subsubsection{Lagrange prediction}
-  {\color{red}TODO: Self.note.add also  include notes about the smoothness of data}
+  Lagrange extrapolation prediction is a gradiant-based method that can be used to predict a value of a polynomial at $t+1$, given the values at $t\dots t-n$.
+  The method is commonly used for interpolation between known points on a curve defined by some polynomial. Good extrapolations is only possible for 
+  \textit{smooth} data.
+  
+  If a function $f:[1\dots n] \rightarrow \mathbb{R}$ is evaluated over a time interval $[1\dots n]$ and its results stored as a sequence of values 
+  $a_{1}\dots a_{n}$ where $a_{i} = f(i)$, then such a sequence is called \textit{smooth of order m} if for all $j>m$ $a_{j}$ can be approximated with reasonable
+  accuracy from extrapolating from the previous \textit{m} values. Such smooth sequences normally arrise as solutions of ordanary differential equations (ODEs) in
+  simulation models \cite{engelson2000lossless}.
+  
+  The model implemented in this report uses \textit{fixed-step extrapolation} (the time between consecutive observations is assumed to be of constant duration), but
+  the method works just as well if these differences vary in length, as long as such sequence can be approximated some polynomial \cite{engelson2000lossless}. The method 
+  builds from \textit{Lagrange's Rule} for an extrapopolation. The rule states, that for a given function, $f$ implicitly defined over the previous \textit{m} 
+  observed values, given some extrapolation points, indexed by $x\in I = \{i\in\mathbb{N}|i\geq 0\wedge i\leq m\}$ there exists some polynomial, $\varphi_{m}$ such that 
+  $(\forall x\in I) \varphi_{m}(x)=f(x)$. The polynomial is defined as $\varphi_{m}(x^{*})=\sum_{x\in I}L_{x}(x^{*})f(x)$ where each coefficient, $L_{x}(x^{*})$ 
+  can be computed by the following equation below. Note that $x^{*} = m + 1$, the index of the unknown value of f, after the $1\dots m$ previously observed values.
+  \begin{equation}
+   L_{x}(x^{*}) = \prod_{k\in{I},k\neq x}\left(\frac{x^{*}-k}{x-k}\right)
+  \end{equation}
+
  \subsection{Algorithm parallelization}
   {\color{red}TODO}
  \subsection{SSE and XOP intrinsics} 
