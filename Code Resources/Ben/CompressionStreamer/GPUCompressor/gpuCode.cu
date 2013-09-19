@@ -64,7 +64,11 @@ void gpuCode::initCUDA(){
     }
     cudaSetDevice(0);
     gpuBlockSize = 256;
-    
+    size_t free = 0;
+    size_t total = 0;
+    cudaMemGetInfo(&free,&total);
+    std::cout << "Total GPU Memory on card: " << total/1024/1024 << " MB" << std::endl;
+    std::cout << "Total GPU Memory available: " << free/1024/1024 << " MB" << std::endl;
     delete[] properties;
 }
 void gpuCode::releaseCard(){
@@ -79,7 +83,7 @@ void gpuCode::releaseCard(){
 void gpuCode::compressor::initCompressor(const float* iv, uint64_t ivLength){
   if (ivLength < 1)
     throw invalidInitializationException();
-  uint32_t numBlocks = (ivLength / gpuBlockSize) + 1; //(HACK: add one: this will take care of any padding without adding branches to our main kernel!)
+  uint32_t numBlocks = (ivLength / gpuBlockSize) + (ivLength%gpuBlockSize != 0); //+1 iff there is remaining elements after number of completely fulled blocks
   if (_gpuCompressorIV != NULL)
     CUDA_CHECK_RETURN(cudaFree(_gpuCompressorIV));
   CUDA_CHECK_RETURN(cudaMalloc((void**) &_gpuCompressorIV, sizeof(uint32_t) * numBlocks * gpuBlockSize));
@@ -138,9 +142,6 @@ __device__ uint32_t storePrefixStream(const uint32_t * iv, uint32_t elementCount
         //save the prefixes:
 	uint32_t ivElement = iv[index];
         element = ivElement ^ dataElement;
-	
-//  	printf("Index %d with values (iv,n)=(%d,%d) has %d leading zeros\n",
-//  	       index,ivElement,dataElement,__clz(element));
 	uint32_t prefix0 = min(3,__clz(element) >> 3);
         uint32_t iTimesgpuBitCountForRepresentation = blockThreadId*gpuBitCountForRepresentation;
         uint32_t startingIndex = (iTimesgpuBitCountForRepresentation) >> 5;
@@ -150,8 +151,7 @@ __device__ uint32_t storePrefixStream(const uint32_t * iv, uint32_t elementCount
 	//store a copy of the orignal count at an 2* BLOCK SIZE offset in shared memory so that we can get the scan values and originals later!
 	uint32_t countIndexN = blockThreadId+bankOffset;
         counts[countIndexN] = ((sizeof(uint32_t)-prefix0) << 3);
-	counts[2*chunkSize+countIndexN] = counts[countIndexN];
-// 	printf("Index %d stores its accumulated count at %d and its count at %d. Its count is %d\n",index,countIndexN,2*chunkSize+countIndexN,counts[2*chunkSize+countIndexN]);
+	counts[(chunkSize<<1)+countIndexN] = counts[countIndexN];
     }
     return element;
 }
@@ -220,7 +220,7 @@ __device__ uint32_t storeResidualStream(uint32_t elementCount, uint32_t chunkSiz
 	//save the residuals:
         uint32_t countIndexN = blockThreadId+bankOffset;
         uint32_t accumulatedIndex = counts[countIndexN];
-	uint32_t count = counts[2*chunkSize + countIndexN]; //get the original count value before the prefix scan was computed
+	uint32_t count = counts[(chunkSize<<1) + countIndexN]; //get the original count value before the prefix scan was computed
         uint32_t startingIndex = accumulatedIndex >> 5;
         uint8_t lshiftAmount = (gpuStorageIndiceCapacity - count);
         uint32_t rshiftAmount = accumulatedIndex % gpuStorageIndiceCapacity;
@@ -238,7 +238,7 @@ __global__ void gpuCompressionKernel(const uint32_t * data, uint32_t * iv, uint3
     uint32_t blockThreadId = threadIdx.x;
     //in line with the way GPU Gems 3 structures the parallel prefix sum we have to copy TWO data elements into registers
     uint32_t ai = blockThreadId;
-    uint32_t bi = blockThreadId + (chunkSize/2);
+    uint32_t bi = blockThreadId + (chunkSize>>1);
     uint32_t bankOffsetA = CONFLICT_FREE_OFFSET(ai);
     uint32_t bankOffsetB = CONFLICT_FREE_OFFSET(bi);
     uint32_t  blockOffsetA = lowerBound + ai;
@@ -264,25 +264,22 @@ __global__ void gpuCompressionKernel(const uint32_t * data, uint32_t * iv, uint3
     __syncthreads();
     //calculate storage space used by residuals:
     if (blockOffsetA == elementCount-1){ //last element before end of block
-       uint32_t accumulatedIndex = counts[bankOffsetA+ai] + counts[chunkSize * 2 + bankOffsetA+ai];
+       uint32_t accumulatedIndex = counts[bankOffsetA+ai] + counts[(chunkSize << 1) + bankOffsetA+ai];
        uint32_t sizeOfResidualArray = accumulatedIndex / gpuStorageIndiceCapacity +
                            (accumulatedIndex % gpuStorageIndiceCapacity != 0);
-//         printf("Block %d has a size of %d chars\n",blockIdx.x,accumulatedIndex);
       //Store pointers to the current prefixes and residuals
         residualSizeStore[blockIdx.x] = sizeOfResidualArray; 
     } else if (blockOffsetB == elementCount-1){
-       uint32_t accumulatedIndex = counts[bankOffsetB+bi] + counts[chunkSize * 2 + bankOffsetB+bi];
+       uint32_t accumulatedIndex = counts[bankOffsetB+bi] + counts[(chunkSize << 1) + bankOffsetB+bi];
        uint32_t sizeOfResidualArray = accumulatedIndex / gpuStorageIndiceCapacity +
                            (accumulatedIndex % gpuStorageIndiceCapacity != 0);
-//         printf("Block %d has a size of %d chars\n",blockIdx.x,accumulatedIndex);
       //Store pointers to the current prefixes and residuals
         residualSizeStore[blockIdx.x] = sizeOfResidualArray; 
-    } else if (blockThreadId == chunkSize/2-1){ //last thread of block
+    } else if (blockThreadId == (chunkSize >> 1)-1){ //last thread of block
        uint32_t lastCountElemIndex = bankOffsetB+bi;
-      uint32_t accumulatedIndex = counts[lastCountElemIndex] + counts[chunkSize * 2 + lastCountElemIndex];
+      uint32_t accumulatedIndex = counts[lastCountElemIndex] + counts[(chunkSize << 1) + lastCountElemIndex];
       uint32_t sizeOfResidualArray = accumulatedIndex / gpuStorageIndiceCapacity +
                           (accumulatedIndex % gpuStorageIndiceCapacity != 0);
-//       printf("Block %d has a size of %d chars\n",blockIdx.x,accumulatedIndex);
       residualSizeStore[blockIdx.x] = sizeOfResidualArray; 
     }
      __syncthreads();
