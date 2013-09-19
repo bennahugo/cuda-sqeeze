@@ -192,7 +192,7 @@ void compressCallback(uint32_t elementCount, uint32_t * compressedResidualsIntCo
 
 void processStride(const astroReader::stride & data){
     uint32_t tsSize = data.getTimeStampSize();
-    float * ts = (float*)_mm_malloc(sizeof(uint32_t)*tsSize,16);
+    float * ts = (float*) new float[tsSize];
     currentUncompressedData = ts;
     data.getTimeStampData(0,ts);
     
@@ -220,7 +220,7 @@ void processStride(const astroReader::stride & data){
     totalCompressSize += gpuCode::compressor::getAccumulatedCompressedDataSize();
     gpuCode::compressor::releaseResources();
     gpuCode::decompressor::releaseResources();
-    _mm_free(ts);
+    delete[] ts;
 }
 
 void printBinaryRepresentation(void * data, int sizeInBytes){

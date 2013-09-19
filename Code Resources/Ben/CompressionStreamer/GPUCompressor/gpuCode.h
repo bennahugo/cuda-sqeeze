@@ -29,7 +29,6 @@
 #include <omp.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <x86intrin.h>
 #include <iostream>
 #include <cuda.h>
 #include <cuda_runtime.h>
