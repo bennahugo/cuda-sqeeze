@@ -124,14 +124,14 @@ Jason \textsc{Manley}
 I would like to acknowledge A/Prof. James Gain and Dr. Patrick Marais of the Department of Computer Science at the University of Cape Town for their continuous, expert, input on the project.
 
 Secondly I would like to thank Jason Manley, a Digital Signals Processing specialist at the MeerKAT offices in Pinelands, Cape Town for providing us with technical information
-on the MeerKAT project. Jason has also kindly prepared a 100 GB of sample of KAT-7 output data for testing purposes.
+on the MeerKAT project. Jason has also kindly prepared a 100 GiB of sample of KAT-7 output data for testing purposes.
 
 Thirdly I would like to note that all tests were performed on the ICTS High Performance (\textit{HEX}) cluster at the University of Cape Town. The cluster has 4 DELL C6145 nodes each boasting 4 16-core
-AMD Opteron 6274 CPUs, clocked at 2200 MHz with 16 MB L3 cache memory. There are two additional GPU nodes with 4 Tesla M2090 GPU cards each. Each GPU card has 6 GB GDDR5 and 2048 CUDA cores. I want to 
+AMD Opteron 6274 CPUs, clocked at 2200 MHz with 16 MiB L3 cache memory. There are two additional GPU nodes with 4 Tesla M2090 GPU cards each. Each GPU card has 6 GiB GDDR5 and 2048 CUDA cores. I want to 
 especially thank Andrew Lewis from ICTS for his assistance and support during testing.
 
 This research is made possible under grant of the National Research Foundation (hereafter \textit{NRF}) of the Republic of South Africa. All views expressed in this report are those of the author and not 
-necessarily those the NRF.
+necessarily those of the NRF.
 \pagebreak
 \begin{abstract}
  {\color{red}TODO: add at end of writeup}
@@ -148,8 +148,8 @@ cover the low frequency band. The South African branch of the SKA will be comple
 called the KAT-7. The second phase, known as the MeerKAT, will consist of approximately 90 dishes. These are to be erected in the central Karoo region of South Africa. 
 The final phase will add the remaining dishes and increase the baseline of the telescope to roughly 3000 km.
 
-Due to the high signal sampling rate it is expected that each of these dishes will produce data rates of up to 420 GiB/s, while the lower frequency aperture arrays 
-will produce up to 16 TiB/s. These rates, coupled with the scale of the SKA, will require a processing facility capable of handling as much as 1 Petabyte of 
+Due to the high signal sampling rate it is expected that each of these dishes will produce data rates of up to 420 GBit/s, while the lower frequency aperture arrays 
+will produce up to 16 TBit/s. These rates, coupled with the scale of the SKA, will require a processing facility capable of handling as much as 1 Petabyte of 
 data every 20 seconds, necessitating massive storage facilities. Innovative techniques are required to deal with the complex dual-requirement of high 
 \textit{throughput rates} while effectively reducing the large storage requirements by means of \textit{data compression}. 
 \subsection{Data compression \& decompression}
@@ -159,7 +159,7 @@ grid of 24-bit colours (8-bits for each of the red, green and blue channels) a l
 reduce redundancy in this example is to store each horizontal line (or \textit{scanline}) of pixels as runs of colours, instead of individual colours. The first 
 scanline can therefore be reduced to 9 white, 5 white, 5 orange, 1 white runs of pixels. This is known as \textit{Run-Length Encoding}. However, this is not the only 
 form of redundancy: if each colour is represented as a 24-bit value, but only 5 colours are used from the $2^{24}$ colours available, a lot of storage space is wasted. 
-In this case only  $\lfloor\log_{2}{5}\rfloor+1 = 4$ bits are needed to store all 5 colours uniquely. This variable-length encoding is often accomplished using a 
+In this case only  $\lfloor\log_{2}{5}\rfloor+1 = 4$ bits are needed to store all 5 colours uniquely. This variable-length encoding is often accomplished using an 
 entropy encoding scheme which will be described to greater detail in the background section. Decompression can be thought of as the inverse operation to the compression 
 process, which will reconstruct the original data from its encoded version.
 \begin{figure}[ht!]
@@ -179,7 +179,7 @@ process, which will reconstruct the original data from its encoded version.
 All compression techniques build on the central concept of reducing redundant data as pointed out previously. The exact definition of this redundancy is of course context 
 dependent. In the case of the KAT-7 / MeerKAT array this redundancy may be defined in terms of the coherency of consecutive observations from each pair of dishes 
 (or \textit{correlated} pairs). If the observations made are not particularly noisy it is reasonable to assume that the differences between consecutive values will be small.
-Rather than storing each value it is possible to store the differences between observations (over a fixed time interval) instead. See figure~\ref{MeerKAT_PIPELINE}. 
+Rather than storing each value it is possible to store the differences between observations (each over a fixed time interval) instead. See figure~\ref{MeerKAT_PIPELINE}. 
 The array observes a large spectrum of frequencies over a large number of correlated pairs, as indicated in the illustration. Each of these correlated frequency 
 observations can be considered as steps of a time series. This report investigates how linear prediction can be employed to predict consecutive values for each of these time 
 series. The goal is to minimise the difference between consecutive values, which can then be encoded using fewer bits than the original 32-bit sample size that is received 
@@ -209,7 +209,7 @@ compression ratio closer to 0 indicates a smaller output file and values greater
  \text{Compression ratio} := \frac{\text{size of the output stream}}{\text{size of the input stream}}
 \end{equation}
 \begin{equation}
- \text{Throughput} := \frac{\text{input processed (in GB)}}{\text{difference in time (in seconds)}}
+ \text{Throughput} := \frac{\text{input processed (in GiB)}}{\text{difference in time (in seconds)}}
 \end{equation}
 \subsection{Research questions}
 Due to the limited scope of the project this report will only focus on evaluating algorithm performance and not algorithm integration into the KAT-7 / MeerKAT processing
@@ -218,8 +218,8 @@ Purpose Graphics Processing Unit (GPGPU)-accelerated nodes currently employed by
 
 The algorithm will have to meet two primary criteria: high throughput and effective compression ratios. These are outlined below:
 \begin{enumerate}
- \item Are predictive techniques fast enough? The algorithm should be able of achieving throughput rates of at least 40 GiB/s. These represent Infiniband network speeds 
- and represents a reasonable first milestone towards achieving compression at line rates.
+ \item Are predictive techniques fast enough? The algorithm should be able of achieving throughput rates of at least 40 GBit/s. These represent Infiniband network speeds 
+ and is a reasonable first milestone towards achieving compression at line rates.
  \item Are predictive techniques effective? The algorithm should reduce the size of transmissions by several percent and hopefully this reduction can take the form of 
        double digit figures. It has, however, been pointed out by the SKA office that the data may be too noisy to expect great reductions, while maintaining the throughput 
        rate mentioned above.
@@ -238,23 +238,23 @@ character and a number indicating the length of the run. In the context of compr
 at a bit level.
 
 Another basic technique which is particularly relevant for application on numerical data is a predictive compression scheme. Such a compression scheme encodes the 
-difference between each predicted succeeding value and the actual succeeding value as explained earlier. This can be quite successfully employed to compress data 
+difference between each predicted and actual succeeding value as explained earlier. This can be quite successfully employed to compress data 
 generated from time series \cite{engelson2000lossless}, but does rely on data coherence.
 \subsubsection{Lempel-Ziv methods}
-Lempel-Ziv is commonly referred to as “LZ” or dictionary methods, is a class of algorithms with many variants. It is one of the more popular \textit{adaptive} techniques 
+Lempel-Ziv, commonly referred to as “LZ” or dictionary methods, is a class of algorithms with many variants. It is one of the more popular \textit{adaptive} techniques 
 in modern compression utilities. In their simplest form these methods normally use both a search- and lookahead buffer to encode recurrent phrases using fixed-size codes. An 
 adaptive compression technique is useful in circumstances where the probability distribution of the underlying dataset is not known in advance or may change over time. 
-One example of such an LZ method is used in the GNU compression utility Gzip. Gzip implements the DEFLATE algorithm which is a variant of the first LZ scheme, LZ-77 
+One example of such an LZ method is used in the GNU compression utility GZIP. GZIP implements the DEFLATE algorithm which is a variant of the first LZ scheme, LZ-77 
 \cite[ch. 3]{salomon2004data}.
 
-LZ-77 encodes these recurrent phrases as length-distance pairs. If a sequence of characters are found to be the same as a sub-sequence of characters in the search buffer the 
-distance to the start of that sub-sequence together with the length of the match is encoded. The size of the search buffer can be up to 32 kB in some implementations of the 
+LZ-77 encodes these recurrent phrases as length-distance pairs. If a sequence of characters are found to be the same as a sub-sequence of characters in the search buffer, the 
+distance to the start of that sub-sequence, together with the length of the match is encoded. The size of the search buffer can be up to 32 kiB in some implementations of the 
 algorithm \cite[ch. 3]{salomon2004data}.
 \subsubsection{Statistical methods}
 This class of algorithms normally uses variable-length codes to achieve an optimal (or near optimal) encoding of dataset. In information theory this optimal encoding is 
 described as an \textit{entropy} encoding. Entropy is the measurement of the information contained in a single base-n symbol (as transmitted per unit time by some source).
 
-Redundancy is defined as the difference in entropy between the optimal encoding and the current encoding of a data set and is expressed in the following equation  
+\textit{Redundancy} is defined as the difference in entropy between the optimal encoding and the current encoding of a data. It is expressed in the following equation  
 ($n$ is the size of a symbol set and $P_{i}$ is the probability that a symbol $c_{i}$ is transmitted from a source)\cite[p. 46 - 47]{salomon2004data}:
 \begin{equation}
  R := \log_2n + \sum_1^nP_i\log_2P_i
@@ -264,10 +264,10 @@ class include two widely employed techniques known as Huffman and Arithmetic cod
 coding assigns \textit{real-length} subintervals of [0,1) to frequently occurring symbols \cite{Witten:1987:ACD:214762.214771}\cite[ch. 2]{salomon2004data}.
 
 Huffman coding counts the number of occurrences of a particular symbol, sorts this list in ascending order and merges the rarest pairs of symbols into a single \textit{binary} 
-(a tree in which each node can have up to 2 children) sub-tree and re-inserts the merged sub-tree into the list (still preserving the previously established order). The number of occurrences 
-of each subtree will be the sum of occurrences of all the leaf nodes. Upon termination of this process only a single binary tree is left in the list. Each left-traversal adds a 0 to the encoding 
+sub-tree (a tree in which each node can have up to 2 children) and re-inserts the merged sub-tree into the list (still preserving the previously established order). The number of occurrences 
+of each subtree will be the sum of occurrences of all its leaf nodes. Upon termination of this process only a single binary tree is left in the list. Each left-traversal adds a 0 to the encoding 
 of a symbol, while each right-traversal adds a 1. When a leaf-node is reached the constructed encoding is an \textit{unambiguous} code for the symbol. Refer to figure~\ref{HUFFMAN} for an example.
-In this case the symbol \textit{H} will be represented as 11 while some of the least frequent symbols such as \textit{B} will be represented by a longer code (0001 in this case).
+In this case the symbol \textit{H} will be represented as 11 while some of the least frequent symbols, such as \textit{B}, will be represented by a longer code (0001 in this case).
 \begin{figure}[h!]
  \centering
  \includegraphics[width=0.15\textwidth]{huffmanTree.png}
@@ -281,18 +281,18 @@ symbol. The length of the sub-interval is proportional to the probability of occ
 sub-interval. As the interval decreases the number of bits required to encode each consecutive interval increases. However, the average number of bits needed to store 
 each symbol is closer to the that of the entropy encoding of the dataset, since this average number can be \textit{real} value, unlike that of the per-symbol encoding of Huffman \cite[ch. 2]{salomon2004data}.
 
-Both approaches lead to variable-size codes. Both techniques have adaptive versions which are useful in situations where the probability distributions change or have to be estimated. 
-This approach is also applicable to the situation where the symbol table has to be computed on the fly, because it is impossible to perform multiple passes over data. This can, for example
-be the scenario when processing streaming data and all compression has to be completed on the fly. Arithmetic coding achieves higher compression ratios in both adaptive and non-adaptive cases 
+Both approaches lead to variable-size codes and both techniques have adaptive versions, which are useful in situations where the probability distributions change or have to be estimated. 
+This approach is also applicable to the situation where the symbol table has to be computed on the fly, because it is impossible to perform multiple passes over data. This can, for example,
+happen when processing streaming data and all compression has to be completed on the fly. Arithmetic coding achieves higher compression ratios in both adaptive and non-adaptive cases 
 when compared to Huffman coding. It should be pointed out that the decompression step of Arithmetic coding is slow and unsuitable for cases where fast access is 
 required \cite{ray1995database,williams1999compressing}\cite[ch. 2]{salomon2004data}.
 
 \subsubsection{Transforms}
 As the name suggest it can be useful to transform a dataset from one form to another in order to exploit its features for the purposes of compression. Such transformations 
-includes, for example, wavelet transforms. As the name suggests a wavelet is a small wave-like function that is only non-zero over a very small domain and is useful
+includes, for example, wavelet transforms. A wavelet is a small, wave-like, function that is only non-zero over a very small domain and is useful
 to separate the low frequency components from the high frequency components of, for example, an image. JPEG2000 and DjVu are popular formats that use 
 wavelet transforms. The dataset is generally sampled at increasing frequencies to produce a series of representations that gradually increases in resolution. When added together 
-these representations will reconstruct the original dataset. A sample of the discrete cosine transform of an image (as employed by JPEG2000) is shown in figure~\ref{TRANSFORM_SAMPLE}. 
+these representations will reconstruct the original dataset. A sample of the Discrete Cosine Transform of an image (as employed by JPEG2000) is shown in figure~\ref{TRANSFORM_SAMPLE}. 
 Only the transformation coefficients have to be stored in order to reconstruct each value in this series. The coefficients within this transformation can then be further compressed 
 using other techniques, for example, Huffman coding and Run-Length Encoding (as is done in JPEG2000). If lossy compression (loss of accuracy which cannot be recovered after 
 decompression) is tolerable, quantization can be used to discard unimportant values (for example the high frequency features of an image) \cite{952804}\cite[ch. 5]{salomon2004data}.
@@ -309,14 +309,14 @@ for real-time analysis and observation. Low resolution samples can be consistent
 Previous research \cite{1607248,4589203,engelson2000lossless,lindstrom2006fast,O'Neil:2011:FDC:1964179.1964189,4976448,CGF:CGF681} in this area has yielded good results both in terms of compression ratio and speed. 
 The common line of thought is to predict successive values with reasonable precision. Depending on the accuracy of the prediction, the difference between the predicted and actual value will be much smaller than the actual value itself. 
 This difference can then be encoded using fewer bytes/bits of data (depending if compression occurs at a byte or bit level) by compressing the leading zeros after either an XOR or integer subtraction 
-operation. Machine instructions to count the leading zeros can be found on AMD and newer Intel Processors. The leading zero count is then encoded as a prefix stream while the remaining bits/bytes 
+operation. Machine instructions to count the leading zeros can be found on AMD, newer Intel Processors and CUDA architectures. The leading zero count is then encoded as a prefix stream while the remaining bits/bytes 
 are encoded as a residual stream.
 
 Previous research suggests several different constructions of predictors. The use of a \textit{Lorenzo} predictor \cite{lindstrom2006fast,CGF:CGF681} generalizes the well known parallelogram predictor. 
 The Lorenzo predictor extends the parallelogram to arbitrary dimensions. More detail on the parallelogram predictor will be given
 in the implementation section, but it is useful to note that this approach is particularly useful for compressing large meshes. Other approaches include the use of prediction history 
-(via a simple lookup table construction) as suggested by Burtscher et al. \cite{1607248,4589203,4976448}. Burtscher et al. reports a throughput of up to 670 MB/s on a CPU implementation of their FPC 
-compressor. An even simpler scheme by O'Neil et al. \cite{O'Neil:2011:FDC:1964179.1964189} reportedly achieved throughputs of up to 75GB/s for compression and up to 90GB/s 
+(via a simple lookup table construction) as suggested by Burtscher et al. \cite{1607248,4589203,4976448}. Burtscher et al. reports a throughput of up to 670 MiB/s on a CPU implementation of their FPC 
+compressor. An even simpler scheme by O'Neil et al. \cite{O'Neil:2011:FDC:1964179.1964189} reportedly achieved throughputs of up to 75GiB/s for compression and up to 90GiB/s 
 decompression, implemented in CUDA. In this scheme only the difference between successive values are encoded (this will clearly only work if pairs of data points 
 vary very little from one time step to the next). It is duly noted that the speeds achieved  are on the post-processing of results, already stored in graphics memory. 
 The implementations by \cite{O'Neil:2011:FDC:1964179.1964189,1607248,4589203,4976448,engelson2000lossless} target 64-bit IEEE 754 
@@ -351,13 +351,13 @@ construction with the following subfields:
 \end{figure}
 The primary scheme proposed in this paper takes its inspiration from the work of O'Neil et al. \cite{O'Neil:2011:FDC:1964179.1964189}, but will operate on 32-bit 
 IEEE 754 \textit{single} precision floating-point values, as pointed out in the introduction. The uncompressed data itself is also structured slightly 
-differently to the model used by O'Neil et al. \cite{O'Neil:2011:FDC:1964179.1964189}. Instead of compressing each consecutive value the proposed compressor will operate 
+differently to the model used by O'Neil et al. Instead of compressing each consecutive value the proposed compressor will operate 
 over consecutive time slices (refer to figure~\ref{MeerKAT_PIPELINE}).
 
 As pointed out in previous research \cite{engelson2000lossless,lindstrom2006fast} using floating-point operations in the prediction step can cause an irreversible loss of information due to floating-point
 rounding errors. A simple alternative approach is proposed by Engelson et al. \cite{engelson2000lossless}: floating-point memory is simply treated as integer memory and all operations performed on that memory are integer operations. This
-approach ensures the predictive scheme achieves lossless compression. In light of this only schemes that conform to this approach will be considered. Engelson et al. \cite{engelson2000lossless} gives an example of how floating-point numbers
-can be treated with integer operations. Figure~\ref{INT_REP} shows that if two floating-point numbers are relatively close to each other in terms of magnitude it is possible to discard some repeated bytes of information after performing 
+approach ensures the predictive scheme achieves lossless compression. In light of this only schemes that conform to this approach will be considered. Engelson et al. gives an example of how floating-point numbers
+can be treated with integer operations. Figure~\ref{INT_REP} shows that if two floating-point numbers are relatively close to each other (in terms of magnitude) it is possible to discard some repeated bytes of information after performing 
 an XOR operation to extract the remaining, seemingly random, residual bits. Therefore if an accurate prediction can be made for consecutive numbers a reasonable
 saving in terms of compression ratio can be made.
 \begin{figure}[h!]
@@ -378,9 +378,9 @@ saving in terms of compression ratio can be made.
 \end{figure}
 \section{Design and Methodology}
 \subsection{Overview}
-In light of the research questions and the limited scope of this report focus will be placed on the usefulness of a predictive data compression 
+In light of the research questions and the limited scope of this report, focus will be placed on the usefulness of a predictive data compression 
 step in the context of the MeerKAT project. This will be limited to an investigation on whether the algorithm can operate at the desired line rate of
-40 GiB/s and whether it provides reasonable compression ratios. This initial investigation precludes the implementation of the algorithm as part of 
+40 GBit/s and whether it provides reasonable compression ratios. This initial investigation precludes the implementation of the algorithm as part of 
 the networking stack employed in the KAT-7 pipeline. Reasonable compression in this context means achieving compression ratios, comparable to industry standard 
 tools like GZIP and BZIP2. The possibility of using alternative predictive schemes to trade some throughput for a better compression ratio will also be investigated.
 Such alternative schemes will include the following (notes on their efficient implementation will be provided in the implementation section):
@@ -391,7 +391,7 @@ Such alternative schemes will include the following (notes on their efficient im
 \end{enumerate}
 The key success criteria for this investigation are the following:
 \begin{enumerate}
- \item Throughput in excess of 40 GiB/s is achieved by both the compressor and decompressor.
+ \item Throughput in excess of 40 GBit/s is achieved by both the compressor and decompressor.
  \item Effective compression ratios, comparable to those achieved by GZIP and BZIP2 are achieved.
 \end{enumerate}
 \subsection{Packing algorithm}
@@ -406,12 +406,12 @@ zero count does not have to be computed for each element being decompressed. Ref
 \end{figure}
 The construction of the algorithm being specified in figure~\ref{PACKING_ALGORITHM} is used because it allows for easy swapping between different predictors. The predictor in this case 
 can be any n-element predictor. As mentioned earlier the predicted value is XORed with the actual value to get a residual which can be compacted at either bit or byte level. This 
-compaction simply removes the leading zeros from each residual and stores each residual as a fixed-length prefix count. The number of bits needed to store $n$ leading 
+compaction simply removes the leading zeros from each leading zero count and stores each residual as a fixed-length prefix count. The number of bits needed to store $n$ leading 
 zeros can be calculated as $\lfloor\log_2n\rfloor+1$ bits where $n\in\mathbb{N}_{>0}$. It remains to find the residual compaction scheme that gives the best results: packing at 
 bit or byte level. Although a bit-packing scheme can pack an arbitrary number of zeros it requires longer prefixes to store the leading zero counts. The opposite is true 
 for byte-packing schemes. Since the prefixes are always short a bit-packing scheme is used to store these fixed-length codes. Basic pseudo code is given in the implementation section.
 
-Suppose the following two converted float values have to be compacted (the left-most byte is the most significant byte):
+Suppose the following two (converted) float values have to be compacted (the left-most byte is the most significant byte):
 \begin{center}
   \begin{verbatim}
     #1: 00000000 01100010 01101000 11001001
@@ -432,7 +432,7 @@ In this scenario the compaction of the residuals is done at byte level and the p
 There are three ways this can be achieved: 
 \begin{enumerate}
  \item Even though the residuals are of variable length it is possible to pack them in parallel. However, there is an additional overhead to \textit{both} the packing and 
- unpacking process, since this approach requires a prefix sum to be computed for the array of element-wise leading zero counts as O'Neil et al. \cite{O'Neil:2011:FDC:1964179.1964189} 
+ unpacking process, since this approach requires a \textit{prefix sum} to be computed for the array of element-wise leading zero counts as O'Neil et al. \cite{O'Neil:2011:FDC:1964179.1964189} 
  points out.
  
  A prefix sum (or \textit{scan}) can be defined on any binary associative operator, $\oplus$ over an ordered set with $I$ as its identity. If $A=[a_{0},a_{1},\dots,a_{n-1}]$ 
@@ -458,9 +458,9 @@ There are three ways this can be achieved:
  the opportunity to perform 4 instructions (adds, multiplies, logarithms, rounding, etc.) simultaneously per core. However, the SSE instruction sets do not have any element-wise bit-shift operations. A combination 
  of the Intel SSE and AMD XOP instruction sets, will however, provide enough support to write the most of the algorithm using vector intrinsics. The XOP instruction set extends the SSE instruction set by adding these 
  operations as one of its primary features. Adding these instructions will, however, make the implementation dependent on the architecture of the underlying machine it is executed on (and therefore less portable). 
- If this approach is successful the vectorized code should be extended to use the latest Intel AVX 2 instruction set in which Intel introduces element-wise shift operations and offset-loading operations in future work. 
- The AVX family of instructions can compute up to 8 SIMD operations in parallel per core. All these vectorized instruction sets make use of a very limited number of 128- and 256-bit registers (SSE and AVX respectively).
- It remains to be investigated whether it is worthwhile to implement the proposed packing algorithm using SSE and XOP instructions.
+ If this approach is successful the vectorized code should be extended to use the latest Intel AVX 2 instruction set in which Intel introduces element-wise shift operations and offset-loading operations as part of 
+ future work. The AVX family of instructions can compute up to 8 SIMD operations in parallel per core. All these vectorized instruction sets make use of a very limited number of 128- and 256-bit registers (SSE and 
+ AVX respectively). It remains to be investigated whether it is worthwhile to implement the proposed packing algorithm using SSE and XOP instructions.
 \end{enumerate}
 \subsection{Porting the implementation to CUDA}
 General Purpose programming using Graphics Processing Units (GPGPU) brings a host of associated challenges. These challenges arise primarily due to the widely differing architecture of GPUs if compared
@@ -468,7 +468,7 @@ with the classical architectures of Central Processing Units (CPUs). Refer to fi
 However, each generation of GPUs have widely differing architectures, each making many architecture specific optimizations. Each generation, for instance, will have both a 
 different ratio and configuration of arithmetic cores to floating-point and special operations cores, per group of processing \textit{CUDA cores}. These cores are also known as 
 \textit{SMs} (or \textit{SMXs} on the latest \textit{Kepler} generation). Additionally each generation has widely differing memory controller layouts. These may determine 
-how many \textit{warps} of threads can be executed, when the warps are swapped in/out, along with many others. Each SM is split into atomic groups of threads which are executed
+how many \textit{warps} of threads can be executed, when the warps are swapped in/out, along with many other properties. Each SM is split into atomic groups of threads which are executed
 in parallel (normally this is specified as 32 threads per warp). Even if only a subset of these threads have work the entire warp will be executed on the same machine clock cycle.
 
 A basic CUDA implementation will be provided to see if doing compression as a post-processing step on signal data already loaded to GPU (as part of the current pipeline) is a 
@@ -483,7 +483,7 @@ In GPU architectures (at the very least with Nvidia cards) \emph{shared} memory 
 access the same bank of memory, the memory accesses will be made sequentially. The general approach to avoid such a situation is to add padding between blocks of shared memory.
 
 More details will be provided in the implementation section, but it is clear that a combination of the approaches (1 \& 2) taken with the CPU version will be required to make 
-adequate use of the GPU architecture. This proposed implementation will consider assigning a block of data to each SM, which will in turn process that block in parallel without 
+adequate use of the GPU architecture. This proposed implementation will consider assigning a block of data to each SM, which will, in turn, process that block in parallel without 
 regard to operations performed on other SMs. This ensures that no unnecessary overheads due to costly card-wide synchronization steps are introduced. Instead all atomic 
 operations and synchronization steps will be performed per-SM only.
 \begin{figure}[h!]
@@ -505,7 +505,7 @@ The headers vary between 13-14\% of the total h5 file size. However, the data is
 figure~\ref{MeerKAT_PIPELINE}). Therefore if the algorithm being proposed is integrated into the front end of the pipeline as seen in figure~\ref{MeerKAT_PIPELINE} (as part of 
 future work) it may still provide a significant saving in network I/O. 
 \subsection{Structure and scope of the benchmarks}
-Some of these HDF5 files measure more than 30GB in size, each containing many timestamps, some spread over 4000 frequencies. It is reasonable to assume that once the number of correlations grow, emphasis will be placed on processing each 
+Some of these HDF5 files measure more than 30GiB in size, each containing many timestamps (some spans over 4000 frequencies). It is reasonable to assume that once the number of correlations grow, emphasis will be placed on processing each 
 time step (or portion thereof) as soon as it is received over the network. In future research the compressor may be integrated into the 7-layer OSI networking stack currently employed by the KAT-7 prototype. Due to the limited
 scope of this project focus will be on analyzing the performance of the algorithms themselves and not to measure any disk I/O (except when comparing to other compression utilities for the sake of fairness).
 
@@ -517,7 +517,7 @@ This report will focus on the following analysis:
        Each of these methods will be described in greater detail in the implementation chapter.
  \item The feasibility of implementation using the Intel SSE and AMD XOP vectorized instruction sets will be investigated.
  \item Benchmarks of the algorithm against the standard programs used for comparison: GZIP, BZIP2, ZIP and RAR. In this case the disk I/O will be included for the sake of fairness.
- \item The feasibility of a CUDA implementation, as outlined earlier will be determined.
+ \item The feasibility of a CUDA implementation, as outlined earlier, will be determined.
  \item Finally results from concurrent research being conducted into entropy encoding and run-length encoding will be compared to those achieved in this investigation. This comparison will include a 
        breakdown of performance in terms of both throughput and compression ratios.
 \end{enumerate}
@@ -526,10 +526,10 @@ The benchmarking platform is designed with two primary software engineering goal
 \begin{itemize}
  \item It should be as \textit{decoupled} as possible, making use of predefined interfaces. This will assist in providing several implementations of the CPU version (for example SSE, different linear predictors and different parallelization
  approaches) and simply swapping one implementation for another. Interactions between components must be kept to a minimum.
- \item The components must be \textit{cohesive}. They should contain only relevant operations and should be considered as atomic units.
+ \item The components must be \textit{cohesive}: they should contain only relevant operations and should be considered as atomic units.
 \end{itemize}
 The architecture described in figure~\ref{TOOL_ARCH} is used for the benchmarking platform. All the external dependencies depicted in the component model is freely available
-and are actively maintained. There is no considerable technical risk in using these libraries. More detailed implementation details will be provided in the next section. The 
+and are actively maintained. There is no considerable technical risk in using these libraries. Technical details will be provided in the next section. The 
 benchmark process is relatively simple and its flow is depicted in figure~\ref{TOOL_FLOW}.
 \begin{figure}[h!]
  \centering
@@ -583,28 +583,24 @@ BEGIN
 	 END FOR
 END SUBROUTINE 
 \end{verbatim}
-The decompression algorithm is remarkably similar except that the leading zero count does is not computed, but instead retrieved from the prefix array. The shift
-operations are inverted to retrieve the bits that may be split over two consecutive elements in both the prefix and residual arrays. The prediction step is moved towards
+The decompression algorithm is remarkably similar, except that the leading zero count is not computed, but is instead retrieved from the prefix array. The shift
+operations are inverted to retrieve the bits (that may be splitted over two consecutive elements) in both the prefix and residual arrays. The prediction step is moved towards
 the end of the routine, where the predicted value is XORed with the residual to restore the original, uncompressed, value.
  \subsection{Alternative linear prediction schemes}
   The most basic prediction scheme simply encodes the difference between observations at time \textit{t} and $t+1$. This difference is given as $O[t]$ xor $O[t-1]$. This 
-  scheme is sensitive to the structure of the underlying data. Such a scheme will only work if most consecutive values varies slowly over time. Using an n-element 
+  scheme is sensitive to the structure of the underlying data. Such a scheme will only work if \emph{most} consecutive values varies slowly over time. Using an n-element 
   predictor may help mitigate the effects of noise. However, as pointed out earlier: any operations over these n-elements have to be integer operations and not 
-  floating point operations due to the rounding errors they may introduce (as pointed out in the background section). All floating-point memory are therefore cast to 
+  floating point operations, due to the rounding errors they may introduce (as pointed out in the background section). All floating-point memory are therefore cast to 
   integer-typed memory before values are retrieved.
   
   These predictions, however, still have to be fast and preferably have an average linear computational complexity, $\theta(n)$. The predictor will only 
-  store the previous \textit{n} observations in a fixed-length queue. This implies that the memory overhead for the predictor is $nxm$ where m is the total 
-  number of elements being processed at time $t$.
+  store the previous \textit{n} observations in a fixed-length queue. This implies that the memory overhead for the predictor is $n\times m$ where \textit{m} is 
+  the total number of elements being processed at time $t$.
  \subsubsection{Lorenzo predictor}
  The n-dimensional Lorenzo predictor is a generalization of the two dimensional parallelogram predictor (see figure~\ref{LORENZO}). It can be used to predict scalar 
  functions that are polynomials of degree $n - 1$ and has been proven useful in scalar field compression \cite{CGF:CGF681}. In each of the 3 cases below only simple
  integer additions and subtractions are needed: the sum of the values in red are subtracted from the sum of the values in green. In the two dimensional case this 
  addition and subtraction is known as the \textit{parallelogram rule}. The predicted value is computed from previous observations as as $P = O[t-1] + O[t-2] - O[t-3]$.
- Considerable savings in compression ratio will, however, only be achieved for extrapolation of \textit{smooth data}.
- 
- If a function $f:[1\dots n]\rightarrow\mathbb{R}$ is evaluated over a time interval $[1\dots n]$ and the results are stored in a sequence $a_1\dots a_n$, where 
- $a_i = f(i)$
   \begin{figure}[h!]
     \centering
     \includegraphics[width=0.3\textwidth]{lorenzo.png}
@@ -612,12 +608,12 @@ the end of the routine, where the predicted value is XORed with the residual to 
     \label{LORENZO}
   \end{figure} 
  \subsubsection{Moving average and moving mean}
-  An integer-based moving mean is simple to implement and involves only a sumation and an integer division and therefore clearly has a linear computational complexity.
+  An integer-based moving mean is simple to implement and involves only a sumation and an integer division (and therefore clearly has a linear computational complexity).
   However, the mean of a sample is sensitive to outliers, and therefore will not work well for noisy data. A simple solution will be to use a median based scheme
   where the predicted value is the center value of a \textit{sorted} list of observations. However, a naive implementation of such a median-based scheme will
   be slow due to the overheads of sorting. Wirth \cite{wirth76} suggests an algorithm to select the median using a basic \textit{pivoting} scheme in $\theta(n)$
   time. A pivot divides a dataset into two groups. The elements in the group to the right of the pivot is larger than the pivot and the elements in the group to
-  the left of the pivot is smaller or equal to the pivot. The two groups do \emph{not} necessarily have to be ordered. The median is chosen through the following
+  the left of the pivot is smaller (or equal) to the pivot. The two groups do \emph{not} necessarily have to be ordered. The median is chosen through the following
   method that selects the \textit{k-th largest value} \cite{wirth76}:
   \begin{verbatim}
 FUNCTION INT32 pivotMedian(INT32[] data, int n) {
@@ -652,20 +648,20 @@ FUNCTION INT32 pivotMedian(INT32[] data, int n) {
   \end{verbatim}
  \subsubsection{Lagrange prediction}
   Lagrange extrapolation prediction is a gradiant-based method that can be used to predict a value of a polynomial at $t+1$, given the values at $t\dots t-n$.
-  The method is commonly used for interpolation between known points on a curve defined by some polynomial. Good extrapolations is only possible for 
+  The method is commonly used for interpolation between known points on a curve, defined by some polynomial. Good extrapolations are only possible for 
   \textit{smooth} data.
   
   If a function $f:[1\dots n] \rightarrow \mathbb{R}$ is evaluated over a time interval $[1\dots n]$ and its results stored as a sequence of values 
-  $a_{1}\dots a_{n}$ where $a_{i} = f(i)$, then such a sequence is called \textit{smooth of order m} if for all $j>m$ $a_{j}$ can be approximated with reasonable
+  $a_{1}\dots a_{n}$ where $a_{i} = f(i)$, then such a sequence is called \textit{smooth of order m} if for all $j>m$, $a_{j}$ can be approximated with reasonable
   accuracy from extrapolating from the previous \textit{m} values. Such smooth sequences normally arrise as solutions of ordanary differential equations (ODEs) in
   simulation models \cite{engelson2000lossless}.
   
   The model implemented in this report uses \textit{fixed-step extrapolation} (the time between consecutive observations is assumed to be of constant duration), but
-  the method works just as well if these differences vary in length, as long as such sequence can be approximated some polynomial \cite{engelson2000lossless}. The method 
-  builds from \textit{Lagrange's Rule} for an extrapopolation. The rule states, that for a given function, $f$ implicitly defined over the previous \textit{m} 
+  the method works just as well if these differences vary in length, as long as the underlying sequence can be approximated some polynomial \cite{engelson2000lossless}. 
+  The method builds from \textit{Lagrange's Rule}. The rule states, that for a given function, $f$ implicitly defined over the previous \textit{m} 
   observed values, given some extrapolation points, indexed by $x\in I = \{i\in\mathbb{N}|i\geq 0\wedge i\leq m\}$ there exists some polynomial, $\varphi_{m}$ such that 
   $(\forall x\in I) \varphi_{m}(x)=f(x)$. The polynomial is defined as $\varphi_{m}(x^{*})=\sum_{x\in I}L_{x}(x^{*})f(x)$ where each coefficient, $L_{x}(x^{*})$ 
-  can be computed by the following equation below. Note that $x^{*} = m + 1$, the index of the unknown value of f, after the $1\dots m$ previously observed values.
+  can be computed by the equation below. Note that $x^{*} = m + 1$, the index of the unknown value of \textit{f}, after the $1\dots m$ previously observed values.
   \begin{equation}
    L_{x}(x^{*}) = \prod_{k\in{I},k\neq x}\left(\frac{x^{*}-k}{x-k}\right)
   \end{equation}
@@ -684,11 +680,17 @@ In order to eliminate the influence of the external testing environment the foll
  \item No other processes should be making intensive use of primary memory once benchmarking has commenced. The sheer quantity of data being processed makes benchmarking a memory-bound operation.
 \end{enumerate}
 \subsection{Parallelization approach}
+{\color{red}TODO}
 \subsection{Performance of the block-based parallel scheme}
+{\color{red}TODO}
 \subsection{Feasibility of including vector intrinsics}
+{\color{red}TODO}
 \subsection{Benchmark against standard compression utilities}
+{\color{red}TODO}
 \subsection{Feasibility of a CUDA implementation}
+{\color{red}TODO}
 \subsection{Comparison to what was achieved in concurrent research}
+{\color{red}TODO}
 \section{Discussion}
 {\color{red}TODO}
 \section{Conclusion}
