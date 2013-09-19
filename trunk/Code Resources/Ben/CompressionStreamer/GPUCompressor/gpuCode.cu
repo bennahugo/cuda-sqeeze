@@ -333,7 +333,6 @@ void gpuCode::compressor::compressData(const float * data, uint32_t elementCount
 			    uint32_t * compressedPrefixIntCounts, uint32_t ** compressedPrefixes, uint32_t chunkCount, uint32_t * chunkSizes)){
     if (_gpuCompressorIV == NULL || _gpuCompressorIVLength != elementCount)
         throw invalidInitializationException();
-    timer::tic();
     uint32_t chunkSize = gpuBlockSize; 
     uint32_t numStores = elementCount/gpuBlockSize + (elementCount%gpuBlockSize != 0); //+1 iff there is remaining elements after number of completely fulled blocks
     uint32_t** residlualStore = new uint32_t*[numStores];
@@ -381,7 +380,7 @@ void gpuCode::compressor::compressData(const float * data, uint32_t elementCount
 				   sizeof(uint32_t*) * numStores, cudaMemcpyHostToDevice));
     CUDA_CHECK_RETURN(cudaMemcpy(gpuPrefixStoresWrapper,gpuPrefixMemoryStores, 
 				   sizeof(uint32_t*) * numStores, cudaMemcpyHostToDevice));
-    
+    timer::tic();
     gpuCompressionKernel<<<numStores, (chunkSize)/2, (chunkSize) * 4 * sizeof(uint32_t)>>>(gpuData,
 			_gpuCompressorIV,elementCount,chunkSize,gpuPrefixStoresWrapper,
 			gpuResidlualStoresWrapper,gpuResidualSizesStore);
