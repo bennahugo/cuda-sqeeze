@@ -21,6 +21,7 @@
 #define CPUCODE_H
 
 #include <cstdlib>
+#include <cstdio>
 #include <cstring>
 #include <stdint.h>
 #include <math.h>

@@ -18,7 +18,7 @@
 
 
 #include "cpuCodeLinearCoder.h"
-#define PREDICTOR_ORDER 2
+#define PREDICTOR_ORDER 3
 uint32_t ** _compressorIV = NULL; 
 uint64_t _compressorIVLength = -1;
 uint32_t _accumCompressedDataSize = 0;
@@ -80,8 +80,9 @@ inline int32_t compressorParallelogramPredictor(uint32_t index){
   exit(1);
 #endif  
   int32_t P = 0;
-  for (uint32_t j = 0; j < PREDICTOR_ORDER; ++j)
-    P += (-2*(1-(int)j%2)+1)*((int32_t**)_compressorIV)[j][index];
+  P -= _compressorIV[0][index];
+  P += _compressorIV[1][index];
+  P += _compressorIV[2][index]; 
   return P;
 }
 inline int32_t decompressorParallelogramPredictor(uint32_t index){
@@ -90,8 +91,9 @@ inline int32_t decompressorParallelogramPredictor(uint32_t index){
   exit(1);
 #endif  
   int32_t P = 0;
-  for (uint32_t j = 0; j < PREDICTOR_ORDER; ++j)
-    P += (-2*(1-(int)j%2)+1)*((int32_t**)_decompressorIV)[j][index];
+  P -= _decompressorIV[0][index];
+  P += _decompressorIV[1][index];
+  P += _decompressorIV[2][index];
   return P;
 }
 inline int32_t compressorMeanPredictor(uint32_t index){
@@ -267,7 +269,7 @@ void compressionKernel(const float * data, uint32_t elementCount, uint32_t dataB
     for (uint32_t i = 0; i < elementsInDataBlock; ++i) {
 	uint32_t index = i+lowerBound;
         //save the prefixes:
-	int32_t P = compressorMedianPredictor(index);
+	int32_t P = compressorParallelogramPredictor(index);
 	for (uint32_t j = 1; j < PREDICTOR_ORDER;++j)
 	  _compressorIV[j-1][index] = _compressorIV[j][index];
 	_compressorIV[PREDICTOR_ORDER-1][index] = *((int32_t*)&data[index]); 
@@ -335,7 +337,7 @@ void decompressionKernel(uint32_t chunkSize, uint32_t dataBlockSize,
 	  | ( compressedResiduals[startingIndex+(storageIndiceCapacity - residuallshiftAmount - writtenBits > 0)] >> (residuallshiftAmount + writtenBits - 1) >> 1)
 	  | sign;
 	uint32_t residual = *((uint32_t*)&element);
-	int32_t P = decompressorMedianPredictor(index);
+	int32_t P = decompressorParallelogramPredictor(index);
 	//P += _decompressorIV[PREDICTOR_ORDER-1][index];
 	for (uint32_t j = 1; j < PREDICTOR_ORDER;++j)
 	  _decompressorIV[j-1][index] = _decompressorIV[j][index];
