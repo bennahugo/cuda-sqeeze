@@ -742,8 +742,8 @@ POW(2,n) = (2 << n-1) //where "<<" is the arithmetic left-shift operator
   \item Compute $B = scan(A)$ in parallel
   \item Each element, $B[i]$ is now the stating position (in bits) of the residual of element $D[i]$. This means the variable-length residuals can be placed into the residual stream in parallel.
  \end{enumerate}
-
-
+ 
+  {\color{red}TODO: problem of atomics} 
  \subsection{SSE and XOP intrinsics} 
   {\color{red}TODO} 
  \subsection{GPGPU implementation in CUDA}
