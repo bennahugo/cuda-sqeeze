@@ -579,7 +579,7 @@ BEGIN
 		      of the next byte
 		  END IF  
 		  //increment position in the residual array
-		  bitPosInResidualArray += leadingZeroCount INT_DIV 8
+		  bitPosInResidualArray += leadingZeroCount
 	 END FOR
 END SUBROUTINE 
 \end{verbatim}
@@ -608,7 +608,7 @@ the end of the routine, where the predicted value is XORed with the residual to 
     \label{LORENZO}
   \end{figure} 
  \subsubsection{Moving average and moving mean}
-  An integer-based moving mean is simple to implement and involves only a sumation and an integer division (and therefore clearly has a linear computational complexity).
+  An integer-based moving mean is simple to implement and involves only a summation and an integer division (and therefore clearly has a linear computational complexity).
   However, the mean of a sample is sensitive to outliers, and therefore will not work well for noisy data. A simple solution will be to use a median based scheme
   where the predicted value is the center value of a \textit{sorted} list of observations. However, a naive implementation of such a median-based scheme will
   be slow due to the overheads of sorting. Wirth \cite{wirth76} suggests an algorithm to select the median using a basic \textit{pivoting} scheme in $\theta(n)$
@@ -647,13 +647,13 @@ FUNCTION INT32 pivotMedian(INT32[] data, int n) {
 }
   \end{verbatim}
  \subsubsection{Lagrange prediction}
-  Lagrange extrapolation prediction is a gradiant-based method that can be used to predict a value of a polynomial at $t+1$, given the values at $t\dots t-n$.
+  Lagrange extrapolation prediction is a gradient-based method that can be used to predict a value of a polynomial at $t+1$, given the values at $t\dots t-n$.
   The method is commonly used for interpolation between known points on a curve, defined by some polynomial. Good extrapolations are only possible for 
   \textit{smooth} data.
   
   If a function $f:[1\dots n] \rightarrow \mathbb{R}$ is evaluated over a time interval $[1\dots n]$ and its results stored as a sequence of values 
   $a_{1}\dots a_{n}$ where $a_{i} = f(i)$, then such a sequence is called \textit{smooth of order m} if for all $j>m$, $a_{j}$ can be approximated with reasonable
-  accuracy from extrapolating from the previous \textit{m} values. Such smooth sequences normally arrise as solutions of ordanary differential equations (ODEs) in
+  accuracy from extrapolating from the previous \textit{m} values. Such smooth sequences normally arise as solutions of ordinary differential equations (ODEs) in
   simulation models \cite{engelson2000lossless}.
   
   The model implemented in this report uses \textit{fixed-step extrapolation} (the time between consecutive observations is assumed to be of constant duration), but
@@ -667,7 +667,31 @@ FUNCTION INT32 pivotMedian(INT32[] data, int n) {
   \end{equation}
 
  \subsection{Algorithm parallelization}
-  {\color{red}TODO}
+  As pointed out in the design section the parallelization of the basic algorithm discussed earlier can be done by dividing incoming data up into fixed size chunks, and
+  processing the elements of each block sequentially, and doing multiple blocks in parallel. This approach is detrimental to the compression ratio, since the size of each
+  block's residual stream has to be stored (this effect will be worse if there is a large number of blocks). This block-based approach is relatively straightforward to 
+  implement and does not modify the structure of the basic algorithm at all.
+  
+  The alternative approach is to convert the basic algorithm into a element-wise parallel algorithm. As mentioned in the design chapter this requires a prefix sum to be computed 
+  in order to compute the starting position of each residual in the residual stream. The prefix scan is a trivial case of a dynamic programming problem and the algorithm 
+  \cite{blelloch1990prefix} is shown below:
+  \begin{verbatim}
+   SUBROUTINE scan(out INT32[] out, INT32[] in)
+    INT32 i = 0
+    INT32 sum = in[0]
+    out[0] = sum;
+    WHILE i < length(in) DO
+      ++i
+      sum += in[i]
+      out[i] = sum
+    END WHILE
+   END SUBROUTINE
+  \end{verbatim}
+  Blelloch suggests a novel approach \cite{blelloch1990prefix} to compute this prefix scan in parallel. The algorithm treats the input array of integers as a \textit{complete}
+  binary tree, meaning that each level of the binary tree is completely filled, except for the last level of the tree. The algorithm requires the size of the input array to
+  be a power of 2. If this is not the case padding has to be added to the input array. The algorithm is done in 3 primary steps, with a synchronization point between each. First
+  an \textit{up-sweep} operation is completed, then the last element is set to 0, and finally a \textit{down-sweep} operation is completed on the tree. Each level of the tree
+  can be done in parallel and therefore the algorithm has a complexity of $O(n/p + \log_2{p})$ where p is the number of processors in a system. 
  \subsection{SSE and XOP intrinsics} 
   {\color{red}TODO} 
  \subsection{GPGPU implementation in CUDA}
