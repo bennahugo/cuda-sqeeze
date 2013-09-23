@@ -687,11 +687,63 @@ FUNCTION INT32 pivotMedian(INT32[] data, int n) {
     END WHILE
    END SUBROUTINE
   \end{verbatim}
-  Blelloch suggests a novel approach \cite{blelloch1990prefix} to compute this prefix scan in parallel. The algorithm treats the input array of integers as a \textit{complete}
-  binary tree, meaning that each level of the binary tree is completely filled, except for the last level of the tree. The algorithm requires the size of the input array to
-  be a power of 2. If this is not the case padding has to be added to the input array. The algorithm is done in 3 primary steps, with a synchronization point between each. First
-  an \textit{up-sweep} operation is completed, then the last element is set to 0, and finally a \textit{down-sweep} operation is completed on the tree. Each level of the tree
-  can be done in parallel and therefore the algorithm has a complexity of $O(n/p + \log_2{p})$ where p is the number of processors in a system. 
+  Blelloch suggests a novel approach \cite{blelloch1990prefix} to compute this prefix scan in parallel. The algorithm requires the size of the input array to
+  be a power of 2. If this is not the case padding has to be added to the input array. There are three primary steps to the algorithm, with a synchronization point between each. First
+  an \textit{up-sweep} operation is completed, then the last element is set to 0, and finally a \textit{down-sweep} operation is completed. Both the \textit{up-sweep} and \textit{down-sweep} operations
+  can be respresented by a \textit{complete} binary tree of $\log_2n$ levels (meaning that each level is fully filled). Each level of the tree can be done in parallel and therefore the algorithm has a 
+  complexity of $O(n/p + \log_2{p})$ where \textit{p} is the number of processors in a system. The \textit{up-sweep} and \textit{down-sweep} operations (over integer addition) over a short sequence of integers is shown
+  in figure~\ref{PARALLEL_SCAN}.
+  \begin{figure}[h!]
+    \centering
+    \begin{subfigure}[b]{0.8\textwidth}
+      \includegraphics[width=0.9\textwidth]{scanOperationOnArray.png}
+      \caption{Steps of the scan operation being executed in order on the sequence [3 1 7 0 4 1 6 3]}
+      \label{UPSWEEP_DOWNSWEEP}
+    \end{subfigure}
+    \begin{subfigure}[b]{\textwidth}
+      \centering
+      \includegraphics[width=0.9\textwidth]{upsweep_downsweep.png}
+      \begin{minipage}{\textwidth}
+        \begin{verbatim}
+//UP-SWEEP:
+  FOR d from 0 TO log2(length(A))-1 DO
+    FOR i from 0 TO length(A) - 1 IN STEPS OF POW(2,d+1) IN PARALLLEL DO
+      A[i + pow(2,d+1) - 1] += A[i + pow(2,d) - 1]
+    END FOR
+  END FOR
+//DOWN-SWEEP:
+  A[length(A)-1] = 0
+  FOR d from log2(length(A))-1 DOWNTO 0 DO
+    FOR i from 0 TO length(A) - 1 IN STEPS OF POW(2,d+1) IN PARALLLEL DO
+      INT32 temp = A[i + pow(2,d) - 1]
+      A[i + pow(2,d) - 1] = A[i + pow(2,d+1) - 1] //set left child
+      A[i + pow(2,d+1) - 1] += temp //set right child
+    END FOR
+  END FOR
+//EFFICIENCY NOTE: Powers of 2 are efficiently implemented as:
+POW(2,n) = (2 << n-1) //where "<<" is the arithmetic left-shift operator
+//and n is strictly greater than 0
+        \end{verbatim}       
+      \end{minipage}
+      \caption{Tree representations with respective algorithms to compute each level in parallel (for both up- and down-sweeps)}
+      \label{PARALLEL_SCAN_SUB_ALGORITHMS}
+    \end{subfigure}
+    \caption{Parrallel scan algorithm example and pseudo code \cite{blelloch1990prefix}}
+    \label{PARALLEL_SCAN}
+  \end{figure}
+  
+ The algorithm shown figure~\ref{PARALLEL_SCAN} assumes execution takes place in a \textit{shared-memory} architecture, where each processor has access to the memory of the other processors and that synchronization
+ can take place accross multiple processors. In CUDA the last condition is not easily met. This problem will be addressed later when the CUDA implementation details are discussed.
+ 
+ The entire algorithm can now be turned into three steps that can each be computed in parallel:
+ \begin{enumerate}
+  \item Perform a leading zero count and store the prefixes as discussed in the basic pseudo code, but store the leading zero count to an array, A. The prefixes are fixed in length, so placing them
+  into the prefix stream in parallel does not pose a problem.
+  \item Compute $B = scan(A)$ in parallel
+  \item Each element, $B[i]$ is now the stating position (in bits) of the residual of element $D[i]$. This means the variable-length residuals can be placed into the residual stream in parallel.
+ \end{enumerate}
+
+
  \subsection{SSE and XOP intrinsics} 
   {\color{red}TODO} 
  \subsection{GPGPU implementation in CUDA}
