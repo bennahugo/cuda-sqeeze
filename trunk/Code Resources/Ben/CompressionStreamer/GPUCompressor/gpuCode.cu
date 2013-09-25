@@ -30,7 +30,7 @@ uint32_t _gpuAccumDecompressedDataSize = 0;
 const uint8_t gpuStorageIndiceCapacity = 8*sizeof(uint32_t);
 const uint8_t gpuBitCountForRepresentation = 2;
 uint32_t gpuBlockSize = 0; //set by initCUDA
-
+cudaStream_t asyncStream = NULL;
 /**
  * This macro checks return value of the CUDA runtime call and exits
  * the application if the call failed.
@@ -42,7 +42,10 @@ uint32_t gpuBlockSize = 0; //set by initCUDA
 				cudaGetErrorString(_m_cudaStat), __LINE__, __FILE__);		\
 		exit(1);															\
 	} }
-
+/**
+ * Initializes the device and sets up the block sizes and prints out memory properties
+ * 
+ */
 void gpuCode::initCUDA(){
   int deviceCount, device;
     int gpuDeviceCount = 0;
@@ -69,9 +72,16 @@ void gpuCode::initCUDA(){
     cudaMemGetInfo(&free,&total);
     std::cout << "Total GPU Memory on card: " << total/1024/1024 << " MB" << std::endl;
     std::cout << "Total GPU Memory available: " << free/1024/1024 << " MB" << std::endl;
+    //create an async stream:
+    CUDA_CHECK_RETURN(cudaStreamCreate (&asyncStream));
     delete[] properties;
 }
+/**
+ * Releases and resets GPU
+ * 
+ */
 void gpuCode::releaseCard(){
+  CUDA_CHECK_RETURN(cudaStreamDestroy (asyncStream));
   CUDA_CHECK_RETURN(cudaDeviceReset());
 }
 /*
@@ -131,7 +141,7 @@ inline int32_t imin_2( int32_t x, int32_t y )
 }
 
 __device__ uint32_t storePrefixStream(const uint32_t * iv, uint32_t elementCount, uint32_t chunkSize, 
-			uint32_t ** prefixStore, uint32_t ** residualStore, 
+			uint32_t * prefixStore, uint32_t * residualStore, 
 			uint32_t lowerBound,uint32_t blockThreadId,uint32_t index,uint32_t dataElement,
 			uint32_t bankOffset){
     extern __shared__ uint32_t counts[]; //the kernel must be called with "length" as a third special arguement  
@@ -146,7 +156,7 @@ __device__ uint32_t storePrefixStream(const uint32_t * iv, uint32_t elementCount
         uint32_t iTimesgpuBitCountForRepresentation = blockThreadId*gpuBitCountForRepresentation;
         uint32_t startingIndex = (iTimesgpuBitCountForRepresentation) >> 5;
         uint32_t rshiftAmount = (iTimesgpuBitCountForRepresentation) % gpuStorageIndiceCapacity;
-	atomicOr(prefixStore[blockIdx.x] + startingIndex,
+	atomicOr(prefixStore + blockIdx.x * ((chunkSize * gpuBitCountForRepresentation) / gpuStorageIndiceCapacity + 1) + startingIndex,
 		 ((prefix0 << lshiftAmountPrefixes) >> rshiftAmount)); //according to the cuda developer guide this will compute the or and store it back to the same address
 	//store a copy of the orignal count at an 2* BLOCK SIZE offset in shared memory so that we can get the scan values and originals later!
 	uint32_t countIndexN = blockThreadId+bankOffset;
@@ -212,7 +222,7 @@ __device__ void computeScan(uint32_t n, uint32_t blockSize) {
 }
 
 __device__ uint32_t storeResidualStream(uint32_t elementCount, uint32_t chunkSize, 
-			uint32_t ** prefixStore, uint32_t ** residualStore, 
+			uint32_t * prefixStore, uint32_t * residualStore, 
 			uint32_t lowerBound,uint32_t blockThreadId,uint32_t index,uint32_t xoredElement,
 			uint32_t bankOffset){
   extern __shared__ uint32_t counts[]; //the kernel must be called with "length" as a third special arguement  
@@ -225,12 +235,12 @@ __device__ uint32_t storeResidualStream(uint32_t elementCount, uint32_t chunkSiz
         uint8_t lshiftAmount = (gpuStorageIndiceCapacity - count);
         uint32_t rshiftAmount = accumulatedIndex % gpuStorageIndiceCapacity;
         uint8_t writtenBits = gpuStorageIndiceCapacity - lshiftAmount - max(rshiftAmount-lshiftAmount,0);
-        atomicOr(residualStore[blockIdx.x] + startingIndex,((xoredElement << lshiftAmount) >> rshiftAmount));
-        atomicOr(residualStore[blockIdx.x] + startingIndex + 1,(xoredElement << (lshiftAmount + writtenBits - 1) << 1));    
+        atomicOr(residualStore + blockIdx.x * (chunkSize + 1) + startingIndex,((xoredElement << lshiftAmount) >> rshiftAmount));
+        atomicOr(residualStore + blockIdx.x * (chunkSize + 1) + startingIndex + 1,(xoredElement << (lshiftAmount + writtenBits - 1) << 1));    
     }
 }
 __global__ void gpuCompressionKernel(const uint32_t * data, uint32_t * iv, uint32_t elementCount, uint32_t chunkSize, 
-			uint32_t ** prefixStore, uint32_t ** residualStore, uint32_t * residualSizeStore){
+			uint32_t * prefixStore, uint32_t * residualStore, uint32_t * residualSizeStore){
       extern __shared__ uint32_t counts[]; //the kernel must be called with "length" as a third special arguement
     
     //Create difference array, count used bits (up to 3 bytes of leading zeros) and save prefixes
@@ -267,13 +277,11 @@ __global__ void gpuCompressionKernel(const uint32_t * data, uint32_t * iv, uint3
        uint32_t accumulatedIndex = counts[bankOffsetA+ai] + counts[(chunkSize << 1) + bankOffsetA+ai];
        uint32_t sizeOfResidualArray = accumulatedIndex / gpuStorageIndiceCapacity +
                            (accumulatedIndex % gpuStorageIndiceCapacity != 0);
-      //Store pointers to the current prefixes and residuals
         residualSizeStore[blockIdx.x] = sizeOfResidualArray; 
     } else if (blockOffsetB == elementCount-1){
        uint32_t accumulatedIndex = counts[bankOffsetB+bi] + counts[(chunkSize << 1) + bankOffsetB+bi];
        uint32_t sizeOfResidualArray = accumulatedIndex / gpuStorageIndiceCapacity +
                            (accumulatedIndex % gpuStorageIndiceCapacity != 0);
-      //Store pointers to the current prefixes and residuals
         residualSizeStore[blockIdx.x] = sizeOfResidualArray; 
     } else if (blockThreadId == (chunkSize >> 1)-1){ //last thread of block
        uint32_t lastCountElemIndex = bankOffsetB+bi;
@@ -282,7 +290,6 @@ __global__ void gpuCompressionKernel(const uint32_t * data, uint32_t * iv, uint3
                           (accumulatedIndex % gpuStorageIndiceCapacity != 0);
       residualSizeStore[blockIdx.x] = sizeOfResidualArray; 
     }
-     __syncthreads();
     //Copy the current data to the IV memory for the next round of compression
     if (blockOffsetA < elementCount)
       iv[blockOffsetA] = data[blockOffsetA];
@@ -339,79 +346,71 @@ void gpuCode::compressor::compressData(const float * data, uint32_t elementCount
     uint32_t* chunkSizes = new uint32_t[numStores];
     //alloc space for the data on the card
     uint32_t* gpuData = NULL;
-    CUDA_CHECK_RETURN(cudaMalloc((void**) &gpuData, sizeof(uint32_t) * numStores * gpuBlockSize));
+    CUDA_CHECK_RETURN(cudaMalloc((void**) &gpuData, sizeof(uint32_t) * numStores * gpuBlockSize)); //pad so that we completely fill every SM
     CUDA_CHECK_RETURN(cudaMemset(gpuData,0,sizeof(uint32_t) * numStores * gpuBlockSize)); //ensure padding is set to zero on the device
     CUDA_CHECK_RETURN(cudaMemcpy(gpuData, data, elementCount*sizeof(float), cudaMemcpyHostToDevice));
-    //alloc space for residuals and prefixes
-    uint32_t** gpuResidlualMemoryStores = NULL;
-    uint32_t** gpuPrefixMemoryStores = NULL;
-    uint32_t** gpuResidlualStoresWrapper = NULL;
-    uint32_t** gpuPrefixStoresWrapper = NULL;
+    //alloc space for residuals and prefixes on the card
+    uint32_t* gpuPrefixesStore = NULL;
+    uint32_t* gpuResidualsStore = NULL;
     uint32_t* gpuResidualSizesStore = NULL;
-    uint32_t* gpuPrefixSizesStore = NULL;
-    //create temporary stores for the residual and prefix memory:
-    gpuResidlualMemoryStores = new uint32_t*[numStores];
-    gpuPrefixMemoryStores = new uint32_t*[numStores];
+    uint32_t* gpuPrefixSizesStore = NULL;    
     //create the wrappers for the residual and prefix memory stores which will be sent to the kernel:
     CUDA_CHECK_RETURN(cudaMalloc((void**) &gpuResidualSizesStore, sizeof(uint32_t) * numStores));
     CUDA_CHECK_RETURN(cudaMemset(gpuResidualSizesStore,0,sizeof(uint32_t) * numStores)); 
-    CUDA_CHECK_RETURN(cudaMalloc((void**) &gpuResidlualStoresWrapper, sizeof(uint32_t*) * numStores));
-    CUDA_CHECK_RETURN(cudaMalloc((void**) &gpuPrefixStoresWrapper, sizeof(uint32_t*) * numStores));
-    
-// #pragma omp parallel for 
-    for (uint32_t dataBlockIndex = 0; dataBlockIndex < numStores; ++dataBlockIndex) {
-      uint32_t elementsInDataBlock = (((dataBlockIndex + 1)*chunkSize <= elementCount) ? chunkSize : chunkSize-((dataBlockIndex + 1)*chunkSize-elementCount));
-      uint32_t sizeOfPrefixArray = (elementsInDataBlock * gpuBitCountForRepresentation) / gpuStorageIndiceCapacity +
-                                 ((elementsInDataBlock * gpuBitCountForRepresentation) % gpuStorageIndiceCapacity != 0);
-      prefixStore[dataBlockIndex] = new uint32_t[sizeOfPrefixArray];
-      prefixSizesStore[dataBlockIndex] = sizeOfPrefixArray; 
-      residlualStore[dataBlockIndex] = new uint32_t[elementsInDataBlock+1]; //this padding actually waste less space than having a count array, +1 to avoid a branch later on when writing the remainder of the residuals
-      chunkSizes[dataBlockIndex] = elementsInDataBlock;
-      CUDA_CHECK_RETURN(cudaMalloc((void**) &gpuPrefixMemoryStores[dataBlockIndex], sizeof(uint32_t) * sizeOfPrefixArray));
-      CUDA_CHECK_RETURN(cudaMemset(gpuPrefixMemoryStores[dataBlockIndex],0,sizeof(uint32_t) * sizeOfPrefixArray));
-      CUDA_CHECK_RETURN(cudaMalloc((void**) &gpuResidlualMemoryStores[dataBlockIndex], sizeof(uint32_t) * (elementsInDataBlock+1)));
-      CUDA_CHECK_RETURN(cudaMemset(gpuResidlualMemoryStores[dataBlockIndex],0,sizeof(uint32_t)*(elementsInDataBlock+1)));
-    }
-    //copy the alloced pointers to the wrapper array so we can send it off the kernel:
-    CUDA_CHECK_RETURN(cudaMemcpy(gpuResidlualStoresWrapper,gpuResidlualMemoryStores, 
-				   sizeof(uint32_t*) * numStores, cudaMemcpyHostToDevice));
-    CUDA_CHECK_RETURN(cudaMemcpy(gpuPrefixStoresWrapper,gpuPrefixMemoryStores, 
-				   sizeof(uint32_t*) * numStores, cudaMemcpyHostToDevice));
+    uint32_t sizeOfPrefixArray = sizeof(uint32_t)*((elementCount * gpuBitCountForRepresentation) / gpuStorageIndiceCapacity + elementCount); //pad the prefix array with 1 for every block to prevent branch diversion in the kernel
+    uint32_t sizeOfResidualArray = sizeof(uint32_t)*(chunkSize*numStores + elementCount); //pad the residual array with 1 to prevent branch diversion in the kernel
+    CUDA_CHECK_RETURN(cudaMalloc((void**) &gpuPrefixesStore, sizeOfPrefixArray));
+    CUDA_CHECK_RETURN(cudaMalloc((void**) &gpuResidualsStore, sizeOfResidualArray));
+    CUDA_CHECK_RETURN(cudaMemset(gpuPrefixesStore,0,sizeOfPrefixArray));
+    CUDA_CHECK_RETURN(cudaMemset(gpuResidualsStore,0,sizeOfResidualArray));
     timer::tic();
     gpuCompressionKernel<<<numStores, (chunkSize)/2, (chunkSize) * 4 * sizeof(uint32_t)>>>(gpuData,
-			_gpuCompressorIV,elementCount,chunkSize,gpuPrefixStoresWrapper,
-			gpuResidlualStoresWrapper,gpuResidualSizesStore);
+			_gpuCompressorIV,elementCount,chunkSize,gpuPrefixesStore,
+			gpuResidualsStore,gpuResidualSizesStore);
     cudaDeviceSynchronize();
     CUDA_CHECK_RETURN(cudaGetLastError());
     _gpuCompressorAccumulatedTime += timer::toc();
     //get the residual arrays sizes
     CUDA_CHECK_RETURN(cudaMemcpy(residualSizesStore,gpuResidualSizesStore,
 				   sizeof(uint32_t) * numStores,cudaMemcpyDeviceToHost));
+    //copy the padded prefix and residual arrays over so that it can be bundled into 2 transactions and not hundreds:
+    uint32_t * tempResidualsStore = new uint32_t[sizeOfResidualArray];
+    uint32_t * tempPrefixesStore = new uint32_t[sizeOfPrefixArray];
+    CUDA_CHECK_RETURN(cudaMemcpyAsync(tempPrefixesStore,gpuPrefixesStore, 
+				   sizeOfPrefixArray, cudaMemcpyDeviceToHost,asyncStream));
+    CUDA_CHECK_RETURN(cudaMemcpyAsync(tempResidualsStore,gpuResidualsStore, 
+				   sizeOfResidualArray, cudaMemcpyDeviceToHost,asyncStream));
+    cudaStreamSynchronize(asyncStream); //wait for the two copies to complete
     
-    //Now do the callback and free all resources afterwards except the IV:
+    //Now split the cuda memory up into unpadded chunks:
+    uint32_t offsetPrefixes = 0;
+    uint32_t offsetResiduals = 0;
     for (uint32_t i = 0; i < numStores; ++i){      
       uint32_t elementsInDataBlock = (((i + 1)*chunkSize <= elementCount) ? chunkSize : chunkSize-((i + 1)*chunkSize-elementCount));
       uint32_t sizeOfPrefixArray = (elementsInDataBlock * gpuBitCountForRepresentation) / gpuStorageIndiceCapacity +
                                  ((elementsInDataBlock * gpuBitCountForRepresentation) % gpuStorageIndiceCapacity != 0);		 
-      CUDA_CHECK_RETURN(cudaMemcpy(prefixStore[i],gpuPrefixMemoryStores[i], 
-				   sizeof(uint32_t) * sizeOfPrefixArray, cudaMemcpyDeviceToHost));
-//       printf("COPYING %d bytes from graphics memory for block %d\n",residualSizesStore[i],i);
-      CUDA_CHECK_RETURN(cudaMemcpy(residlualStore[i],gpuResidlualMemoryStores[i], 
-				   sizeof(uint32_t) * residualSizesStore[i], cudaMemcpyDeviceToHost));
+      //  std::cout << "Copying store " << i+1 << " of " << numStores << ", with prefix array length "<< sizeOfPrefixArray <<" and residual array length " << residualSizesStore[i] << std::endl;
+      prefixStore[i] = new uint32_t[sizeOfPrefixArray];
+      residlualStore[i] = new uint32_t[residualSizesStore[i]];
+      prefixSizesStore[i] = sizeOfPrefixArray;
+      chunkSizes[i] = elementsInDataBlock;
+      memcpy(prefixStore[i],tempPrefixesStore + offsetPrefixes, sizeof(uint32_t) * sizeOfPrefixArray);
+      memcpy(residlualStore[i],tempResidualsStore + offsetResiduals, sizeof(uint32_t) * residualSizesStore[i]);
+      offsetPrefixes += ((chunkSize * gpuBitCountForRepresentation) / gpuStorageIndiceCapacity + 1);
+      offsetResiduals += (chunkSize + 1);
       _gpuAccumCompressedDataSize += residualSizesStore[i] + prefixSizesStore[i] + 1;
     }
+    //_gpuCompressorAccumulatedTime += timer::toc();
+    delete [] tempResidualsStore;
+    delete [] tempPrefixesStore;
     callBack(elementCount,residualSizesStore,residlualStore,prefixSizesStore,prefixStore,numStores,chunkSizes);
     for (uint32_t i = 0; i < numStores; ++i){
-       CUDA_CHECK_RETURN(cudaFree((void*) gpuResidlualMemoryStores[i]));
-       CUDA_CHECK_RETURN(cudaFree((void*) gpuPrefixMemoryStores[i]));
        delete[] residlualStore[i];
        delete[] prefixStore[i];
     }
     CUDA_CHECK_RETURN(cudaFree((void*) gpuData));
-    delete [] gpuResidlualMemoryStores;
-    delete [] gpuPrefixMemoryStores;
-    CUDA_CHECK_RETURN(cudaFree((void*) gpuResidlualStoresWrapper));
-    CUDA_CHECK_RETURN(cudaFree((void*) gpuPrefixStoresWrapper));
+    CUDA_CHECK_RETURN(cudaFree((void*) gpuPrefixesStore));
+    CUDA_CHECK_RETURN(cudaFree((void*) gpuResidualsStore));
     CUDA_CHECK_RETURN(cudaFree((void*) gpuResidualSizesStore));
     delete[] residlualStore;
     delete[] prefixStore;

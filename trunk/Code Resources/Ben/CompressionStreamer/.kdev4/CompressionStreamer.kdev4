@@ -8,8 +8,8 @@ Current Build Directory Index=0
 ProjectRootRelative=./
 
 [CMake][CMake Build Directory 0]
-Build Directory Path=file:///home/bhugo/projects/CompressionStreamer/build
-Build Type=
+Build Directory Path=file:///home/benjamin/workspace/CompressionStreamer/build
+Build Type=Debug
 CMake Binary=file:///usr/bin/cmake
 Environment Profile=
 Extra Arguments=
@@ -25,7 +25,7 @@ Name=New Native Application Configuration
 Type=Native Application
 
 [Launch][Launch Configuration 0][Data]
-Arguments=/home/bhugo/1369858495.h5 4 0 0 0
+Arguments=/home/benjamin/1370275467.h5 4 0 0 0
 Dependencies=@Variant(\x00\x00\x00\t\x00\x00\x00\x00\x00)
 Dependency Action=Nothing
 EnvironmentGroup=default
