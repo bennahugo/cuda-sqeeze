@@ -369,7 +369,6 @@ void gpuCode::compressor::compressData(const float * data, uint32_t elementCount
 			gpuResidualsStore,gpuResidualSizesStore);
     cudaDeviceSynchronize();
     CUDA_CHECK_RETURN(cudaGetLastError());
-    _gpuCompressorAccumulatedTime += timer::toc();
     //get the residual arrays sizes
     CUDA_CHECK_RETURN(cudaMemcpy(residualSizesStore,gpuResidualSizesStore,
 				   sizeof(uint32_t) * numStores,cudaMemcpyDeviceToHost));
@@ -381,7 +380,7 @@ void gpuCode::compressor::compressData(const float * data, uint32_t elementCount
     CUDA_CHECK_RETURN(cudaMemcpyAsync(tempResidualsStore,gpuResidualsStore, 
 				   sizeOfResidualArray, cudaMemcpyDeviceToHost,asyncStream));
     cudaStreamSynchronize(asyncStream); //wait for the two copies to complete
-    
+    _gpuCompressorAccumulatedTime += timer::toc();
     //Now split the cuda memory up into unpadded chunks:
     uint32_t offsetPrefixes = 0;
     uint32_t offsetResiduals = 0;
