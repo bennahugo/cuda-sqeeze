@@ -33,67 +33,11 @@ FILE * fdecomp;
 double totalCompressWriteTime = 0;
 double totalDecompressWriteTime = 0;
 double totalDiskReadTime = 0;
-int main(int argc, char **argv) {
-    using namespace std;
-    
-//     gpuCode::initCUDA();
-//     float* iv = new float[15];
-//     float* n = new float[15];
-//    
-//     iv[0] = 0.4235811f;
-//     iv[1] = 3.5687154f;
-//     iv[2] =-1.2547897f;
-//     iv[3] = 3.5687154f;
-//     iv[4] =-1.2547897f;
-//     iv[5] = 3.5687154f;
-//     iv[6] =-1.2547897f;
-//     iv[7] = 3.5687154f;
-//     iv[8] =-1.2547897f;
-//     iv[9] = 3.5687154f;
-//     iv[10] =-1.2547897f;
-//     iv[11] = 3.5687154f;
-//     iv[12] =-1.2547897f;
-//     iv[13] = 3.5687154f;
-//     iv[14] =-1.2547897f;
-//    
-//     n[0] = 0.4335811f;
-//     n[1] = 3.5587154f;
-//     n[2] =-1.2447897f;
-//     n[3] = 3.5587154f;
-//     n[4] =-1.2447897f;
-//     n[5] = 3.5587154f;
-//     n[6] =-1.2447897f;
-//     n[7] = 3.5587154f;
-//     n[8] =-1.2447897f;
-//     n[9] = 3.5587154f;
-//     n[10] =-1.2447897f;
-//     n[11] = 3.5587154f;
-//     n[12] =-1.2447897f;
-//     n[13] = 3.5587154f;
-//     n[14] =-1.2447897f;
-//    
-//     for (int i = 0; i < 15; ++i){
-//       uint32_t ivElm = *((uint32_t*)&iv[0] + i);
-//       uint32_t nElm = *((uint32_t*)&n[0] + i);
-//       uint32_t x = ivElm ^ nElm;
-//       printf("%d:::",i);
-//       printBinaryRepresentation((void*)&ivElm,sizeof(uint32_t));
-//       printf("(%d)",ivElm);
-//       cout << " ^ ";
-//       printBinaryRepresentation((void*)&nElm,sizeof(uint32_t));
-//       printf("(%d)",nElm);
-//       cout << " = ";
-//       printBinaryRepresentation((void*)&x,sizeof(uint32_t));
-//       cout << '\n';
-//     }
-//     gpuCode::compressor::initCompressor(iv,15);
-//     gpuCode::decompressor::initDecompressor(iv,15);
-//     gpuCode::compressor::compressData(n,15,compressCallback);
-//     gpuCode::releaseCard();
-//     delete[] iv;
-//     delete[] n;
 
-    
+uint32_t memoryScaling = 120;
+
+int main(int argc, char **argv) {
+    using namespace std; 
     if (argc < 2){
       cout << "FATAL: PLEASE SPECIFY MEERKAT HDF5 FILE LOCATION" << endl;
       exit(1);
@@ -177,12 +121,12 @@ int main(int argc, char **argv) {
       totalDiskReadTime += timer::toc();
       processStride(data);
     } 
-    std::cout << "COMPRESSION RATIO: " << (totalCompressSize/(float)origSize) << std::endl;
+    std::cout << "COMPRESSION RATIO: " << (totalCompressSize/((float)origSize*memoryScaling)) << std::endl;
     std::cout << "COMPRESSED IN " << totalCompressTime << " seconds @ " << 
-      origSize*sizeof(float)/1024.0f/1024.0f/1024.0f/totalCompressTime << " GB/s" << std::endl;
+      origSize*memoryScaling*sizeof(float)/1024.0f/1024.0f/1024.0f/totalCompressTime << " GB/s" << std::endl;
     if (!skipDecompression){  
       std::cout << "DECOMPRESSED IN " << totalDecompressTime << " seconds @ " << 
-	origSize*sizeof(float)/1024.0f/1024.0f/1024.0f/totalDecompressTime << " GB/s" << std::endl;
+	origSize*memoryScaling*sizeof(float)/1024.0f/1024.0f/1024.0f/totalDecompressTime << " GB/s" << std::endl;
     }
     if (writeStream){
       std::cout << "DISK I/O READ TIME (PER STEP): " << totalDiskReadTime << std::endl; // I make the reasonable assumption that an HDF5 system reads the data in blocks --- the same we would have to do it if we read back before decompression
@@ -209,11 +153,6 @@ void decompressCallback(uint32_t elementCount, uint32_t * decompressedData){
       }
     }
   }
-//   cout << "DECOMPRESSED DATA: " << endl;
-//   for (uint32_t i = 0; i < elementCount; ++i){
-//     printBinaryRepresentation((void*)&decompressedData[i],sizeof(uint32_t));
-//     std::cout << std::endl;
-//   }
   timer::tic();
   if (writeStream){
       fwrite(decompressedData,sizeof(uint32_t),elementCount,fdecomp);
@@ -222,24 +161,7 @@ void decompressCallback(uint32_t elementCount, uint32_t * decompressedData){
 }
 void compressCallback(uint32_t elementCount, uint32_t * compressedResidualsIntCounts, uint32_t ** compressedResiduals,
 			    uint32_t * compressedPrefixIntCounts, uint32_t ** compressedPrefixes, 
-			    uint32_t chunkCount, uint32_t * chunkSizes){
-//     std::cout << "PREFIX ARRAY:" << std::endl;
-//     for (int i = 0; i < chunkCount; ++i){
-//       std::cout << ">>" << i << std::endl;
-//       for (int eI = 0; eI < compressedPrefixIntCounts[i]; ++eI){
-// 	printBinaryRepresentation((void*)&compressedPrefixes[i][eI],sizeof(uint32_t));
-// 	std::cout << std::endl;
-//       }
-//     }
-//     std::cout << "RESIDUAL ARRAY:" << std::endl;
-//     for (int i = 0; i < chunkCount; ++i){
-//       std::cout << ">>" << i << std::endl;
-//       for (int eI = 0; eI < compressedResidualsIntCounts[i]; ++eI){
-// 	printBinaryRepresentation((void*)&compressedResiduals[i][eI],sizeof(uint32_t));
-// 	std::cout << std::endl;
-//       }
-//     }
-    
+			    uint32_t chunkCount, uint32_t * chunkSizes){    
     if (!skipDecompression){ 
       gpuCode::decompressor::decompressData(elementCount,chunkCount,chunkSizes,
  					 compressedResiduals,compressedPrefixes,decompressCallback);
@@ -256,11 +178,12 @@ void compressCallback(uint32_t elementCount, uint32_t * compressedResidualsIntCo
 }
 
 void processStride(const astroReader::stride & data){
-    uint32_t tsSize = data.getTimeStampSize();
+    uint32_t tsSize = data.getTimeStampSize()*memoryScaling;
     float * ts = (float*) new float[tsSize];
     currentUncompressedData = ts;
     data.getTimeStampData(0,ts);
-    
+    for (uint32_t i = 1; i < memoryScaling; ++i)
+      memcpy(ts+i*data.getTimeStampSize(),ts,data.getTimeStampSize()*sizeof(float));
     gpuCode::compressor::initCompressor(ts,tsSize);
     gpuCode::decompressor::initDecompressor(ts,tsSize);
     
@@ -278,6 +201,8 @@ void processStride(const astroReader::stride & data){
     
     for (int t = 1; t <= data.getMaxTimestampIndex() - data.getMinTimestampIndex(); ++t) {
         data.getTimeStampData(t,ts);
+	for (uint32_t i = 1; i < memoryScaling; ++i)
+	  memcpy(ts+i*data.getTimeStampSize(),ts,data.getTimeStampSize()*sizeof(float));
         gpuCode::compressor::compressData(ts,tsSize,compressCallback);
     }
     totalCompressTime += gpuCode::compressor::getAccumulatedRunTimeSinceInit();
