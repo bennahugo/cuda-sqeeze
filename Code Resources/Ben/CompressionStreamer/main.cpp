@@ -34,7 +34,7 @@ double totalCompressWriteTime = 0;
 double totalDecompressWriteTime = 0;
 double totalDiskReadTime = 0;
 
-uint32_t memoryScaling = 120;
+uint32_t memoryScaling = 1;
 
 int main(int argc, char **argv) {
     using namespace std; 
