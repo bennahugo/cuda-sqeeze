@@ -1,0 +1,2 @@
+/usr/bin/ar cr libcpuCode.a  CMakeFiles/cpuCode.dir/cpuCode.cpp.o
+/usr/bin/ranlib libcpuCode.a

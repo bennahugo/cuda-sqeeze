@@ -1,0 +1,3 @@
+/home/bhugo/projects/CompressionStreamer/build/CMakeFiles/compressionstreamer.dir
+/home/bhugo/projects/CompressionStreamer/build/Compressor/CMakeFiles/cpuCode.dir
+/home/bhugo/projects/CompressionStreamer/build/GPUCompressor/CMakeFiles/gpuCode.dir

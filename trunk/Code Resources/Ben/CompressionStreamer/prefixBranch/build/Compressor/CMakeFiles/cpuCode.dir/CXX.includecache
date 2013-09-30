@@ -1,0 +1,44 @@
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/bhugo/projects/CompressionStreamer/Compressor/../timer.h
+time.h
+-
+
+/home/bhugo/projects/CompressionStreamer/Compressor/cpuCode.cpp
+cpuCode.h
+/home/bhugo/projects/CompressionStreamer/Compressor/cpuCode.h
+
+/home/bhugo/projects/CompressionStreamer/Compressor/cpuCode.h
+cstdlib
+-
+cstdio
+-
+cstring
+-
+stdint.h
+-
+math.h
+-
+omp.h
+-
+stdlib.h
+-
+unistd.h
+-
+iostream
+-
+exceptions.h
+/home/bhugo/projects/CompressionStreamer/Compressor/exceptions.h
+../timer.h
+/home/bhugo/projects/CompressionStreamer/Compressor/../timer.h
+
+/home/bhugo/projects/CompressionStreamer/Compressor/exceptions.h
+exception
+-
+
