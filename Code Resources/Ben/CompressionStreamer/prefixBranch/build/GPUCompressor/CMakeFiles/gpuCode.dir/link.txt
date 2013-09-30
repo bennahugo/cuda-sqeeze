@@ -1,0 +1,2 @@
+/usr/bin/ar cr libgpuCode.a  CMakeFiles/gpuCode.dir/./gpuCode_generated_gpuCode.cu.o
+/usr/bin/ranlib libgpuCode.a
