@@ -136,30 +136,21 @@ inline int32_t imin_2( int32_t x, int32_t y )
     return y ^ ((x ^ y) & -(x < y)); // min(x, y)
 }
 
-__device__ uint32_t storePrefixStream(const uint32_t * iv, uint32_t elementCount, uint32_t chunkSize, 
+__device__ void storePrefixStream(const uint32_t * iv, uint32_t elementCount, uint32_t chunkSize, 
 			uint32_t * residualAndPrefixStore, 
-			uint32_t lowerBound,uint32_t blockThreadId,uint32_t index,uint32_t dataElement,
-			uint32_t bankOffset, uint32_t prefixArrOffset, uint32_t numBlocks){
+			uint32_t lowerBound,uint32_t blockThreadId,uint32_t index,uint32_t element,
+			uint32_t bankOffset, uint32_t prefixArrOffset, uint32_t numBlocks,uint32_t prefix){
     extern __shared__ uint32_t counts[]; //the kernel must be called with "length" as a third special arguement  
     
-    uint32_t element = 0;
     uint32_t lshiftAmountPrefixes = gpuStorageIndiceCapacity - gpuBitCountForRepresentation;
     if ((index < elementCount)){
         //save the prefixes:
-	uint32_t ivElement = iv[index];
-        element = ivElement ^ dataElement;
-	uint32_t prefix0 = min(3,__clz(element) >> 3);
         uint32_t iTimesgpuBitCountForRepresentation = blockThreadId*gpuBitCountForRepresentation;
         uint32_t startingIndex = (iTimesgpuBitCountForRepresentation) >> 5;
         uint32_t rshiftAmount = (iTimesgpuBitCountForRepresentation) % gpuStorageIndiceCapacity;
 	atomicOr(residualAndPrefixStore + numBlocks + prefixArrOffset + blockIdx.x * ((chunkSize * gpuBitCountForRepresentation) / gpuStorageIndiceCapacity + 1) + startingIndex,
-		 ((prefix0 << lshiftAmountPrefixes) >> rshiftAmount)); //according to the cuda developer guide this will compute the or and store it back to the same address
-	//store a copy of the orignal count at an 2* BLOCK SIZE offset in shared memory so that we can get the scan values and originals later!
-	uint32_t countIndexN = blockThreadId+bankOffset;
-        counts[countIndexN] = ((sizeof(uint32_t)-prefix0) << 3);
-	counts[(chunkSize<<1)+countIndexN] = counts[countIndexN];
+		 ((prefix << lshiftAmountPrefixes) >> rshiftAmount)); //according to the cuda developer guide this will compute the or and store it back to the same address
     }
-    return element;
 }
 
 /**
@@ -252,21 +243,41 @@ __global__ void gpuCompressionKernel(const uint32_t * data, uint32_t * iv, uint3
     uint32_t dataElementA = NULL;
     uint32_t dataElementB = NULL;
     uint32_t lastElemVal = 0;
-    
-    if (blockOffsetA < elementCount)
+    uint32_t xoredElementA = 0;
+    uint32_t xoredElementB = 0;
+    uint32_t prefixA = 0;
+    uint32_t prefixB = 0;
+    if (blockOffsetA < elementCount){
+      uint32_t ivElement = iv[blockOffsetA];
       dataElementA = data[blockOffsetA];
-    if (blockOffsetB < elementCount)
-      dataElementB = data[blockOffsetB];    
+      xoredElementA = ivElement ^ dataElementA;
+      prefixA = min(3,__clz(xoredElementA) >> 3);
+      //store a copy of the orignal count at an 2* BLOCK SIZE offset in shared memory so that we can get the scan values and originals later!
+      uint32_t countIndexN = ai+bankOffsetA;
+      counts[countIndexN] = ((sizeof(uint32_t)-prefixA) << 3);
+      counts[(chunkSize<<1)+countIndexN] = counts[countIndexN];
+    }
+    if (blockOffsetB < elementCount){
+      uint32_t ivElement = iv[blockOffsetB];
+      dataElementB = data[blockOffsetB];
+      xoredElementB = ivElement ^ dataElementB;
+      prefixB = min(3,__clz(xoredElementB) >> 3);
+      //store a copy of the orignal count at an 2* BLOCK SIZE offset in shared memory so that we can get the scan values and originals later!
+      uint32_t countIndexN = bi+bankOffsetB;
+      counts[countIndexN] = ((sizeof(uint32_t)-prefixB) << 3);
+      counts[(chunkSize<<1)+countIndexN] = counts[countIndexN];
+    }
+    __syncthreads();
     //compute lzc and save the prefixes:
-     uint32_t elementA = storePrefixStream(iv,elementCount,chunkSize,residualAndPrefixStore,lowerBound,ai,blockOffsetA,dataElementA,bankOffsetA,prefixArrOffset,numBlocks);
-     uint32_t elementB = storePrefixStream(iv,elementCount,chunkSize,residualAndPrefixStore,lowerBound,bi,blockOffsetB,dataElementB,bankOffsetB,prefixArrOffset,numBlocks);
+     storePrefixStream(iv,elementCount,chunkSize,residualAndPrefixStore,lowerBound,ai,blockOffsetA,xoredElementA,bankOffsetA,prefixArrOffset,numBlocks,prefixA);
+     storePrefixStream(iv,elementCount,chunkSize,residualAndPrefixStore,lowerBound,bi,blockOffsetB,xoredElementB,bankOffsetB,prefixArrOffset,numBlocks,prefixB);
     __syncthreads();
     //compute parallel prefix sum (this method taken from GPU GEMS 3 computes 2 elements at a time):
      computeScan(elementCount,chunkSize);
      __syncthreads();
     //now save the residuals:
-    storeResidualStream(elementCount,chunkSize,residualAndPrefixStore,lowerBound,ai,blockOffsetA,elementA,bankOffsetA,numBlocks);
-    storeResidualStream(elementCount,chunkSize,residualAndPrefixStore,lowerBound,bi,blockOffsetB,elementB,bankOffsetB,numBlocks);
+    storeResidualStream(elementCount,chunkSize,residualAndPrefixStore,lowerBound,ai,blockOffsetA,xoredElementA,bankOffsetA,numBlocks);
+    storeResidualStream(elementCount,chunkSize,residualAndPrefixStore,lowerBound,bi,blockOffsetB,xoredElementB,bankOffsetB,numBlocks);
     __syncthreads();
     //calculate storage space used by residuals:
     if (blockOffsetA == elementCount-1){ //last element before end of block
