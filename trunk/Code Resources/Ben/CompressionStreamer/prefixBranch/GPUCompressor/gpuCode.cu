@@ -126,6 +126,16 @@ uint32_t gpuCode::compressor::getAccumulatedCompressedDataSize(){
   return _gpuAccumCompressedDataSize;
 }
 
+const uint32_t BYTESPERINTMIN1_2 = sizeof(uint32_t) * sizeof(uint8_t) - 1;
+inline int32_t imax_2( int32_t x, int32_t y )
+{
+    return x - ((x - y) & ((x - y) >> (BYTESPERINTMIN1_2)));
+}
+inline int32_t imin_2( int32_t x, int32_t y )
+{
+    return y ^ ((x ^ y) & -(x < y)); // min(x, y)
+}
+
 /**
  * Define a macro according to Nvidia's GPU Gems 3 to offset the indexing in order to avoid bank conflicts
  * Compute Capability 	1.x: 16 banks
@@ -142,27 +152,26 @@ uint32_t gpuCode::compressor::getAccumulatedCompressedDataSize(){
 __device__ void storePrefixStream(const uint32_t * iv, uint32_t elementCount, uint32_t chunkSize, 
 			uint32_t * residualAndPrefixStore, 
 			uint32_t lowerBound,uint32_t blockThreadId,uint32_t index,uint32_t element,
-			uint32_t prefixArrOffset, uint32_t numBlocks){
+			 uint32_t prefixArrOffset, uint32_t numBlocks){
     extern __shared__ uint32_t counts[]; //the kernel must be called with "length" as a third special arguement  
+    
     uint32_t lshiftAmountPrefixes = gpuStorageIndiceCapacity - gpuBitCountForRepresentation;
-    uint8_t * prefixesArr = (uint8_t*)&residualAndPrefixStore[numBlocks + prefixArrOffset + blockIdx.x * ((chunkSize * gpuBitCountForRepresentation) / gpuStorageIndiceCapacity + 1)];
-    uint8_t groupedPrefixes = 0;
-    for (uint32_t i = 0; i < 4; ++i)
-      if ((index+i < elementCount)){
-	uint32_t blockThreadIdPlusI = blockThreadId+i;
-	uint32_t bankOffset = CONFLICT_FREE_OFFSET(blockThreadIdPlusI);
-	uint32_t prefix = min(3,__clz(element) >> 3);	//store a copy of the orignal count at an 2* BLOCK SIZE offset in shared memory so that we can get the scan values and originals later!
-	uint32_t countIndexN = (blockThreadIdPlusI)+bankOffset;
-	counts[countIndexN] = ((sizeof(uint32_t)-prefix) << 3);
-	counts[(chunkSize<<1)+countIndexN] = counts[countIndexN];
-	
+    uint32_t concatPrefixes = 0;
+    uint32_t startingIndex = (blockThreadId*gpuBitCountForRepresentation) >> 5;
+    
+    for (int i = 0; i < 16; ++i)
+      if ((index < elementCount)){
+	uint32_t blockThreadIdPlusI = blockThreadId + i;
         //save the prefixes:
-        uint32_t iTimesgpuBitCountForRepresentation = (blockThreadIdPlusI)*gpuBitCountForRepresentation;
-        uint32_t startingIndex = (iTimesgpuBitCountForRepresentation) >> 3;
-        uint32_t rshiftAmount = (iTimesgpuBitCountForRepresentation) % 8;
-	groupedPrefixes |= ((prefix << lshiftAmountPrefixes) >> rshiftAmount);
+	uint32_t bankOffset = CONFLICT_FREE_OFFSET(blockThreadIdPlusI);
+	uint32_t countIndexN = blockThreadIdPlusI+bankOffset;
+	uint32_t prefix = -(counts[(chunkSize<<1)+countIndexN] >> 3) + sizeof(uint32_t);
+        uint32_t iTimesgpuBitCountForRepresentation = blockThreadIdPlusI*gpuBitCountForRepresentation;
+        uint32_t rshiftAmount = (iTimesgpuBitCountForRepresentation) % gpuStorageIndiceCapacity;
+	concatPrefixes |= ((prefix << lshiftAmountPrefixes) >> rshiftAmount);
       }
-    prefixesArr[startingIndex] = groupedPrefixes; //according to the cuda developer guide this will compute the or and store it back to the same address
+    residualAndPrefixStore[numBlocks + prefixArrOffset + 
+			   blockIdx.x * ((chunkSize * gpuBitCountForRepresentation) / gpuStorageIndiceCapacity + 1) + startingIndex] = concatPrefixes;
 }
 
 __device__ void computeScan(uint32_t n, uint32_t blockSize) {
@@ -222,7 +231,7 @@ __device__ uint32_t storeResidualStream(uint32_t elementCount, uint32_t chunkSiz
         uint32_t rshiftAmount = accumulatedIndex % gpuStorageIndiceCapacity;
         uint8_t writtenBits = gpuStorageIndiceCapacity - lshiftAmount - max(rshiftAmount-lshiftAmount,0);
         atomicOr(residualAndPrefixStore + numBlocks +  blockIdx.x * (chunkSize + 1) + startingIndex,((xoredElement << lshiftAmount) >> rshiftAmount));
-	atomicOr(residualAndPrefixStore + numBlocks + blockIdx.x * (chunkSize + 1) + startingIndex + 1,(xoredElement << (lshiftAmount + writtenBits - 1) << 1));    
+        atomicOr(residualAndPrefixStore + numBlocks + blockIdx.x * (chunkSize + 1) + startingIndex + 1,(xoredElement << (lshiftAmount + writtenBits - 1) << 1));    
     }
 }
 __global__ void gpuCompressionKernel(const uint32_t * data, uint32_t * iv, uint32_t elementCount, uint32_t chunkSize, 
@@ -244,20 +253,34 @@ __global__ void gpuCompressionKernel(const uint32_t * data, uint32_t * iv, uint3
     uint32_t lastElemVal = 0;
     uint32_t xoredElementA = 0;
     uint32_t xoredElementB = 0;
+    uint32_t prefixA = 0;
+    uint32_t prefixB = 0;
     if (blockOffsetA < elementCount){
       uint32_t ivElement = iv[blockOffsetA];
       dataElementA = data[blockOffsetA];
       xoredElementA = ivElement ^ dataElementA;
+      prefixA = min(3,__clz(xoredElementA) >> 3);
+      //store a copy of the orignal count at an 2* BLOCK SIZE offset in shared memory so that we can get the scan values and originals later!
+      uint32_t countIndexN = ai+bankOffsetA;
+      counts[countIndexN] = ((sizeof(uint32_t)-prefixA) << 3);
+      counts[(chunkSize<<1)+countIndexN] = counts[countIndexN];
     }
     if (blockOffsetB < elementCount){
       uint32_t ivElement = iv[blockOffsetB];
       dataElementB = data[blockOffsetB];
       xoredElementB = ivElement ^ dataElementB;
+      prefixB = min(3,__clz(xoredElementB) >> 3);
+      //store a copy of the orignal count at an 2* BLOCK SIZE offset in shared memory so that we can get the scan values and originals later!
+      uint32_t countIndexN = bi+bankOffsetB;
+      counts[countIndexN] = ((sizeof(uint32_t)-prefixB) << 3);
+      counts[(chunkSize<<1)+countIndexN] = counts[countIndexN];
     }
     __syncthreads();
     //compute lzc and save the prefixes:
-     storePrefixStream(iv,elementCount,chunkSize,residualAndPrefixStore,lowerBound,ai,blockOffsetA,xoredElementA,prefixArrOffset,numBlocks);
-     storePrefixStream(iv,elementCount,chunkSize,residualAndPrefixStore,lowerBound,bi,blockOffsetB,xoredElementB,prefixArrOffset,numBlocks);
+     if (blockThreadId % 16 == 0){
+      storePrefixStream(iv,elementCount,chunkSize,residualAndPrefixStore,lowerBound,ai,blockOffsetA,xoredElementA,prefixArrOffset,numBlocks);
+      storePrefixStream(iv,elementCount,chunkSize,residualAndPrefixStore,lowerBound,bi,blockOffsetB,xoredElementB,prefixArrOffset,numBlocks);
+     }
     __syncthreads();
     //compute parallel prefix sum (this method taken from GPU GEMS 3 computes 2 elements at a time):
      computeScan(elementCount,chunkSize);
@@ -291,26 +314,16 @@ __global__ void gpuCompressionKernel(const uint32_t * data, uint32_t * iv, uint3
       iv[blockOffsetB] = data[blockOffsetB];
 }
 
-const uint32_t BYTESPERINTMIN1_2 = sizeof(uint32_t) * sizeof(uint8_t) - 1;
-inline int32_t imax_2( int32_t x, int32_t y )
-{
-    return x - ((x - y) & ((x - y) >> (BYTESPERINTMIN1_2)));
-}
-inline int32_t imin_2( int32_t x, int32_t y )
-{
-    return y ^ ((x ^ y) & -(x < y)); // min(x, y)
-}
-
 void gpuDecompressionKernel(uint32_t chunkSize, uint32_t dataBlockSize, 
-			  uint8_t * compressedPrefixes, uint32_t * compressedResiduals,
+			  uint32_t * compressedPrefixes, uint32_t * compressedResiduals,
 			  uint32_t dataBlockIndex,uint32_t lowerBound) {
     uint32_t accumulatedIndex = 0;
     uint8_t lshiftAmount = (gpuStorageIndiceCapacity - gpuBitCountForRepresentation);
     for (uint32_t i = 0; i < dataBlockSize; ++i) {
 	//inflate prefix
 	uint32_t prefixIndex = i*gpuBitCountForRepresentation;
-        uint32_t startingIndex = prefixIndex >> 3;
-        uint8_t rshiftAmount = prefixIndex % 8;
+        uint32_t startingIndex = prefixIndex >> 5;
+        uint8_t rshiftAmount = prefixIndex % gpuStorageIndiceCapacity;
         uint8_t prefix = ((compressedPrefixes[startingIndex] << rshiftAmount) >> lshiftAmount);
         uint32_t count = gpuStorageIndiceCapacity - (prefix << 3);
 	//inflate its associated residual
@@ -368,14 +381,13 @@ void gpuCode::compressor::compressData(const float * data, uint32_t elementCount
 			gpuResidualsAndPrefixesStore,prefixArrOffset,numStores);
     cudaThreadSynchronize();
     CUDA_CHECK_RETURN(cudaGetLastError());
-    _gpuCompressorAccumulatedTime += timer::toc();
     //copy the padded prefix and residual arrays over so that it can be bundled into 2 transactions and not hundreds:
 //     uint32_t * tempResidualsAndPrefixesStore = NULL;
 //     CUDA_CHECK_RETURN(cudaMallocHost((void**)&tempResidualsAndPrefixesStore,sizeOfResidualArray+sizeOfPrefixArray+sizeOfResidualSizesArray,0));
     uint32_t * tempResidualsAndPrefixesStore = (uint32_t*) malloc(sizeOfResidualArray+sizeOfPrefixArray+sizeOfResidualSizesArray);
     CUDA_CHECK_RETURN(cudaMemcpy(tempResidualsAndPrefixesStore,gpuResidualsAndPrefixesStore, 
 				   sizeOfResidualArray+sizeOfPrefixArray+sizeOfResidualSizesArray, cudaMemcpyDeviceToHost));
-    
+    _gpuCompressorAccumulatedTime += timer::toc();
     //Now split the cuda memory up into unpadded chunks:
     uint32_t offsetPrefixes = 0;
     uint32_t offsetResiduals = 0;
