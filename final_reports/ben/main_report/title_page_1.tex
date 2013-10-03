@@ -467,17 +467,17 @@ General Purpose programming using Graphics Processing Units (GPGPU) brings a hos
 with the classical architectures of Central Processing Units (CPUs). Refer to figure~\ref{FERMI_ARCH} for a detailed overview of the microchip die structure of a Nvidia Fermi generation GPU. 
 However, each generation of GPUs have widely differing architectures, each making many architecture specific optimizations. Each generation, for instance, will have both a 
 different ratio and configuration of arithmetic cores to floating-point and special operations cores, per group of processing \textit{CUDA cores}. These cores are also known as 
-\textit{SMs} (or \textit{SMXs} on the latest \textit{Kepler} generation). Additionally each generation has widely differing memory controller layouts. These may determine 
-how many \textit{warps} of threads can be executed, when the warps are swapped in/out, along with many other properties. Each SM is split into atomic groups of threads which are executed
-in parallel (normally this is specified as 32 threads per warp). Even if only a subset of these threads have work the entire warp will be executed on the same machine clock cycle.
+\textit{streaming multiprocessors} (SMs). Additionally each generation has widely differing memory controller layouts. These may determine how many \textit{warps} of threads can be executed, when 
+the warps are swapped in/out, along with many other properties. Each SM is split into groups of threads which are executed in parallel (normally this is specified as 32 threads per warp). 
+These groups of threads are executed in \emph{atomic} batches, for example this may be a half-warp of threads on a G80 GPU \cite{harris2007parallel}.
 
 A basic CUDA implementation will be provided to see if doing compression as a post-processing step on signal data already loaded to GPU (as part of the current pipeline) is a 
 feasible alternative to a regular multi-threaded CPU implementation. Adaquite use of shared memory (as figure~\ref{FERMI_ARCH} shows GPUs have very large L1 and L2 caches available per SM) 
 will be made and the implementation will take adequate precaution to \textit{coalesce} memory accesses and to avoid \textit{bank conflicts} when possible. 
 
-Coalesced memory accesses are made if a continuous chunk of memory is accessed by a half-warp of threads at the same time. Normally these accesses have to be made in a uniform pattern. 
-Individual memory calls to global graphics memory is a very costly operation (and therefore random accesses have to be avoided). Coalesced accesses are made simultaneously by the 
-memory controller. Such accesses retrieve / write memory in larger chunks, which counters the latency associated with such an access. 
+Coalesced memory accesses are made if a continuous chunk of memory is accessed by a half-warp of threads at the same time. Normally these accesses have to be made in a uniform pattern that is aligned perfectly
+with the structure of global memory. Individual memory calls to global graphics memory is a very costly operation (and therefore random accesses have to be avoided). Coalesced accesses are made simultaneously by 
+the memory controller. Such accesses retrieve / write memory in larger chunks, which counters the latency associated with such an access. 
 
 In GPU architectures (at the very least with Nvidia cards) \emph{shared} memory is divided up into banks. When multiple threads (specifically a half-warp of threads) try to 
 access the same bank of memory, the memory accesses will be made sequentially. The general approach to avoid such a situation is to add padding between blocks of shared memory.
@@ -666,7 +666,7 @@ FUNCTION INT32 pivotMedian(INT32[] data, int n) {
    L_{x}(x^{*}) = \prod_{k\in{I},k\neq x}\left(\frac{x^{*}-k}{x-k}\right)
   \end{equation}
 
- \subsection{Algorithm parallelization}
+ \subsection{Algorithm parallelization and its implications for GPGPU architectures}
   As pointed out in the design section the parallelization of the basic algorithm discussed earlier can be done by dividing incoming data up into fixed size chunks, and
   processing the elements of each block sequentially, and doing multiple blocks in parallel. This approach is detrimental to the compression ratio, since the size of each
   block's residual stream has to be stored (this effect will be worse if there is a large number of blocks). This block-based approach is relatively straightforward to 
@@ -702,7 +702,7 @@ FUNCTION INT32 pivotMedian(INT32[] data, int n) {
     \end{subfigure}
     \begin{subfigure}[b]{\textwidth}
       \centering
-      \includegraphics[width=0.9\textwidth]{upsweep_downsweep.png}
+      \includegraphics[width=0.7\textwidth]{upsweep_downsweep.png}
       \begin{minipage}{\textwidth}
         \begin{verbatim}
 //UP-SWEEP:
@@ -731,9 +731,6 @@ POW(2,n) = (2 << n-1) //where "<<" is the arithmetic left-shift operator
     \caption{Parrallel scan algorithm example and pseudo code \cite{blelloch1990prefix}}
     \label{PARALLEL_SCAN}
   \end{figure}
-  
- The algorithm shown figure~\ref{PARALLEL_SCAN} assumes execution takes place in a \textit{shared-memory} architecture, where each processor has access to the memory of the other processors and that synchronization
- can take place accross multiple processors. In CUDA the last condition is not easily met. This problem will be addressed later when the CUDA implementation details are discussed.
  
  The entire algorithm can now be turned into three steps that can each be computed in parallel:
  \begin{enumerate}
@@ -743,11 +740,48 @@ POW(2,n) = (2 << n-1) //where "<<" is the arithmetic left-shift operator
   \item Each element, $B[i]$ is now the stating position (in bits) of the residual of element $D[i]$. This means the variable-length residuals can be placed into the residual stream in parallel.
  \end{enumerate}
  
-  {\color{red}TODO: problem of atomics} 
- \subsection{SSE and XOP intrinsics} 
+ The algorithm shown figure~\ref{PARALLEL_SCAN} assumes execution takes place in a \textit{shared-memory} architecture, where each processor has access to the memory of the other processors and that synchronization
+ can take place across multiple processors. In CUDA the last condition is not easily met: the global synchronization required by the parallel prefix sum scan can only be achieved through a global memory barrier. 
+ However, this will cause a high number of context switches for every SM on the GPU (especially if the number of blocks are much larger than the number of available SMs). The alternative approach is to let each SM
+ compute the prefix sum of a sub-sequence of numbers and store its last value of the accumulation as $S_{i}$. Each block total, $S_{i}$ is then distributed to the $i+1\dots n$ blocks of sub-sequence prefix sums in 
+ parallel \cite{harris2007parallel}.
+ 
+ The last, distribution, step adds additional overhead to the parallel algorithm. Instead, the dataset can be split into blocks that is a multiple of the warp size in length. This means that the data can be
+ spread throughout the entire GPU to achieve a high \textit{occupancy} of the available SMs. Each SM packs its block in parallel by computing a short prefix sum only for leading zero counts of the block 
+ being processed. 
+ 
+ If this approach is taken in conjunction with the modifications described in GPU Gems 3 \cite{harris2007parallel}, a fast, work-efficient, parallel prefix sum scan can be implemented, that both minimizes overheads, and 
+ includes optimizations through the use of shared memory on the GPU. These modifications includes adding padding  to each shared memory index according to the \textit{degree} of the bank conflict at the associated 
+ depth of the indexing tree shown in figure~\ref{PARALLEL_SCAN_SUB_ALGORITHMS}, and letting each thread compute two values at a time. By doubling the strides between each successive level in the tree, the modifications 
+ ensures that double the number of threads can be executed on that level without bank conflicts. 
+ 
+ The next complication in scheme that includes element-wise packing is the matter of atomic operations. This issue arises due to sharing an atomic memory location between multiple threads that require simultaneous access
+ to that memory location. The following example illustrates a race condition between 2 threads packing residuals into a 32-bit residual array: thread 0 tries to pack 00000000 00000000 00011101 01100111 into residual store 
+ $R[0]$ while thread 2 tries to split 00000000 01001010 01110001 01111111 into the same $R[0]$ and its successor, $R[1]$. Since $R[0]$ can only be written to by one thread at a time, either thread 1 will overwrite what has
+ been written by thread 0, or the converse. This clearly causes irreversible loss of data. One way to avoid this is to lock the memory location for reading and writing while another thread is reading and writing to the 
+ location. This potentially serializes the access.
+ 
+ One way to avoid two atomic operations per residual is to use an array of bytes as the atomic units of the residual stream. However, since each element is 4 bytes in length, there may be anything from 0 up to 4 memory
+ write operations and the necessary control logic that will result in \textit{branch-diversion}. In the context of general GPU architecture this has potentially devastating consequences for simultaneous execution. As mentioned
+ earlier each SM constitutes of many arithmetic units that are executed in atomic units, each performing the same basic instruction. When some threads are required to perform one task while the others have to perform another the
+ SM is forced to let all the threads perform both tasks in sequence, each time discarding values from the threads that are not supposed to execute through a masking operation. This means that double the clock cycles are needed
+ to perform a branch. This problem becomes worse if a 3- or 4-way branch is necessary. This branch-diversion, coupled with multiple costly memory accesses may prove worse than a single atomic operation. 
+ 
+ It is possible to remove the atomic operations from the prefix compaction operation by storing only prefixes with a length that divides the length of the closest atomic unit (byte, short or int). If the compacting operation is 
+ constrained to packing up to 3 leading zero bytes of residuals, only 2 bits are needed to store this count per element. Every $4^{th}$ thread then has to compute 4 leading zero counts and store them simultaneously into a 
+ single prefix.
+ \subsection{Feasibility analysis}
+  \subsubsection{Parallelization approaches on the CPU}
+  The initial implementation considered parallelizing the algorithm at element level using prefix sums as described in the previous section. Even when using up to 16 CPU threads through OpenMP the overheads of computing a prefix 
+  sum over all the elements turned out to be too costly on a CPU-based architecture. Although the implementation scaled roughly linear in throughput per core added it only managed to achieve compression throughputs of around 
+  400 MiB/s and decompression throughputs of around 600 MiB/s on a 16 core test. This is a lot slower than the required throughput of 5 GiB/s. The failure of this approach in a CPU environment however, does not necessarily 
+  preclude a similar approach on a GPU. It has been shown \cite{harris2007parallel} that a prefix sum can be computed up to 6 times faster on a GPU for large arrays of 16.7 million elements. 
+  \subsubsection{Compression and alternative linear predictors}
   {\color{red}TODO} 
- \subsection{GPGPU implementation in CUDA}
-  {\color{red}TODO}
+  \subsubsection{Vector intrinsics}
+  {\color{red}TODO} 
+  \subsubsection{GPGPU implementation using CUDA}
+  {\color{red}TODO} 
 \section{Results}
 \subsection{Constraints on benchmarking environment}
 In order to eliminate the influence of the external testing environment the following special conditions are specified:
@@ -755,15 +789,8 @@ In order to eliminate the influence of the external testing environment the foll
  \item Files in excess of 500 MB will be used for benchmarking. This will greatly reduce variability in timings.
  \item No other processes should be making intensive use of primary memory once benchmarking has commenced. The sheer quantity of data being processed makes benchmarking a memory-bound operation.
 \end{enumerate}
-\subsection{Parallelization approach}
-{\color{red}TODO}
-\subsection{Performance of the block-based parallel scheme}
-{\color{red}TODO}
-\subsection{Feasibility of including vector intrinsics}
-{\color{red}TODO}
+\subsection{Algorithm throughput on a CPU architecture}
 \subsection{Benchmark against standard compression utilities}
-{\color{red}TODO}
-\subsection{Feasibility of a CUDA implementation}
 {\color{red}TODO}
 \subsection{Comparison to what was achieved in concurrent research}
 {\color{red}TODO}
