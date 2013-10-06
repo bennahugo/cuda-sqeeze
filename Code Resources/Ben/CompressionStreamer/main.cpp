@@ -19,6 +19,8 @@ void printBinaryRepresentation(void * data, int sizeInBytes);
 void processStride(const astroReader::stride & data);
 void compressCallback(uint32_t elementCount, uint32_t * compressedResidualsIntCounts, uint32_t ** compressedResiduals,
 			    uint32_t * compressedPrefixIntCounts, uint32_t ** compressedPrefixes, uint32_t chunkCount, uint32_t * chunkSizes);
+void decompressCallback(uint32_t elementCount, uint32_t * decompressedData);
+void decompressFromFile(std::string filename);
 
 float * currentUncompressedData = NULL;
 bool skipDecompression = false;
@@ -119,8 +121,13 @@ int main(int argc, char **argv) {
 									  f.getDimensionSize(1)-1,0,
 									  f.getDimensionSize(2)-1,0);	  
       totalDiskReadTime += timer::toc();
-      processStride(data);
+      processStride(data);     
     } 
+    if (writeStream){
+      fclose(fcomp);
+       if (!skipDecompression)
+	decompressFromFile(filename);
+    }
     std::cout << "COMPRESSION RATIO: " << (totalCompressSize/((float)origSize*memoryScaling)) << std::endl;
     std::cout << "COMPRESSED IN " << totalCompressTime << " seconds @ " << 
       origSize*memoryScaling*sizeof(float)/1024.0f/1024.0f/1024.0f/totalCompressTime << " GB/s" << std::endl;
@@ -129,20 +136,99 @@ int main(int argc, char **argv) {
 	origSize*memoryScaling*sizeof(float)/1024.0f/1024.0f/1024.0f/totalDecompressTime << " GB/s" << std::endl;
     }
     if (writeStream){
-      std::cout << "DISK I/O READ TIME (PER STEP): " << totalDiskReadTime << std::endl; // I make the reasonable assumption that an HDF5 system reads the data in blocks --- the same we would have to do it if we read back before decompression
+      std::cout << "DISK I/O READ TIME (PER STEP): " << totalDiskReadTime << std::endl;
       std::cout << "COMPRESSION DISK I/O WRITE TIME: " << totalCompressTime << std::endl;
-      if (!skipDecompression)
+      if (!skipDecompression){
 	std::cout << "DECOMPRESSION DISK I/O WRITE TIME: " << totalDecompressTime << std::endl;
-      fclose(fcomp);
+	fclose(fdecomp);
+      }
     }
     if (useCUDA)
       gpuCode::releaseCard();
     return 0;
 }
+/*
+ * File-based decompression routine (to compare against other compression utilities)
+ * This routine is not invoked if the user does not explicitly ask for output
+ */
+void decompressFromFile(std::string filename){
+    using namespace std;
+    std::stringstream concat;
+    concat << filename << ".comp";
+    std::string outName;
+    concat >> outName;
+    FILE * compressedFile = fopen(outName.c_str(),"r");
+    if (compressedFile == NULL) { //failure
+        cout << "FATAL: COULD NOT OPEN COMPRESSED FILE FOR DECOMPRESSION STAGE" << endl;
+        exit(1);
+    }
+    
+    //read the header and the IV:
+    uint32_t numElements = 0;
+    uint32_t numBlocks = 0;
+    timer::tic();
+    fread (&numElements,sizeof(uint32_t),1,compressedFile);
+    uint32_t * ts = new uint32_t[numElements];
+    fread (&numBlocks,sizeof(uint32_t),1,compressedFile);
+    fread (ts,sizeof(uint32_t),numElements,compressedFile);
+    totalDiskReadTime += timer::toc();
+    uint32_t chunkSize = numElements/numBlocks;
+    
+    //write the IV to decompressed file:
+    cpuCode::decompressor::initDecompressor((float*)ts,numElements);
+    
+    timer::tic();
+    fwrite(ts,sizeof(uint32_t),numElements,fdecomp);
+    fflush(fdecomp);
+    totalDecompressWriteTime += timer::toc();
+    //read residual counts, prefixes and  residuals block by block:
+    while (!feof(compressedFile)){
+      uint32_t ** compressedResiduals = new uint32_t*[numBlocks];
+      uint32_t ** compressedPrefixes = new uint32_t*[numBlocks];
+      uint32_t * chunkSizes = new uint32_t[numBlocks];
+      for (uint32_t i = 0; i < numBlocks; ++i){
+	uint32_t compressedResidualIntCount = 0;
+	timer::tic();
+	fread(&compressedResidualIntCount,sizeof(uint32_t),1,compressedFile);
+	totalDiskReadTime += timer::toc();
+	compressedResiduals[i] = new uint32_t[compressedResidualIntCount];	
+	uint32_t elementsInDataBlock = (((i + 1)*chunkSize <= numElements) ? chunkSize : chunkSize-((i + 1)*chunkSize-numElements));
+	uint32_t sizeOfPrefixArray = (elementsInDataBlock * 2) / 32 +
+                                 ((elementsInDataBlock * 2) % 32 != 0);
+	
+	compressedPrefixes[i] = new uint32_t[sizeOfPrefixArray];
+	chunkSizes[i] = elementsInDataBlock;
+	timer::tic();
+	fread(compressedPrefixes[i],sizeof(uint32_t),sizeOfPrefixArray,compressedFile);
+	fread(compressedResiduals[i],sizeof(uint32_t),compressedResidualIntCount,compressedFile);
+	totalDiskReadTime += timer::toc();
+      }
+      
+      cpuCode::decompressor::decompressData(numElements,numBlocks,chunkSizes,
+ 					 compressedResiduals,compressedPrefixes,decompressCallback);
+      //free residual and prefix stores:
+      for (uint32_t i = 0; i < numBlocks; ++i){
+	delete [] compressedResiduals[i];
+	delete [] compressedPrefixes[i];
+      }
+      delete [] compressedResiduals;
+      delete [] compressedPrefixes;
+      delete [] chunkSizes;
+    }
+    totalDecompressTime += cpuCode::decompressor::getAccumulatedRunTimeSinceInit();
+    cpuCode::decompressor::releaseResources();
+    fclose(compressedFile);
+    delete[] ts;
+    
+}
+/**
+ * Decompression callback
+ * Performs sanity check if not in file output mode
+ */
 void decompressCallback(uint32_t elementCount, uint32_t * decompressedData){
   using namespace std;
   //Automated test of the compression algorithm. Check decompressed data against original timeslice
-  if (!skipValidation){ 
+  if (!skipValidation && !writeStream){ 
     for (uint32_t i = 0; i < elementCount; ++i){
      int checkElement = *(uint32_t *)&currentUncompressedData[i];
       if (decompressedData[i] != checkElement){
@@ -156,27 +242,39 @@ void decompressCallback(uint32_t elementCount, uint32_t * decompressedData){
   timer::tic();
   if (writeStream){
       fwrite(decompressedData,sizeof(uint32_t),elementCount,fdecomp);
+      fflush(fdecomp);
   }
   totalDecompressWriteTime += timer::toc();
 }
+/**
+ * Compressor callback
+ * If user requests compression output all compressed blocks are dumped to disk
+ * otherwise if decompression is enabled the blocks are sent strait to the decompressor
+ */
 void compressCallback(uint32_t elementCount, uint32_t * compressedResidualsIntCounts, uint32_t ** compressedResiduals,
 			    uint32_t * compressedPrefixIntCounts, uint32_t ** compressedPrefixes, 
-			    uint32_t chunkCount, uint32_t * chunkSizes){    
-    if (!skipDecompression){ 
-      gpuCode::decompressor::decompressData(elementCount,chunkCount,chunkSizes,
- 					 compressedResiduals,compressedPrefixes,decompressCallback);
-    }
-    timer::tic();
+			    uint32_t chunkCount, uint32_t * chunkSizes){        
     if (writeStream){
+      timer::tic();
       for (uint32_t i = 0; i < chunkCount; ++i){
-	 fwrite(&chunkSizes[i],sizeof(uint32_t),1,fcomp);
+	//chunksizes can be recomputed from number of blocks
+	 fwrite(&compressedResidualsIntCounts[i],sizeof(uint32_t),1,fcomp);
 	 fwrite(compressedPrefixes[i],sizeof(uint32_t),compressedPrefixIntCounts[i],fcomp);
 	 fwrite(compressedResiduals[i],sizeof(uint32_t),compressedResidualsIntCounts[i],fcomp);
+	 fflush(fcomp);
+      }
+      totalCompressWriteTime += timer::toc();
+    }
+    else{
+      if (!skipDecompression){ //decompression from file only decompresses at the end
+	cpuCode::decompressor::decompressData(elementCount,chunkCount,chunkSizes,
+ 					 compressedResiduals,compressedPrefixes,decompressCallback);
       }
     }
-    totalCompressWriteTime += timer::toc();
 }
-
+/**
+ * Routine initializes the compressor and decompressor and starts encoding (timestamps at a time)
+ */
 void processStride(const astroReader::stride & data){
     uint32_t tsSize = data.getTimeStampSize()*memoryScaling;
     float * ts = (float*) new float[tsSize];
@@ -184,35 +282,38 @@ void processStride(const astroReader::stride & data){
     data.getTimeStampData(0,ts);
     for (uint32_t i = 1; i < memoryScaling; ++i)
       memcpy(ts+i*data.getTimeStampSize(),ts,data.getTimeStampSize()*sizeof(float));
-    gpuCode::compressor::initCompressor(ts,tsSize);
-    gpuCode::decompressor::initDecompressor(ts,tsSize);
+    cpuCode::compressor::initCompressor(ts,tsSize);
+    if (!writeStream)
+      cpuCode::decompressor::initDecompressor(ts,tsSize);
     
     timer::tic();
     if (writeStream){
-      fwrite(ts,sizeof(uint32_t),tsSize,fcomp);
+      fwrite(&tsSize,sizeof(uint32_t),1,fcomp);  //number of elements
+      uint32_t blockSize = omp_get_max_threads();
+      fwrite(&blockSize,sizeof(uint32_t),1,fcomp); //number of blocks
+      fwrite(ts,sizeof(uint32_t),tsSize,fcomp); //iv
+      fflush(fcomp);
     }
     totalCompressWriteTime += timer::toc();
-    
-    timer::tic();
-    if (writeStream){
-      fwrite(ts,sizeof(uint32_t),tsSize,fdecomp);
-    }
-    totalDecompressWriteTime += timer::toc();
     
     for (int t = 1; t <= data.getMaxTimestampIndex() - data.getMinTimestampIndex(); ++t) {
         data.getTimeStampData(t,ts);
 	for (uint32_t i = 1; i < memoryScaling; ++i)
 	  memcpy(ts+i*data.getTimeStampSize(),ts,data.getTimeStampSize()*sizeof(float));
-        gpuCode::compressor::compressData(ts,tsSize,compressCallback);
+        cpuCode::compressor::compressData(ts,tsSize,compressCallback);
     }
-    totalCompressTime += gpuCode::compressor::getAccumulatedRunTimeSinceInit();
-    totalDecompressTime += gpuCode::decompressor::getAccumulatedRunTimeSinceInit();
-    totalCompressSize += gpuCode::compressor::getAccumulatedCompressedDataSize();
-    gpuCode::compressor::releaseResources();
-    gpuCode::decompressor::releaseResources();
+    totalCompressTime += cpuCode::compressor::getAccumulatedRunTimeSinceInit();  
+    totalCompressSize += cpuCode::compressor::getAccumulatedCompressedDataSize();
+    cpuCode::compressor::releaseResources();
+    if (!writeStream){
+      totalDecompressTime += cpuCode::decompressor::getAccumulatedRunTimeSinceInit();
+      cpuCode::decompressor::releaseResources();
+    }
     delete[] ts;
 }
-
+/**
+ * Helper routine to print a binary representation of a memory address
+ */
 void printBinaryRepresentation(void * data, int sizeInBytes){
   using namespace std;
   char * temp = (char *)data;

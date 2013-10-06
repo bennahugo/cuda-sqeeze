@@ -143,14 +143,14 @@ __device__ void storePrefixStream(const uint32_t * iv, uint32_t elementCount, ui
     extern __shared__ uint32_t counts[]; //the kernel must be called with "length" as a third special arguement  
     
     uint32_t lshiftAmountPrefixes = gpuStorageIndiceCapacity - gpuBitCountForRepresentation;
-    if ((index < elementCount)){
+      if ((index < elementCount)){
         //save the prefixes:
         uint32_t iTimesgpuBitCountForRepresentation = blockThreadId*gpuBitCountForRepresentation;
         uint32_t startingIndex = (iTimesgpuBitCountForRepresentation) >> 5;
         uint32_t rshiftAmount = (iTimesgpuBitCountForRepresentation) % gpuStorageIndiceCapacity;
 	atomicOr(residualAndPrefixStore + numBlocks + prefixArrOffset + blockIdx.x * ((chunkSize * gpuBitCountForRepresentation) / gpuStorageIndiceCapacity + 1) + startingIndex,
 		 ((prefix << lshiftAmountPrefixes) >> rshiftAmount)); //according to the cuda developer guide this will compute the or and store it back to the same address
-    }
+      }
 }
 
 /**
