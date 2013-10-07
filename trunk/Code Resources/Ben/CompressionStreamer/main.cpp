@@ -27,6 +27,8 @@ bool skipDecompression = false;
 bool skipValidation = false;
 bool writeStream = false;
 bool useCUDA = true;
+bool skipCompression = false;
+
 double totalCompressTime = 0;
 double totalDecompressTime = 0;
 long totalCompressSize = 0;
@@ -95,12 +97,19 @@ int main(int argc, char **argv) {
     if (argc >= 7){
       useCUDA = atoi(argv[6]);
     }
+    if (argc >= 8){
+      skipCompression = atoi(argv[7]);
+      if (skipCompression)
+	      std::cout << "WARNING: USER IS SKIPPING COMPRESSION, ANY DECOMPRESSION WILL BE FROM PREVIOUSLY COMPRESSED FILE" << std::endl;
+    }
+
     cout << omp_get_max_threads() << " CPU Processor Threads available" << endl;
     if (useCUDA)
       gpuCode::initCUDA();
-    else
-      cout << "WARNING: USER REQUESTED TO SKIP GPGPU RUN" << endl;
+    
+
     //Read in chunks:
+    if (!skipCompression){
     long maxBlockSizeBytes = MAX_READ_BUFFER_IN_MB*1024*1024;
     long pageSize = (f.getDimensionSize(1))*(f.getDimensionSize(2))*2*sizeof(float);
     long fileSize = (f.getDimensionSize(0))*pageSize;
@@ -122,25 +131,32 @@ int main(int argc, char **argv) {
 									  f.getDimensionSize(2)-1,0);	  
       totalCompressDiskReadTime += timer::toc();
       processStride(data);     
-    } 
-    if (writeStream){
-      fclose(fcomp);
-       if (!skipDecompression)
+    }
+      if (writeStream)
+         fclose(fcomp);
+    }
+    //do the compression from file if the write flag is specified
+    if (writeStream && !skipDecompression){
+	std::cout << "NOTE: DECOMPRESSING FROM FILE" << std::endl;
 	decompressFromFile(filename);
     }
-    std::cout << "COMPRESSION RATIO: " << (totalCompressSize/((float)origSize*memoryScaling)) << std::endl;
-    std::cout << "COMPRESSED IN " << totalCompressTime << " seconds @ " << 
-      origSize*memoryScaling*sizeof(float)/1024.0f/1024.0f/1024.0f/totalCompressTime << " GB/s" << std::endl;
+    if (!skipCompression){
+	    std::cout << "COMPRESSION RATIO: " << (totalCompressSize/((float)origSize*memoryScaling)) << std::endl;
+	    std::cout << "COMPRESSED IN " << totalCompressTime << " seconds @ " << 
+	      origSize*memoryScaling*sizeof(float)/1024.0f/1024.0f/1024.0f/totalCompressTime << " GB/s" << std::endl;
+    }
     if (!skipDecompression){  
       std::cout << "DECOMPRESSED IN " << totalDecompressTime << " seconds @ " << 
 	origSize*memoryScaling*sizeof(float)/1024.0f/1024.0f/1024.0f/totalDecompressTime << " GB/s" << std::endl;
     }
     if (writeStream){
-      std::cout << "COMPRESSION DISK I/O READ TIME (PER STEP): " << totalCompressDiskReadTime << std::endl;
-      std::cout << "COMPRESSION DISK I/O WRITE TIME: " << totalCompressTime << std::endl;
+      if (!skipCompression){
+	      std::cout << "COMPRESSION DISK I/O READ TIME: " << totalCompressDiskReadTime << std::endl;
+	      std::cout << "COMPRESSION DISK I/O WRITE TIME: " << totalCompressTime << std::endl;
+      }
       if (!skipDecompression){
 	std::cout << "DECOMPRESSION DISK I/O WRITE TIME: " << totalDecompressTime << std::endl;
-	std::cout << "DECOMPRESSION DISK I/O READ TIME (PER STEP): " << totalDecompressDiskReadTime << std::endl;
+	std::cout << "DECOMPRESSION DISK I/O READ TIME: " << totalDecompressDiskReadTime << std::endl;
 	fclose(fdecomp);
       }
     }
@@ -180,7 +196,7 @@ void decompressFromFile(std::string filename){
     
     timer::tic();
     fwrite(ts,sizeof(uint32_t),numElements,fdecomp);
-    fflush(fdecomp);
+    fflush(0);
     totalDecompressWriteTime += timer::toc();
     //read residual counts, prefixes and  residuals block by block:
     while (!feof(compressedFile)){
@@ -243,7 +259,7 @@ void decompressCallback(uint32_t elementCount, uint32_t * decompressedData){
   timer::tic();
   if (writeStream){
       fwrite(decompressedData,sizeof(uint32_t),elementCount,fdecomp);
-      fflush(fdecomp);
+      fflush(0);
   }
   totalDecompressWriteTime += timer::toc();
 }
@@ -262,7 +278,7 @@ void compressCallback(uint32_t elementCount, uint32_t * compressedResidualsIntCo
 	 fwrite(&compressedResidualsIntCounts[i],sizeof(uint32_t),1,fcomp);
 	 fwrite(compressedPrefixes[i],sizeof(uint32_t),compressedPrefixIntCounts[i],fcomp);
 	 fwrite(compressedResiduals[i],sizeof(uint32_t),compressedResidualsIntCounts[i],fcomp);
-	 fflush(fcomp);
+	 fflush(0);
       }
       totalCompressWriteTime += timer::toc();
     }
@@ -293,7 +309,7 @@ void processStride(const astroReader::stride & data){
       uint32_t blockSize = omp_get_max_threads();
       fwrite(&blockSize,sizeof(uint32_t),1,fcomp); //number of blocks
       fwrite(ts,sizeof(uint32_t),tsSize,fcomp); //iv
-      fflush(fcomp);
+      fflush(0);
     }
     totalCompressWriteTime += timer::toc();
     
