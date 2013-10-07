@@ -18,7 +18,7 @@
 
 
 #include "cpuCodeLinearCoder.h"
-#define PREDICTOR_ORDER 3
+#define PREDICTOR_ORDER 10
 uint32_t ** _compressorIV = NULL; 
 uint64_t _compressorIVLength = -1;
 uint32_t _accumCompressedDataSize = 0;
@@ -269,7 +269,7 @@ void compressionKernel(const float * data, uint32_t elementCount, uint32_t dataB
     for (uint32_t i = 0; i < elementsInDataBlock; ++i) {
 	uint32_t index = i+lowerBound;
         //save the prefixes:
-	int32_t P = compressorParallelogramPredictor(index);
+	int32_t P = compressorLagrangePredictor(index);
 	for (uint32_t j = 1; j < PREDICTOR_ORDER;++j)
 	  _compressorIV[j-1][index] = _compressorIV[j][index];
 	_compressorIV[PREDICTOR_ORDER-1][index] = *((int32_t*)&data[index]); 
@@ -337,7 +337,7 @@ void decompressionKernel(uint32_t chunkSize, uint32_t dataBlockSize,
 	  | ( compressedResiduals[startingIndex+(storageIndiceCapacity - residuallshiftAmount - writtenBits > 0)] >> (residuallshiftAmount + writtenBits - 1) >> 1)
 	  | sign;
 	uint32_t residual = *((uint32_t*)&element);
-	int32_t P = decompressorParallelogramPredictor(index);
+	int32_t P = decompressorLagrangePredictor(index);
 	//P += _decompressorIV[PREDICTOR_ORDER-1][index];
 	for (uint32_t j = 1; j < PREDICTOR_ORDER;++j)
 	  _decompressorIV[j-1][index] = _decompressorIV[j][index];
