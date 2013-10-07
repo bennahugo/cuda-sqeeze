@@ -372,10 +372,9 @@ rounding errors. A simple alternative approach is proposed by Engelson et al. \c
 approach ensures the predictive scheme achieves lossless compression. In light of this only schemes that conform to this approach will be considered. Engelson et al. gives an example of how floating-point numbers
 can be treated with integer operations. Figure~\ref{INT_REP} shows that if two floating-point numbers are relatively close to each other (in terms of magnitude) it is possible to discard some repeated bytes of information after performing 
 an XOR operation to extract the remaining, seemingly random, residual bits. Therefore if an accurate prediction can be made for consecutive numbers a reasonable
-saving in terms of compression ratio can be made. An XOR operation is a \textit{binary} operation (taking two inputs, for example normal addition or multiplication). 
-It returns true if and \emph{only} if \emph{one} of the inputs is true, otherwise it will return false. If $\oplus$ represents the XOR operation then inversion can be achieved as follows:  
-$A\oplus B = C \implies (C\oplus A = B) \wedge (C\oplus B = A)$. The XOR operation is furthermore commutative, meaning: $A\oplus B = B\oplus A$. The inversion property is obviously critical 
-to achieve decompression.
+saving in terms of compression ratio can be made. An XOR operation is a \textit{binary} operation (taking two operands). It returns false if both operands are the same. If $\oplus$ represents the XOR operation then 
+inversion can be achieved as follows: $A\oplus B = C \implies (C\oplus A = B) \wedge (C\oplus B = A)$. The XOR operation is furthermore commutative, meaning: $A\oplus B = B\oplus A$. The inversion property is obviously critical 
+to achieve decompression since the difference can be XORed with the observation at time $t-1$ to obtain the observation at time \textit{t}.
 \begin{figure}[h!]
 \begin{mdframed}
 \centering
@@ -825,7 +824,7 @@ POW(2,n) = (2 << n-1) //where "<<" is the arithmetic left-shift operator
   sum over all the elements turned out to be too costly on a CPU-based architecture. Although the implementation scaled roughly linear in throughput per core added it only managed to achieve compression throughputs of around 
   400 MiB/s and decompression throughputs of around 600 MiB/s on a 16 core test. This is a lot slower than the required throughput of 5 GiB/s. It is duely noted that the throughput rates achieved in the element-wise parallelization 
   includes several optimizations such as the removal of branches (for example branchless implementations are used to compute minimums and maximums \footnote{Sean E. Anderson 
-  provides several bittwiddled implementations of minimums, maximums, binary logarithms and leading zero counts on his website: \url{graphics.stanford.edu/~seander/bithacks.html}. Last accessed 3 
+  provides several bittwiddled implementations of minimums, maximums and binary logarithms on his website: \url{graphics.stanford.edu/~seander/bithacks.html}. Last accessed 3 
   October 2013} when arithmetic bit shifting is computed) and some of the atomic operations as discussed in the previous sections.
   
   The failure of this approach in a CPU environment however, does not necessarily preclude a similar approach on a GPU. It has been shown \cite{harris2007parallel} that a 
@@ -838,12 +837,32 @@ POW(2,n) = (2 << n-1) //where "<<" is the arithmetic left-shift operator
   the p-threaded model with OpenMP a major breakthrough was made: the compressor achieved rates up to 1.98 GiB/s and the decompressor up to 3.66 GiB/s using 16 cores. Further 
   optimizations included using a leading zero count assembler instruction \footnote{\texttt{LZCNT rO,rI} is a machine instruction found on most AMD processors (since the 
   introduction of their XOP vector instruction set), as well as newer Intel processors. Nvidia GPUs have similar support for leading zero counts.} instead of looping to obtain 
-  the count. This optimization increases the througput by up to 200 MiB/s on a quadcore processor. When the implementation is run for large files on a 32 core AMD Opteron platform
+  the count. This optimization increases the throughput by up to 200 MiB/s on a quad-core processor. When the implementation is run for large files on a 32 core AMD Opteron platform
   the desired throughput of 5 GiB/s is achieved. A detailed breakdown is given in the results section.
   \subsubsection{Alternative prediction schemes}
-  The Lagrange predictor predictor is accurate for smooth data (say that of a sinusoid) that can be well approximated by some polynomial of degree \textit{n}. However, when 
-  dealing with noisy data, such as the astronomical data considered in this report the predictor fairs poorly relative to the simple difference scheme.
-   
+  The basic difference scheme discussed earlier will not work well in the case where the sign bit of 2 consecutive observations differs (as previously mentioned the sign bit is the most significant bit of an IEEE 754 
+  floating point representation, implying that there will be no leading zeros to encode). A solution to this is to dedicate an extra bit per prefix in order to store the sign value. From experimentation it was determined that
+  this trade-off between storing an extra bit for every prefix and the number of signed differences is not worth encoding: a saving of less than 0.01\% is made for a few of the sample datasets. 
+  
+  The next simple modification to the scheme is to test whether using normal integer subtraction fairs better than an XOR operation. Burtscher et al. points out that integer subtraction faired much worse both in terms of
+  compression ratio and throughput for their FPC compressor operating on 64-bit floating points values \cite{4589203}. This is the same for the 32-bit KAT-7 being considered in this report. A loss of between 2\% to 3\% in 
+  compression ratio is observed. It is therefore better to stick with a simple XOR operation.
+  
+  The integer mean predictor fairs poorly compared to the simple difference scheme by increasing the compression ratio by 3\% to almost 7\% (thereby inflating the data). The effect worsens when the number of prediction 
+  steps are increased. As pointed out earlier such a mean scheme is prone to outliers, which can be expected from noisy data. A median scheme was expected to fair better. It was observed that this scheme obtained compression ratios
+  similar or slightly smaller (roughly 1\%) than the normal difference based scheme, depending on the number of prediction steps used. However: although the pivoting algorithm discussed earlier has an average linear computational 
+  complexity, it does have a number of branches. This caries a severe penalty on throughput: over 71\% is lost in the case of compression, while just short of 90\% is lost when decompressing. The effect worsens as the number of
+  predictive steps are increased. This cannot be considered a viable alternative to the basic difference scheme.
+  
+  The Lagrange predictor is accurate for smooth data (for example that of a sinusoid) that can be well approximated by some polynomial of degree \textit{n}. However, the noise present in the KAT-7 data renders this
+  method of prediction unsuitable for the purposes of compression. Similar to the mean-based predictor the scheme inflated the data when up to ten predictive steps were chosen. Similarly, the parallelogram predictor 
+  also increased the compression ratio up to 3\%.
+  
+  Other solutions not explored in this project include using a lookup table to store predictions and is used in the FPC predictor mentioned earlier \cite{4589203}. The scheme is fast and reportedly achieves up to 
+  1.36 GiB/s \cite{4976448} as a parallel implementation on a fast quad-core Xeon processor. This scheme uses the same block-based parallel approach investigated in this report. However, the primary concern with this 
+  scheme is that as the number of observed values grow, so does the size of the lookup table. This approach is therefore not as well tailored towards a GPU implementation as the difference-based scheme investigated 
+  in this report, because it will require more global memory accesses than a simple lookup of a single previous observation. It may be worthwhile to investigate whether such a predictor will work well on the sample data produced
+  by the KAT-7 array in future work.
   \subsubsection{Vector intrinsics}
   {\color{red}TODO} 
   \subsubsection{GPGPU implementation using CUDA}
