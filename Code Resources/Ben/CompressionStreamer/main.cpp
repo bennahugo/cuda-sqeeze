@@ -34,8 +34,8 @@ FILE * fcomp;
 FILE * fdecomp;
 double totalCompressWriteTime = 0;
 double totalDecompressWriteTime = 0;
-double totalDiskReadTime = 0;
-
+double totalCompressDiskReadTime = 0;
+double totalDecompressDiskReadTime = 0;
 uint32_t memoryScaling = 1;
 
 int main(int argc, char **argv) {
@@ -120,7 +120,7 @@ int main(int argc, char **argv) {
 									  i*numPagesPerRead > f.getDimensionSize(0)-1 ? f.getDimensionSize(0)-1 : i*numPagesPerRead,
 									  f.getDimensionSize(1)-1,0,
 									  f.getDimensionSize(2)-1,0);	  
-      totalDiskReadTime += timer::toc();
+      totalCompressDiskReadTime += timer::toc();
       processStride(data);     
     } 
     if (writeStream){
@@ -136,10 +136,11 @@ int main(int argc, char **argv) {
 	origSize*memoryScaling*sizeof(float)/1024.0f/1024.0f/1024.0f/totalDecompressTime << " GB/s" << std::endl;
     }
     if (writeStream){
-      std::cout << "DISK I/O READ TIME (PER STEP): " << totalDiskReadTime << std::endl;
+      std::cout << "COMPRESSION DISK I/O READ TIME (PER STEP): " << totalCompressDiskReadTime << std::endl;
       std::cout << "COMPRESSION DISK I/O WRITE TIME: " << totalCompressTime << std::endl;
       if (!skipDecompression){
 	std::cout << "DECOMPRESSION DISK I/O WRITE TIME: " << totalDecompressTime << std::endl;
+	std::cout << "DECOMPRESSION DISK I/O READ TIME (PER STEP): " << totalDecompressDiskReadTime << std::endl;
 	fclose(fdecomp);
       }
     }
@@ -171,7 +172,7 @@ void decompressFromFile(std::string filename){
     uint32_t * ts = new uint32_t[numElements];
     fread (&numBlocks,sizeof(uint32_t),1,compressedFile);
     fread (ts,sizeof(uint32_t),numElements,compressedFile);
-    totalDiskReadTime += timer::toc();
+    totalDecompressDiskReadTime += timer::toc();
     uint32_t chunkSize = numElements/numBlocks;
     
     //write the IV to decompressed file:
@@ -190,7 +191,7 @@ void decompressFromFile(std::string filename){
 	uint32_t compressedResidualIntCount = 0;
 	timer::tic();
 	fread(&compressedResidualIntCount,sizeof(uint32_t),1,compressedFile);
-	totalDiskReadTime += timer::toc();
+	totalDecompressDiskReadTime += timer::toc();
 	compressedResiduals[i] = new uint32_t[compressedResidualIntCount];	
 	uint32_t elementsInDataBlock = (((i + 1)*chunkSize <= numElements) ? chunkSize : chunkSize-((i + 1)*chunkSize-numElements));
 	uint32_t sizeOfPrefixArray = (elementsInDataBlock * 2) / 32 +
@@ -201,7 +202,7 @@ void decompressFromFile(std::string filename){
 	timer::tic();
 	fread(compressedPrefixes[i],sizeof(uint32_t),sizeOfPrefixArray,compressedFile);
 	fread(compressedResiduals[i],sizeof(uint32_t),compressedResidualIntCount,compressedFile);
-	totalDiskReadTime += timer::toc();
+	totalDecompressDiskReadTime += timer::toc();
       }
       
       cpuCode::decompressor::decompressData(numElements,numBlocks,chunkSizes,
