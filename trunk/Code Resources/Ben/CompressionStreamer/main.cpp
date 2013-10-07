@@ -27,7 +27,6 @@ bool skipDecompression = false;
 bool skipValidation = false;
 bool writeStream = false;
 bool useCUDA = true;
-bool skipCompression = false;
 
 double totalCompressTime = 0;
 double totalDecompressTime = 0;
@@ -67,21 +66,25 @@ int main(int argc, char **argv) {
 	  cout << "WARNING: USER REQUESTED TO SKIP VALIDATION" << endl;
       }
     }
-    if (argc >= 6) {
-        writeStream = atoi(argv[5]);
+    if (argc >= 6){
+      useCUDA = atoi(argv[5]);
+    }
+    if (argc >= 7) {
+        writeStream = atoi(argv[6]);
         if (writeStream) {
             {
-                std::stringstream concat;
-                concat << filename << ".comp";
-                std::string outName;
-                concat >> outName;
-                fcomp = fopen(outName.c_str(),"w");
-                if (fcomp == NULL) { //failure
+		  std::stringstream concat;
+		  concat << filename << ".comp";
+		  std::string outName;
+		  concat >> outName;
+		  fcomp = fopen(outName.c_str(),"w");
+		  if (fcomp == NULL) { //failure
                     cout << "FATAL: USER DEMANDED FILE OUTPUT FROM PROGRAM, BUT THE DESTINATION IS FULL OR READ ONLY. GIVING UP." << endl;
                     exit(1);
-                }
+		  }
             }
             {
+	      if (!skipDecompression){
                 std::stringstream concat;
                 concat << filename << ".decomp";
                 std::string outName;
@@ -91,16 +94,9 @@ int main(int argc, char **argv) {
                     cout << "FATAL: USER DEMANDED FILE OUTPUT FROM PROGRAM, BUT THE DESTINATION IS FULL OR READ ONLY. GIVING UP." << endl;
                     exit(1);
                 }
+	      }
             }
         }
-    }
-    if (argc >= 7){
-      useCUDA = atoi(argv[6]);
-    }
-    if (argc >= 8){
-      skipCompression = atoi(argv[7]);
-      if (skipCompression)
-	      std::cout << "WARNING: USER IS SKIPPING COMPRESSION, ANY DECOMPRESSION WILL BE FROM PREVIOUSLY COMPRESSED FILE" << std::endl;
     }
 
     cout << omp_get_max_threads() << " CPU Processor Threads available" << endl;
@@ -109,7 +105,6 @@ int main(int argc, char **argv) {
     
 
     //Read in chunks:
-    if (!skipCompression){
     long maxBlockSizeBytes = MAX_READ_BUFFER_IN_MB*1024*1024;
     long pageSize = (f.getDimensionSize(1))*(f.getDimensionSize(2))*2*sizeof(float);
     long fileSize = (f.getDimensionSize(0))*pageSize;
@@ -134,26 +129,22 @@ int main(int argc, char **argv) {
     }
       if (writeStream)
          fclose(fcomp);
-    }
     //do the compression from file if the write flag is specified
     if (writeStream && !skipDecompression){
 	std::cout << "NOTE: DECOMPRESSING FROM FILE" << std::endl;
 	decompressFromFile(filename);
     }
-    if (!skipCompression){
-	    std::cout << "COMPRESSION RATIO: " << (totalCompressSize/((float)origSize*memoryScaling)) << std::endl;
-	    std::cout << "COMPRESSED IN " << totalCompressTime << " seconds @ " << 
+    std::cout << "COMPRESSION RATIO: " << (totalCompressSize/((float)origSize*memoryScaling)) << std::endl;
+    std::cout << "COMPRESSED IN " << totalCompressTime << " seconds @ " << 
 	      origSize*memoryScaling*sizeof(float)/1024.0f/1024.0f/1024.0f/totalCompressTime << " GB/s" << std::endl;
-    }
+
     if (!skipDecompression){  
       std::cout << "DECOMPRESSED IN " << totalDecompressTime << " seconds @ " << 
 	origSize*memoryScaling*sizeof(float)/1024.0f/1024.0f/1024.0f/totalDecompressTime << " GB/s" << std::endl;
     }
     if (writeStream){
-      if (!skipCompression){
-	      std::cout << "COMPRESSION DISK I/O READ TIME: " << totalCompressDiskReadTime << std::endl;
-	      std::cout << "COMPRESSION DISK I/O WRITE TIME: " << totalCompressTime << std::endl;
-      }
+      std::cout << "COMPRESSION DISK I/O READ TIME: " << totalCompressDiskReadTime << std::endl;
+      std::cout << "COMPRESSION DISK I/O WRITE TIME: " << totalCompressTime << std::endl;
       if (!skipDecompression){
 	std::cout << "DECOMPRESSION DISK I/O WRITE TIME: " << totalDecompressTime << std::endl;
 	std::cout << "DECOMPRESSION DISK I/O READ TIME: " << totalDecompressDiskReadTime << std::endl;
@@ -164,7 +155,7 @@ int main(int argc, char **argv) {
       gpuCode::releaseCard();
     return 0;
 }
-/*
+/**
  * File-based decompression routine (to compare against other compression utilities)
  * This routine is not invoked if the user does not explicitly ask for output
  */
@@ -179,7 +170,6 @@ void decompressFromFile(std::string filename){
         cout << "FATAL: COULD NOT OPEN COMPRESSED FILE FOR DECOMPRESSION STAGE" << endl;
         exit(1);
     }
-    
     //read the header and the IV:
     uint32_t numElements = 0;
     uint32_t numBlocks = 0;
@@ -190,7 +180,6 @@ void decompressFromFile(std::string filename){
     fread (ts,sizeof(uint32_t),numElements,compressedFile);
     totalDecompressDiskReadTime += timer::toc();
     uint32_t chunkSize = numElements/numBlocks;
-    
     //write the IV to decompressed file:
     cpuCode::decompressor::initDecompressor((float*)ts,numElements);
     
@@ -220,7 +209,6 @@ void decompressFromFile(std::string filename){
 	fread(compressedResiduals[i],sizeof(uint32_t),compressedResidualIntCount,compressedFile);
 	totalDecompressDiskReadTime += timer::toc();
       }
-      
       cpuCode::decompressor::decompressData(numElements,numBlocks,chunkSizes,
  					 compressedResiduals,compressedPrefixes,decompressCallback);
       //free residual and prefix stores:
@@ -236,7 +224,7 @@ void decompressFromFile(std::string filename){
     cpuCode::decompressor::releaseResources();
     fclose(compressedFile);
     delete[] ts;
-    
+    std::cout << "FINISHED DECOMPRESSION ROUTINE FROM FILE" << std::endl;
 }
 /**
  * Decompression callback
