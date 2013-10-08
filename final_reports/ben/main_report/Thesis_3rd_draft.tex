@@ -813,9 +813,9 @@ POW(2,n) = (2 << n-1) //where "<<" is the arithmetic left-shift operator
  SM is forced to let all the threads perform both tasks in sequence, each time discarding values from the threads that are not supposed to execute through a masking operation. This means that double the clock cycles are needed
  to perform a branch. This problem becomes worse if a 3- or 4-way branch is necessary. This branch-diversion, coupled with multiple costly memory accesses may prove worse than a single atomic operation. 
  
- It is possible to remove the atomic operations from the prefix compaction operation by storing only prefixes with a length that divides the length of the closest atomic unit (byte, short or int). If the compacting operation is 
- constrained to packing up to 3 leading zero bytes of residuals, only 2 bits are needed to store this count per element. Every $4^{th}$ thread then has to compute 4 leading zero counts and store them simultaneously into a 
- single prefix.
+ Additionally, it is possible to remove the atomic operations from the prefix compaction operation by storing only prefixes with a length that divides the length of the closest atomic unit (byte, short or int). If the compacting 
+ operation is constrained to packing up to 3 leading zero bytes of residuals, only 2 bits are needed to store this count per element. Every $16^{th}$ thread then has to compute 16 leading zero counts and store them simultaneously 
+ into a single 32-bit prefix in order to avoid multiple write operations to global memory (note that the 16 prefixes can be stored into a register before a call to global memory is made).
  \subsection{Feasibility analysis}
   \subsubsection{Compression feasibility}
   As mentioned previously the packing of residuals can be done at either bit or byte level. When packing at a bit level $\lfloor\log_2n\rfloor + 1$ bits are needed to represent
@@ -887,26 +887,10 @@ POW(2,n) = (2 << n-1) //where "<<" is the arithmetic left-shift operator
   elements loaded into a single register are all of the same bit-length (64,32,16 or 8-bit values).
   
   As the name suggests these special machine instructions are focussed on providing greater flexibility for performing a single instruction on multiple data. A good example of where
-  a speedup can be expected is in parallelizing vector addition. The following pseudo code demonstrates such an addition operation:
-  \begin{verbatim}
-Let A and B be arrays of elements (each of n 32-bit integer elements) 
-  that has been allocated as 16-bit aligned memory
-FOR i = 0 TO (n DIV 4) IN PARALLEL DO
-  LOAD 128-bits of memory starting from MEM_ADDRESS(A + i*4) INTO 
-    a 128-bit register rA
-  LOAD 128-bits of memory starting from MEM_ADDRESS(B + i*4) INTO 
-    a 128-bit register rB
-  _mm_add_epi32(rA,rB) //Performs integer addition over 4 32-bit values
-  SAVE contents of rA back to the starting address, MEM_ADDRESS(A + i*4)
-  SAVE contents of rB back to the starting address, MEM_ADDRESS(B + i*4)
-END FOR
-perform addition over the remainder the elements of A 
-  and B here (this will be up to 3 elements only)
-  \end{verbatim}
-  The original SSE instructions only allowed bit-shifting multiple elements by the same amount, whereas the packing algorithm mentioned earlier needs to shift four 
-  32-bit values each by a different amount. A simple solution is to employ the AMD XOP instruction set which adds the ability to perform element-wise arithmetic bit 
-  shifting. The problem with this approach is that no Intel processor prior to the latest (at the time of writing) Haswell series of processors support this operation
-  through the AVX 2 extensions.
+  a speedup can be expected is in parallelizing vector addition. However, in the case of implementing a packing algorithm the original SSE instructions are not sufficient since it only allows 
+  bit-shifting multiple elements by the same amount. The packing algorithm requires that four 32-bit values each be shifted by a different amount. A simple solution is to employ the AMD XOP 
+  instruction set which adds the ability to perform element-wise arithmetic bit shifting. The problem with this approach is that no Intel processor prior to the latest (at the time of writing) 
+  Haswell series of processors support this operation through the AVX 2 extensions.
   
   The next major problem is that there is both a limited number of registers available and a packing algorithm does not have the same number of outputs as inputs. Altough
   the majority of the algorithm can be written as SSE and XOP instructions while the storage section can be written as as four separate instructions this avenue of research
@@ -924,9 +908,36 @@ perform addition over the remainder the elements of A
   two and small enough in order for the leading zero count array and its accumulation to be stored in shared memory with the necessary padding per level to avoid bank conflicts as mentioned 
   earlier.
   
-  Due to the fact that both the packing and unpacking algorithm is so similar in their construction for the sake of time constraints only the packing algorithm was implemented in CUDA. A 
-  general compacting kernel requires the use of atomics as mentioned earlier, but still achieves up to 6.1 GiB/s on a GT670.
+  Due to the fact that both the packing and unpacking algorithm is so similar in their construction for the sake of time constraints only the packing algorithm was implemented in CUDA as it 
+  gives a fair estimation on whether a decompression scheme is feasible. As mentioned previously the GPU implementation can be viewed as a postprocessing step, after existing signal processing 
+  routines have been executed on the data. A general compacting kernel requires the use of atomics as mentioned earlier, but still achieves up to 5.2 GiB/s on a GT670, and up to 11.5 GiB/s on a 
+  GT780 when processing a sufficiently large number of observations (distributed over time as before), which fills the memory capacity of the GPU. It was found that the best performance in terms 
+  of throughput is given when block sizes of 256 elements are used. However, using such small blocks (and the associated increase in header information) can result in a penalty on the compression 
+  ratio of up to 2.7\% compared to a CPU version using a small number of blocks.
   
+  Currently the number of correlated antennae are limited to 7+1 sources each with 2 polarizations. However, as the number of antennae grow (to arround 3000) the number of correlations will exhibit 
+  a factorial growth rate. It therefore makes sense to flood the SIMD environment of the cards with enough information to fill the onboard memory of the card completely in order to mitigate the setup 
+  costs involved when launching device kernels. The current datasets are artifically extended by duplicating the observations at time \textit{t} until it fills the memory of the card being tested on 
+  (it is reasonable to assume that the overall properties of the datasets are preserved if the number of antennae are increased).
+  
+  The approaches to remove the atomic operations from both prefix and residual compaction discussed previously was implemented without much success. As mentioned earlier branch divergence and multiple
+  write operations to global memory (in the case of residual compaction) proved to be just as expensive as using atomic operations. The throughput remained roughly the same for both these approaches.
+  
+  After considering all the kernel-level optimizations, including minimizing branch divergence, using shared memory (and associated issues regarding bank conflicts) and investigating the removal of atomic 
+  operations the issue of memory transfer between the device and host was taken into consideration. This copy operation should be taken into account in a scenario where post-processing is required since
+  no other operations are likely to follow a compression step and due to the limitations in transfer speeds imposed by the PCI-Express bus. Normally the cost of transfer should be hidden by executing multiple 
+  kernels while memory transfers are made through the use of asyncronous memory calls. However, due to the limited amount of memory on these cards and the amount of data being processed duplicating memory allocations
+  in order to execute kernels and memory copies asyncronously is not a viable option. On both the GT670 and the GT780 the latency associated with a memory copy between each kernel launch proved to be very detremental to
+  the high throughputs seen for the execution of the compression kernel itself. When taking the transfer of the blocks of residuals and prefixes into account the compression throughput dropped to below 1 GiB/s.
+  
+  Several different strategies were taken to minimize this latency, including transfering all the blocks of residuals and prefixes using a single copy operation (with the necessary padding between blocks of residuals to
+  take into account the variable length of the blocks of residuals) and doing all the splitting on the host, \textit{pinning} host memory, as well as \textit{zero-copy} operations. Pinned memory simply allocates a block 
+  of memory that cannot be swapped out to secondary storage. Zero-copy operations simply makes memory transfers between host and device transparent, by mapping the host memory address space directly to the GPU memory 
+  address space. Such a zero copy operation is particularly useful when the memory allocation needed is larger than the limited onboard memory of a GPU. 
+  
+  None of these approaches made a significant improvement in terms of throughput, although pinned memory showed a small 200-300 MiB/s increase in throughput if a large number of observations are transfered between the 
+  device and the host. In light of this a post-processing GPU implementation may not be feasible unless the latency added by the memory copy operation can be hidden as part of the transfer cost between the host and RAID disk
+  array (which can sustain transfer rates up to 4GB/s). Such an implementation is, however, beyond the scope of the current investigation.
 \section{Results}
 \subsection{Constraints on benchmarking environment}
 In order to eliminate the influence of the external testing environment the following special conditions are specified:
