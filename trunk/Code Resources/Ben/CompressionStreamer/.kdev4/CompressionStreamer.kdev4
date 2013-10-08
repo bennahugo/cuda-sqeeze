@@ -9,7 +9,7 @@ ProjectRootRelative=./
 
 [CMake][CMake Build Directory 0]
 Build Directory Path=file:///home/bhugo/projects/CompressionStreamer/build
-Build Type=Debug
+Build Type=
 CMake Binary=file:///usr/bin/cmake
 Environment Profile=
 Extra Arguments=
@@ -25,7 +25,7 @@ Name=New Native Application Configuration
 Type=Native Application
 
 [Launch][Launch Configuration 0][Data]
-Arguments=/home/bhugo/1369858495.h5 8 0 0 1 0
+Arguments=/home/bhugo/1369853370.h5 8 0 0 1 0
 Dependencies=@Variant(\x00\x00\x00\t\x00\x00\x00\x00\x00)
 Dependency Action=Nothing
 EnvironmentGroup=default
