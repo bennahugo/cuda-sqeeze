@@ -364,19 +364,21 @@ void gpuCode::compressor::compressData(const float * data, uint32_t elementCount
     uint32_t sizeOfResidualSizesArray = sizeof(uint32_t) * numStores;
     uint32_t prefixArrOffset = (chunkSize*numStores + elementCount);
     uint32_t * tempResidualsAndPrefixesStore = NULL;
-    CUDA_CHECK_RETURN(cudaMallocHost((void**)&tempResidualsAndPrefixesStore,sizeOfResidualArray+sizeOfPrefixArray+sizeOfResidualSizesArray,cudaHostAllocMapped));
-    cudaHostGetDevicePointer(&gpuResidualsAndPrefixesStore,tempResidualsAndPrefixesStore,0);
-    memset(tempResidualsAndPrefixesStore,0,sizeOfPrefixArray+sizeOfResidualArray+sizeOfResidualSizesArray);
+    CUDA_CHECK_RETURN(cudaMallocHost((void**)&tempResidualsAndPrefixesStore,sizeOfResidualArray+sizeOfPrefixArray+sizeOfResidualSizesArray,0));
+    CUDA_CHECK_RETURN(cudaMalloc((void**)&gpuResidualsAndPrefixesStore,sizeOfResidualArray+sizeOfPrefixArray+sizeOfResidualSizesArray));
+    //cudaHostGetDevicePointer(&gpuResidualsAndPrefixesStore,tempResidualsAndPrefixesStore,0);
+    CUDA_CHECK_RETURN(cudaMemset(gpuResidualsAndPrefixesStore,0,sizeOfPrefixArray+sizeOfResidualArray+sizeOfResidualSizesArray));
    
     gpuCompressionKernel<<<numStores, (chunkSize)/2, (chunkSize) * 4 * sizeof(uint32_t)>>>(gpuData,
 			_gpuCompressorIV,elementCount,chunkSize,
 			gpuResidualsAndPrefixesStore,prefixArrOffset,numStores);
     cudaThreadSynchronize();
     CUDA_CHECK_RETURN(cudaGetLastError());
-    //copy the padded prefix and residual arrays over so that it can be bundled into 2 transactions and not hundreds:
-     
-    //uint32_t * tempResidualsAndPrefixesStore = (uint32_t*) malloc(sizeOfResidualArray+sizeOfPrefixArray+sizeOfResidualSizesArray);
     _gpuCompressorAccumulatedTime += timer::toc();
+    //copy the padded prefix and residual arrays over so that it can be bundled into 2 transactions and not hundreds:
+    CUDA_CHECK_RETURN(cudaMemcpy(tempResidualsAndPrefixesStore,gpuResidualsAndPrefixesStore,sizeOfResidualArray+sizeOfPrefixArray+sizeOfResidualSizesArray,cudaMemcpyDeviceToHost));
+    //uint32_t * tempResidualsAndPrefixesStore = (uint32_t*) malloc(sizeOfResidualArray+sizeOfPrefixArray+sizeOfResidualSizesArray);
+    
     //Now split the cuda memory up into unpadded chunks:
     uint32_t offsetPrefixes = 0;
     uint32_t offsetResiduals = 0;
@@ -405,7 +407,7 @@ void gpuCode::compressor::compressData(const float * data, uint32_t elementCount
        delete[] prefixStore[i];
     }
     CUDA_CHECK_RETURN(cudaFree((void*) gpuData));
-    //CUDA_CHECK_RETURN(cudaFree((void*) gpuResidualsAndPrefixesStore));
+    CUDA_CHECK_RETURN(cudaFree((void*) gpuResidualsAndPrefixesStore));
     delete[] residlualStore;
     delete[] prefixStore;
     delete[] residualSizesStore;

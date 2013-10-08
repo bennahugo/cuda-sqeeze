@@ -181,7 +181,7 @@ void decompressFromFile(std::string filename){
     totalDecompressDiskReadTime += timer::toc();
     uint32_t chunkSize = numElements/numBlocks;
     //write the IV to decompressed file:
-    cpuCode::decompressor::initDecompressor((float*)ts,numElements);
+    gpuCode::decompressor::initDecompressor((float*)ts,numElements);
     
     timer::tic();
     fwrite(ts,sizeof(uint32_t),numElements,fdecomp);
@@ -209,7 +209,7 @@ void decompressFromFile(std::string filename){
 	fread(compressedResiduals[i],sizeof(uint32_t),compressedResidualIntCount,compressedFile);
 	totalDecompressDiskReadTime += timer::toc();
       }
-      cpuCode::decompressor::decompressData(numElements,numBlocks,chunkSizes,
+      gpuCode::decompressor::decompressData(numElements,numBlocks,chunkSizes,
  					 compressedResiduals,compressedPrefixes,decompressCallback);
       //free residual and prefix stores:
       for (uint32_t i = 0; i < numBlocks; ++i){
@@ -220,8 +220,8 @@ void decompressFromFile(std::string filename){
       delete [] compressedPrefixes;
       delete [] chunkSizes;
     }
-    totalDecompressTime += cpuCode::decompressor::getAccumulatedRunTimeSinceInit();
-    cpuCode::decompressor::releaseResources();
+    totalDecompressTime += gpuCode::decompressor::getAccumulatedRunTimeSinceInit();
+    gpuCode::decompressor::releaseResources();
     fclose(compressedFile);
     delete[] ts;
     std::cout << "FINISHED DECOMPRESSION ROUTINE FROM FILE" << std::endl;
@@ -272,7 +272,7 @@ void compressCallback(uint32_t elementCount, uint32_t * compressedResidualsIntCo
     }
     else{
       if (!skipDecompression){ //decompression from file only decompresses at the end
-	cpuCode::decompressor::decompressData(elementCount,chunkCount,chunkSizes,
+	gpuCode::decompressor::decompressData(elementCount,chunkCount,chunkSizes,
  					 compressedResiduals,compressedPrefixes,decompressCallback);
       }
     }
@@ -287,9 +287,9 @@ void processStride(const astroReader::stride & data){
     data.getTimeStampData(0,ts);
     for (uint32_t i = 1; i < memoryScaling; ++i)
       memcpy(ts+i*data.getTimeStampSize(),ts,data.getTimeStampSize()*sizeof(float));
-    cpuCode::compressor::initCompressor(ts,tsSize);
+    gpuCode::compressor::initCompressor(ts,tsSize);
     if (!writeStream)
-      cpuCode::decompressor::initDecompressor(ts,tsSize);
+      gpuCode::decompressor::initDecompressor(ts,tsSize);
     
     timer::tic();
     if (writeStream){
@@ -305,14 +305,14 @@ void processStride(const astroReader::stride & data){
         data.getTimeStampData(t,ts);
 	for (uint32_t i = 1; i < memoryScaling; ++i)
 	  memcpy(ts+i*data.getTimeStampSize(),ts,data.getTimeStampSize()*sizeof(float));
-        cpuCode::compressor::compressData(ts,tsSize,compressCallback);
+        gpuCode::compressor::compressData(ts,tsSize,compressCallback);
     }
-    totalCompressTime += cpuCode::compressor::getAccumulatedRunTimeSinceInit();  
-    totalCompressSize += cpuCode::compressor::getAccumulatedCompressedDataSize();
-    cpuCode::compressor::releaseResources();
+    totalCompressTime += gpuCode::compressor::getAccumulatedRunTimeSinceInit();  
+    totalCompressSize += gpuCode::compressor::getAccumulatedCompressedDataSize();
+    gpuCode::compressor::releaseResources();
     if (!writeStream){
-      totalDecompressTime += cpuCode::decompressor::getAccumulatedRunTimeSinceInit();
-      cpuCode::decompressor::releaseResources();
+      totalDecompressTime += gpuCode::decompressor::getAccumulatedRunTimeSinceInit();
+      gpuCode::decompressor::releaseResources();
     }
     delete[] ts;
 }
