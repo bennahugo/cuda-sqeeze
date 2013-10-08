@@ -611,6 +611,23 @@ END SUBROUTINE
 The decompression algorithm is remarkably similar, except that the leading zero count is not computed, but is instead retrieved from the prefix array. The shift
 operations are inverted to retrieve the bits (that may be splitted over two consecutive elements) in both the prefix and residual arrays. The prediction step is moved towards
 the end of the routine, where the predicted value is XORed with the residual to restore the original, uncompressed, value.
+  \subsection{Notes on fault tolerance and error propagation}
+    Due to the fact that the reconstruction of each observation at time \textit{t} depends on the preciding, corresponding, observation at time $t-1$, which in turn 
+    depends on the corresponding observation at time $t-2$, error propagation will become a problem in a production environment (especially if network transmission uses a transport
+    protocol without integrity checking like UDP). 
+  
+    If one of the residuals becomes corrupted (either through network error or disk corruption) each subsequent, corresponding, 
+    observation will be decoded to the wrong value. Since multiple observations can be stored into a single 32-bit store the observations in the immediate vacinity of the corrupted
+    store (and their successors) will be affected. On the other hand if one (or more) of the prefixes becomes corrupted, all the residuals after the first corrupted prefix, $P[c]$ will be decoded 
+    incorrectly as well. This is due to the fact that the accumulated prefix count over $P[0]\dots P[c]\dots P[m]$ are used to reconstruct the residual at index \textit{m}. These 
+    errors will continue to propagate until a fresh initialization is done on both the compressor and decompressor. 
+    
+    In a production environment it will be necessary to include integrity checks using a \textit{checksum} algorithm like the Merkle Damgard 5 (MD5) message digest, in order to validate output after all the observations
+    at time \textit{t} have been decoded. A message digest algorithm is simply a function that takes an arbitrary length input, \textit{M} and maps it to a fixed length output, 
+    \textit{N}. Any slight change in the input, $M'$ will result in a substantially different output $N'$. The chances of a collision ($N = N'$) is very slim, meaning that 
+    the checksum provides a viable way of checking archive integrity. A checksum produced by MD5 is only 128 bits long and will not have a significant detremental impact on the
+    compression ratio, since it only has to be saved for the set of observations at time \textit{t}. Any errors can be mitigated by ensuring that the compressor and decompressor
+    is reinitialized regularly.
  \subsection{Alternative linear prediction schemes}
   The most basic prediction scheme simply encodes the difference between observations at time \textit{t} and $t+1$. This difference is given as $O[t]$ xor $O[t-1]$. This 
   scheme is sensitive to the structure of the underlying data. Such a scheme will only work if \emph{most} consecutive values varies slowly over time. Using an n-element 
@@ -864,9 +881,41 @@ POW(2,n) = (2 << n-1) //where "<<" is the arithmetic left-shift operator
   in this report, because it will require more global memory accesses than a simple lookup of a single previous observation. It may be worthwhile to investigate whether such a predictor will work well on the sample data produced
   by the KAT-7 array in future work.
   \subsubsection{Vector intrinsics}
-  {\color{red}TODO} 
+  The Intel Multimedia Extensions (MMX), SSE and AVX along with the original 3DNow, SSE extensions and XOP extensions added by AMD, forms a family of vectorized instruction sets which adds the ability to 
+  perform a single instruction on multiple data elments of the same type in parallel. The original SSE instruction set added eight special 128-bit registers. The instruction set adds 
+  the ability to perform both integer-arithmetic operations and floating-point operations on any continuous sequence of elements stored into these special registers. It imposes the special condition that the 
+  elements loaded into a single register are all of the same bit-length (64,32,16 or 8-bit values).
+  
+  As the name suggests these special machine instructions are focussed on providing greater flexibility for performing a single instruction on multiple data. A good example of where
+  a speedup can be expected is in parallelizing vector addition. The following pseudo code demonstrates such an addition operation:
+  \begin{verbatim}
+Let A and B be arrays of elements (each of n 32-bit integer elements) 
+  that has been allocated as 16-bit aligned memory
+FOR i = 0 TO (n DIV 4) IN PARALLEL DO
+  LOAD 128-bits of memory starting from MEM_ADDRESS(A + i*4) INTO 
+    a 128-bit register rA
+  LOAD 128-bits of memory starting from MEM_ADDRESS(B + i*4) INTO 
+    a 128-bit register rB
+  _mm_add_epi32(rA,rB) //Performs integer addition over 4 32-bit values
+  SAVE contents of rA back to the starting address, MEM_ADDRESS(A + i*4)
+  SAVE contents of rB back to the starting address, MEM_ADDRESS(B + i*4)
+END FOR
+perform addition over the remainder the elements of A 
+  and B here (this will be up to 3 elements only)
+  \end{verbatim}
+  The original SSE instructions only allowed bit-shifting multiple elements by the same amount, whereas the packing algorithm mentioned earlier needs to shift four 
+  32-bit values each by a different amount. A simple solution is to employ the AMD XOP instruction set which adds the ability to perform element-wise arithmetic bit 
+  shifting. The problem with this approach is that no Intel processor prior to the latest (at the time of writing) Haswell series of processors support this operation
+  through the AVX 2 extensions.
+  
+  The next major problem is that there is both a limited number of registers available and a packing algorithm does not have the same number of outputs as inputs. Altough
+  the majority of the algorithm can be written as SSE and XOP instructions while the storage section can be written as as four separate instructions this avenue of research
+  proved fruitless because of both the limited number of registers available and the overheads of employing both normal instructions and vectorized code (specifically conversion
+  between the two). In both the compressor and decompressor the augmented code halves the throughput achieved before the SSE and XOP instructions were added. This finding precludes
+  using the AVX 2 instruction set which adds several 256-bit registers (that can be used to perform 8 32-bit integer/floating point operations), since it will likely suffer from
+  the same problems as the SSE- and XOP-augmented implementation.
   \subsubsection{GPGPU implementation using CUDA}
-  {\color{red}TODO} 
+  {\color{red}TODO}  
 \section{Results}
 \subsection{Constraints on benchmarking environment}
 In order to eliminate the influence of the external testing environment the following special conditions are specified:
