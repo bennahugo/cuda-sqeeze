@@ -915,7 +915,18 @@ perform addition over the remainder the elements of A
   using the AVX 2 instruction set which adds several 256-bit registers (that can be used to perform 8 32-bit integer/floating point operations), since it will likely suffer from
   the same problems as the SSE- and XOP-augmented implementation.
   \subsubsection{GPGPU implementation using CUDA}
-  {\color{red}TODO}  
+  The GPU implementation is structured slightly different to the CPU implementation as mentioned before. Instead of only splitting the data into blocks, each block is distributed to
+  an SM which processes the block in parallel as well. This approach ensures that a high occupancy is achieved (in other words, all the multiprocessors are used). Since the data is
+  split into SM-sized blocks each SM is free to execute with no need for intra-SM synchronization. 
+  
+  The implementation of the packing algorithm is based arround the parallel prefix sum implementation described in GPU Gems 3 \cite{harris2007parallel}. The parallel prefix sum computes two 
+  elements at a time, making use shared memory to store preliminary results for each parallel step of the algorithm as discussed earlier. The block size, therefore, has to be both a power of 
+  two and small enough in order for the leading zero count array and its accumulation to be stored in shared memory with the necessary padding per level to avoid bank conflicts as mentioned 
+  earlier.
+  
+  Due to the fact that both the packing and unpacking algorithm is so similar in their construction for the sake of time constraints only the packing algorithm was implemented in CUDA. A 
+  general compacting kernel requires the use of atomics as mentioned earlier, but still achieves up to 6.1 GiB/s on a GT670.
+  
 \section{Results}
 \subsection{Constraints on benchmarking environment}
 In order to eliminate the influence of the external testing environment the following special conditions are specified:
