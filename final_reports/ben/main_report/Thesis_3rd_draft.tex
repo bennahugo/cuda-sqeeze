@@ -105,7 +105,11 @@ Jason \textsc{Manley}
 %----------------------------------------------------------------------------------------
 %	DATE SECTION
 %----------------------------------------------------------------------------------------
-
+\vspace{15pt}
+\begin{center}
+ A thesis presented to the Department of Computer Science, UCT, in partial fulfillment of the course CSC4000W, Honours in Computer Science.
+\end{center}
+\vspace{90pt}
 {\large \today}\\[3cm] % Date, change the \today to a set date if you want to be precise
 
 %----------------------------------------------------------------------------------------
@@ -599,7 +603,7 @@ BEGIN
 		      be fitted in the previous operation to the first bit of the next byte
 		  END IF
 		  //save the residual:
-		  residuals[bitPosInResidualArray INT_DIV 32] = SHIFT (difference to \\
+		  residuals[bitPosInResidualArray INT_DIV 32] = SHIFT difference to \\
 		    the bitPosInResidualArray MODULO 32 th bit
 		  IF there are remaining bits that couldn't be fitted THEN
 		    residuals[bitPosInResidualArray INT_DIV 32 + 1] = SHIFT remaining bits \\
@@ -949,11 +953,12 @@ In order to eliminate the influence of the external testing environment the foll
 \begin{enumerate}
  \item Files in excess of 500 MB will be used for benchmarking. This will greatly reduce variability in timings.
  \item No other processes should be making intensive use of primary memory once benchmarking has commenced. The sheer quantity of data being processed makes benchmarking a memory-bound operation.
+ \item Experiments will be repeated at least 10 times to ensure outliers can be removed before a mean is computed.
 \end{enumerate}
 \subsection{Algorithm throughput on a CPU architecture}
 The implementation of the block-based parallel difference predictive scheme was executed on one of the AMD Opteron 6274 nodes of the ICTS High 
 Performance Cluster at the University of Cape Town. The average algorithm throughput (which excludes any disk I/O) for a file of 
-216~x~4096~x~112~x~2 32-bit floats (756.0 MiB in total) is shown in figure~\ref{ALG_THROUGPUT}. Similar results are 
+216~x~4096~x~112~x~2 32-bit floats (756.0 MiB in total, excluding header information) is shown in figure~\ref{ALG_THROUGPUT}. Similar results are 
 achieved for larger files. As mentioned previously the compression ratio varies between 92\%-93\% for most of the files.
 \begin{figure}[ht!]
  \begin{mdframed}
@@ -995,9 +1000,10 @@ achieved for larger files. As mentioned previously the compression ratio varies 
 \subsection{Benchmark against standard compression utilities}
 The implementation was benchmarked against the standard compression utilities GZIP, BZIP2 and ZIP on a 8 core Intel Xeon E5-2650 CPU that supports up to 16 threads. 
 Disk I/O (network-based) has been enabled for this run of the block-based parallel difference predictive scheme implementation. The performance comparison can be seen
-in figure~\ref{ALG_UTILITY_COMPARISON}. The experiment was run using the same 756.0 MiB file used for the throughput experiment. 
-The utilities was using default compression and decompression settings. Only around 0.39s was spent on compression and 0.18s on decompression. The rest of the time 
-is spent reading from the original HDF5 files, writing a compressed file, reading the compressed file and finally writing a decompressed file.
+in figure~\ref{ALG_UTILITY_COMPARISON}. The experiment was run using the same file used for the throughput experiment. The utilities was using default compression 
+and decompression settings. Using fast settings gives a 59.15\% improvement (39.159s) for GZIP and a 76.36\% improvement (36.386s) for ZIP. BZIP2 does not show an improvement 
+in speed and the decompression times stay roughly the same for all the utilities.  Only around 0.39s was spent on compression and 0.18s on decompression for the predictive scheme, 
+the rest of the time is spent reading from the original HDF5 files, writing a compressed file, reading the compressed file and finally writing a decompressed file.
 \begin{figure}[ht!]
  \begin{mdframed}
  \centering
@@ -1051,15 +1057,39 @@ is spent reading from the original HDF5 files, writing a compressed file, readin
   \label{ALG_UTILITY_COMPARISON}
   \end{mdframed}
 \end{figure}
-
 \subsection{Comparison to what was achieved in concurrent research}
 {\color{red}TODO}
 \section{Discussion}
 {\color{red}TODO}
 \section{Conclusion}
-{\color{red}TODO}
-\section{Future avenues of research}
-{\color{red}TODO}
+This investigation set out to evaluate the feasibility of using a predictive compression scheme in order to achieve high throughput compression on the data produced by the MeerKAT radio telescope array, currently under construction
+in the central Karoo region in South Africa. The array will require processing facilities and network infrastructure capable of handling up 1 Petabyte of data every 20 seconds once completed. A fast compression scheme will be able
+to reduce both network bandwidth requirements and ultimately the storage space required to store data over extended periods of time. Some of the key research questions included:
+\begin{enumerate}
+ \item Determining whether a predictive compression scheme achieved comparable results to that of standard compression utilities.
+ \item Determining whether such a predictive scheme could operate at infiniband network speeds of up to 5 GiB/s.
+ \item Whether using different predictors to trade throughput for improved compression ratios and vice-versa.
+\end{enumerate}
+Although several parallel implementations were tested it was found that a block-based parallel approach achieved significantly better throughput rates (up to, and exceeding 5 GiB/s, using 32 cores) compared to an 
+element-wise parallel approach in which the packing scheme is centered around the computation of a parallel prefix sum. This throughput was found to scale roughly linearly up to 32 CPU cores. Furthermore, it was 
+found that employing a vectorized instruction set to enhance the performance of the block-based parallel approach proved infeasible. Additionally merging the two approaches by splitting incoming data into blocks 
+and processing those blocks in parallel on a GPU as a post-processing operation achieved high throughput rates of up to 13.6 GiB/s on a GT780. However, since such a post-processing operation should take the 
+latencies associated with copying memory back to the host into account, GPU-based processing was found to be ineffective if these latencies cannot be mitigated through asynchronous disk operations.
+
+After investigating improvements in throughput the investigation shifted its focus on improving the average compression ratio achieved by a basic difference between successive samples. Such a basic difference
+scheme takes observations at times $t-1$ and xors them with observations at time \textit{t} (it was found that using the xor operator instead of normal integer subtraction was both faster and improved the average
+compression ratio). The scheme failed to achieve a similar compression ratio when compared to the standard compression utilities GZIP, BZIP2 and ZIP, by only achieving savings of between 7\% and 8\% in final file size.
+However, the predictive compression scheme is 20.801 seconds faster than the fastest compression utility (ZIP), when operating at its maximum speed setting. When the common disk I/O latencies are subtracted from these 
+timings the solution is roughly 50 times faster than ZIP on a 16-core machine.
+
+Using alternative predictors (employing only integer arithmetic operations) proved unsuccessful. These alternative predictors included basing each prediction on a mean, a median and polynomial extrapolation (using both a 
+parallelogram and Lagrange predictor). Only a median-based approach was found to give slightly better results (roughly 1\%) using a small number of previous observations. Even though a pivoting algorithm is employed to 
+select the median for each prediction, the implementation is too slow to be considered a viable alternative to the simple difference-based predictor.
+
+The prediction scheme therefore proves to be a viable solution for future implementation as part of the network stack employed by the MeerKAT and ultimately the SKA. It remains to be investigated whether a predictive 
+compression scheme, based on the use of lookup tables gives better results, although this may have considerable memory requirements (see \cite{1607248,4589203,4976448}). The predictive scheme clearly outperforms 
+regular compression utilities, as well as a Huffman entropy encoder in terms of throughput, but sacrifices a considerable amount of the possible compression ratio in doing so. An entropy encoder such as Huffman may be 
+better tailored to address the long-term storage requirements of the project.
 \section{Glossary}
 {\color{red}TODO}
 \bibliographystyle{plain}
