@@ -142,7 +142,11 @@ This research is made possible under grant of the National Research Foundation (
 necessarily those of the NRF.
 \pagebreak
 \begin{abstract}
- {\color{red}TODO: add at end of writeup}
+ This report investigates the fast, lossless compression of 32-bit single precision floating-point values. High speed compression is critical in the context of the MeerKAT 
+ radio telescope currently under construction in southern Africa and Australia, which will produce data at rates up to 1 Petabyte every 20 seconds. The compression technique being 
+ investigated is based on predictive compression, which has proven successful at achieving high-speed compression in previous research. Several different predictive 
+ techniques (which includes polynomial extrapolation), along with CPU- and GPU-based parallelization approaches are discussed. The implementation successfully achieves throughput rates 
+ in excess of 6 GiB/s for compression and much higher rates for decompression using a 64-core AMD Opteron machine.
 \end{abstract}
 \pagebreak
 \tableofcontents
@@ -975,20 +979,24 @@ achieved for larger files. As mentioned previously the compression ratio varies 
   }\datatable
 
   \begin{axis}[
-    ybar,   % Stacked horizontal bars
-    enlargelimits=0.15, 
+    %ybar,   % Stacked horizontal bars
+    %enlargelimits=0.15, 
     legend style={at={(0.5,-0.15)}, anchor=north,legend columns=-1},
     ymin=0,         % Start y axis at 0
-    xtick=data,     % Use as many tick labels as x coordinates
-    xticklabels from table={\datatable}{Threads},  % Get the labels from the Threads column of the \datatable
+    xmin=0,
+    xmax=64,
     xlabel=Number of cores,
     ylabel=Throughput (GiB/s),
-    nodes near coords,
-    bar width=20pt,
+    grid=major,
+    visualization depends on=x \as \rawx,
+    visualization depends on=y \as \rawy,
+    nodes near coords={(\pgfmathprintnumber{\rawx},\pgfmathprintnumber{\rawy})},
+    %bar width=20pt,
     width=0.8\textwidth,
+    minor y tick num=1
     ]
-    \addplot [pattern weight=doublethick,pattern=north west lines,pattern color=blue] table [x expr=\coordindex, y=Compression] {\datatable};    % Plot the "Compression" column against the data index
-    \addplot table [x expr=\coordindex, y=Decompression] {\datatable};    % Plot the "Decompression" column against the data index
+    \addplot [every node near coord/.append style={shift={(20pt,-10pt)},font=\tiny},mark=square*, color=red] table [x=Threads, y=Compression] {\datatable};
+    \addplot [every node near coord/.append style={shift={(-20pt,-10pt)},font=\tiny},mark=triangle*, color=blue] table [x=Threads, y=Decompression] {\datatable};
     \legend{Compression , Decompression}
   \end{axis}
     
@@ -1060,7 +1068,20 @@ the rest of the time is spent reading from the original HDF5 files, writing a co
 \subsection{Comparison to what was achieved in concurrent research}
 {\color{red}TODO}
 \section{Discussion}
-{\color{red}TODO}
+The block-based parallel approach achieved roughly a linear scaling (doubling the number of cores doubles the throughput achieved) up to 32-cores for both the compressor and decompressor. 
+After that point increasing the number of cores sees deminishing returns due to the overheads of processing smaller blocks in parallel, coupled with limited memory throughput capacity. 
+
+Although the compression and decompression algorithm is very similar in construction, the large difference in throughput between them can be contributed to the computation of a 
+leading zero count per element in the Compressor. Even through this leading zero count is computed using a dedicated machine instruction, the decompression step is roughly 
+twice as fast as the compression step. This result is not surprising and corresponds to results reported for 64-bit double precision compression schemes 
+\cite{4976448,O'Neil:2011:FDC:1964179.1964189}.
+
+Even when operating using only 16 threads the predictive compressor implementation greatly outperforms the standard compression utilities set at their fastest settings. When common
+disk I/O is subtracted the predictive compressor is roughly 50 times faster than ZIP (the fastest compression utility by comparison). That said, the predictive compressor fails to 
+achieve good compression ratios when compared to both the standard utilities and the parallel Huffman entropy encoder discussed in concurrent research. The lack of compression ratio 
+can be contributed to noise in the data. Although there is some correlation between consecutive observations, the effectiveness of the predictor not only relies on consecutive 
+observations having the same magnitude (the 1 byte exponents should be identical for most predictions), but the values should change very slowly in the top-most bits of the 23-bit 
+significant. This limitation is not only apparent when compressing 32-bit single precision floating point values, but applies to 64-bit double precision floating point values as well.
 \section{Conclusion}
 This investigation set out to evaluate the feasibility of using a predictive compression scheme in order to achieve high throughput compression on the data produced by the MeerKAT radio telescope array, currently under construction
 in the central Karoo region in South Africa. The array will require processing facilities and network infrastructure capable of handling up 1 Petabyte of data every 20 seconds once completed. A fast compression scheme will be able
@@ -1088,8 +1109,8 @@ select the median for each prediction, the implementation is too slow to be cons
 
 The prediction scheme therefore proves to be a viable solution for future implementation as part of the network stack employed by the MeerKAT and ultimately the SKA. It remains to be investigated whether a predictive 
 compression scheme, based on the use of lookup tables gives better results, although this may have considerable memory requirements (see \cite{1607248,4589203,4976448}). The predictive scheme clearly outperforms 
-regular compression utilities, as well as a Huffman entropy encoder in terms of throughput, but sacrifices a considerable amount of the possible compression ratio in doing so. An entropy encoder such as Huffman may be 
-better tailored to address the long-term storage requirements of the project.
+regular compression utilities, as well as a Huffman entropy encoder in terms of throughput, but sacrifices a considerable amount of the possible compression ratio in doing so. An entropy encoder such as Huffman or a
+parallelization of a Lempel-Ziv scheme, as discussed by Klein et al. \cite{klein2005parallel}, may be better tailored to address the long-term storage requirements of the project.
 \section{Glossary}
 {\color{red}TODO}
 \bibliographystyle{plain}
