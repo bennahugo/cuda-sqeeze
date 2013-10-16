@@ -46,6 +46,7 @@
 \usepackage{hyperref}
 \usepackage{mdframed}
 \usepackage{pgfplots, pgfplotstable}
+\usepackage{float}
 \usetikzlibrary{patterns}
 
 \begin{document}
@@ -123,7 +124,17 @@ Jason \textsc{Manley}
 \vfill % Fill the rest of the page with whitespace
 
 \end{titlepage}
+\pagenumbering{roman}
+\pagebreak
+\begin{abstract}
+ This report investigates the fast, lossless compression of 32-bit single precision floating-point values. High speed compression is critical in the context of the MeerKAT 
+ radio telescope currently under construction in southern Africa and Australia, which will produce data at rates up to 1 Petabyte every 20 seconds. The compression technique being 
+ investigated is based on predictive compression, which has proven successful at achieving high-speed compression in previous research. Several different predictive 
+ techniques (which includes polynomial extrapolation), along with CPU- and GPU-based parallelization approaches are discussed. The implementation successfully achieves throughput rates 
+ in excess of 6 GiB/s for compression and much higher rates for decompression using a 64-core AMD Opteron machine.
+\end{abstract}
 
+\pagebreak
 \begin{center} 
   {\LARGE Acknowledgements}
 \end{center}
@@ -140,17 +151,13 @@ especially thank Andrew Lewis from ICTS for his assistance and support during te
 
 This research is made possible under grant of the National Research Foundation (hereafter \textit{NRF}) of the Republic of South Africa. All views expressed in this report are those of the author and not 
 necessarily those of the NRF.
-\pagebreak
-\begin{abstract}
- This report investigates the fast, lossless compression of 32-bit single precision floating-point values. High speed compression is critical in the context of the MeerKAT 
- radio telescope currently under construction in southern Africa and Australia, which will produce data at rates up to 1 Petabyte every 20 seconds. The compression technique being 
- investigated is based on predictive compression, which has proven successful at achieving high-speed compression in previous research. Several different predictive 
- techniques (which includes polynomial extrapolation), along with CPU- and GPU-based parallelization approaches are discussed. The implementation successfully achieves throughput rates 
- in excess of 6 GiB/s for compression and much higher rates for decompression using a 64-core AMD Opteron machine.
-\end{abstract}
+
 \pagebreak
 \tableofcontents
 \pagebreak
+\listoffigures
+\pagebreak
+\pagenumbering{arabic}
 \section{Introduction}
 \subsection{The KAT-7, MeerKAT and SKA}
 South Africa and Australia are the two primary hosting countries for what is to become the largest radio telescope array in the world, known as the Square Kilometer Array (SKA). 
@@ -622,23 +629,6 @@ END SUBROUTINE
 The decompression algorithm is remarkably similar, except that the leading zero count is not computed, but is instead retrieved from the prefix array. The shift
 operations are inverted to retrieve the bits (that may be splitted over two consecutive elements) in both the prefix and residual arrays. The prediction step is moved towards
 the end of the routine, where the predicted value is XORed with the residual to restore the original, uncompressed, value.
-  \subsection{Notes on fault tolerance and error propagation}
-    Due to the fact that the reconstruction of each observation at time \textit{t} depends on the preciding, corresponding, observation at time $t-1$, which in turn 
-    depends on the corresponding observation at time $t-2$, error propagation will become a problem in a production environment (especially if network transmission uses a transport
-    protocol without integrity checking, like UDP). 
-  
-    If one of the residuals becomes corrupted (either through network error or disk corruption) each subsequent, corresponding, 
-    observation will be decoded to the wrong value. Since multiple observations can be stored into a single 32-bit store the observations in the immediate vacinity of the corrupted
-    store (and their successors) will be affected. On the other hand if one (or more) of the prefixes becomes corrupted, all the residuals after the first corrupted prefix, $P[c]$ will be decoded 
-    incorrectly as well. This is due to the fact that the accumulated prefix count over $P[0]\dots P[c]\dots P[m]$ are used to reconstruct the residual at index \textit{m}. These 
-    errors will continue to propagate until a fresh initialization is done on both the compressor and decompressor. 
-    
-    In a production environment it will be necessary to include integrity checks using a \textit{checksum} algorithm like the Merkle Damgard 5 (MD5) message digest, in order to validate output after all the observations
-    at time \textit{t} have been decoded. A message digest algorithm is simply a function that takes an arbitrary length input, \textit{M} and maps it to a fixed length output, 
-    \textit{N}. Any slight change in the input, $M'$ will result in a substantially different output, $N'$. The chances of a collision ($N = N'$) are very slim, meaning that 
-    the checksum provides a viable way of checking archive integrity. A checksum produced by MD5 is only 128 bits long and will not have a significant detremental impact on the
-    compression ratio, since it only has to be saved for the entire set of observations at time \textit{t} and not per block. Any errors can be mitigated by ensuring that the 
-    compressor and decompressor is reinitialized regularly.
  \subsection{Alternative linear prediction schemes}
   The most basic prediction scheme simply encodes the difference between observations at time \textit{t} and $t+1$. This difference is given as $O[t]$ xor $O[t-1]$. The 
   downside to this basic predictor is that it is particularly sensitive to the structure of the underlying data. It will only work if \emph{most} consecutive values varies 
@@ -951,12 +941,29 @@ POW(2,n) = (2 << n-1) //where "<<" is the arithmetic left-shift operator
   None of these approaches made a significant improvement in terms of throughput, although pinned memory showed a small 200-300 MiB/s increase in throughput if a large number of observations are transfered between the 
   device and the host. In light of these results a post-processing GPU implementation may not be feasible unless the latency added by the memory copy operation can be hidden as part of the transfer cost between the host and RAID disk
   array (which can sustain transfer rates up to 4GB/s according to sources at the MeerKAT offices in Pinelands). Such a modification is, however, beyond the scope of the current investigation.
-  \subsubsection{Memory overheads}
+  \subsubsection{Notes on memory overheads}
   Due to the fact that the parallel algorithm is based on a block-based approach, all the observations at time \textit{t} should be received before compression can commence. It will therefore be necessary to allocate
   enough space to accomodate buffering data while compression is completed in a production environment. The difference-based predictor scheme (compacting up to 3 bytes at a time) requires at most $2n + 2n/8 + n + c$ 32-bit values every 
   time the algorithm is executed. This is due to the fact that all the observations at time \textit{t} and $t-1$ have to 
   be stored, as well as an array of $2n/8$ to store the prefixes, and an array $n$ to store residuals (this includes padding the residual array in order to avoid unnecessary branch divergence within the algorithm). Some negligible 
   amount, \textit{c} accounts for the rest of the program.
+  \subsubsection{Notes on fault tolerance and error propagation}
+  Due to the fact that the reconstruction of each observation at time \textit{t} depends on the preciding, corresponding, observation at time $t-1$, which in turn 
+  depends on the corresponding observation at time $t-2$, error propagation will become a problem in a production environment (especially if network transmission uses a transport
+  protocol without integrity checking, like UDP). 
+  
+  If one of the residuals becomes corrupted (either through network error or disk corruption) each subsequent, corresponding, 
+  observation will be decoded to the wrong value. Since multiple observations can be stored into a single 32-bit store the observations in the immediate vacinity of the corrupted
+  store (and their successors) will be affected. On the other hand if one (or more) of the prefixes becomes corrupted, all the residuals after the first corrupted prefix, $P[c]$ will be decoded 
+  incorrectly as well. This is due to the fact that the accumulated prefix count over $P[0]\dots P[c]\dots P[m]$ are used to reconstruct the residual at index \textit{m}. These 
+  errors will continue to propagate until a fresh initialization is done on both the compressor and decompressor. 
+    
+  In a production environment it will be necessary to include integrity checks using a \textit{checksum} algorithm like the Merkle Damgard 5 (MD5) message digest, in order to validate output after all the observations
+  at time \textit{t} have been decoded. A message digest algorithm is simply a function that takes an arbitrary length input, \textit{M} and maps it to a fixed length output, 
+  \textit{N}. Any slight change in the input, $M'$ will result in a substantially different output, $N'$. The chances of a collision ($N = N'$) are very slim, meaning that 
+  the checksum provides a viable way of checking archive integrity. A checksum produced by MD5 is only 128 bits long and will not have a significant detremental impact on the
+  compression ratio, since it only has to be saved for the entire set of observations at time \textit{t} and not per block. Any errors can be mitigated by ensuring that the 
+  compressor and decompressor is reinitialized regularly.
 \section{Results}
 \subsection{Constraints on benchmarking environment}
 In order to eliminate the influence of the external testing environment the following special conditions are specified:
@@ -1077,19 +1084,19 @@ file used in the previous experiments, on the same Intel Xeon E5-2650 CPU that w
 \begin{figure}[ht!]
  \begin{mdframed}
  \centering
-  \begin{subfigure}[b]{\textwidth}
+  \begin{subfigure}[b]{0.6\textwidth}
  \centering
  \begin{tikzpicture}
   \pgfplotstableread{ % Read the data into a table macro
-	Threads		Huffman		Predictive	ZLE
-	1		0.0072		0.1587168	0
-	4		0.02449		0.6040148	0
-	8		0.046784	1.080432	0
-	16		0.073802	1.855014	0
+	Threads		Huffman		Predictive	ZLE	Huffman_Decomp	Predictive_Decomp	ZLE_Decomp
+	1		0.0072		0.1587168	0	0.019802	0.3731228		0
+	4		0.02449		0.6040148	0	0.019802	1.36565			0
+	8		0.046784	1.080432	0	0.019802	2.436506		0
+	16		0.073802	1.855014	0	0.019802	4.415304		0
   }\datatable
 
   \begin{axis}[
-    legend style={at={(0.5,-0.15)}, anchor=north,legend columns=-1},
+    legend style={at={(0.5,-0.20)}, anchor=north,legend columns=-1},
     ymin=0,         % Start y axis at 0
     xmin=0,
     xmax=16,
@@ -1097,7 +1104,41 @@ file used in the previous experiments, on the same Intel Xeon E5-2650 CPU that w
     ylabel=Throughput (GiB/s),
     grid=major,
     nodes near coords, 
-    width=0.7\textwidth,
+    width=\textwidth,
+    minor x tick num=1,
+    minor y tick num=1
+    ]
+    \addplot [every node near coord/.append style={font=\tiny},mark=square*, color=red] table [x=Threads, y=Huffman] {\datatable};
+    \addplot [every node near coord/.append style={font=\tiny},mark=triangle*, color=blue] table [x=Threads, y=Predictive] {\datatable};
+    \addplot [every node near coord/.append style={font=\tiny},mark=*, color=purple] table [x=Threads, y=ZLE] {\datatable};
+    \legend{Huffman, Predictive, ZLE}
+  \end{axis}  
+  \end{tikzpicture}
+  \caption{Comparison of compression speeds achieved}
+  \label{SPEED_CONCURRENT_COMPARISON_COMPRESSION}
+  \end{subfigure}
+  
+  \begin{subfigure}[b]{0.6\textwidth}
+ \centering
+ \begin{tikzpicture}
+  \pgfplotstableread{ % Read the data into a table macro
+	Threads		Huffman		Predictive	ZLE
+	1		0.019802	0.3731228	0
+	4		0.019802	1.36565		0
+	8		0.019802	2.436506	0
+	16		0.019802	4.415304	0
+  }\datatable
+
+  \begin{axis}[
+    legend style={at={(0.5,-0.20)}, anchor=north,legend columns=-1},
+    ymin=0,         % Start y axis at 0
+    xmin=0,
+    xmax=16,
+    xlabel=Number of cores,
+    ylabel=Throughput (GiB/s),
+    grid=major,
+    nodes near coords, 
+    width=\textwidth,
     minor x tick num=1,
     minor y tick num=1
     ]
@@ -1107,8 +1148,8 @@ file used in the previous experiments, on the same Intel Xeon E5-2650 CPU that w
     \legend{Huffman , Predictive, ZLE}
   \end{axis}  
   \end{tikzpicture}
-  \caption{Comparison of compression speeds achieved}
-  \label{SPEED_CONCURRENT_COMPARISON}
+  \caption{Comparison of decompression speeds achieved}
+  \label{SPEED_CONCURRENT_COMPARISON_DECOMPRESSION}
   \end{subfigure}
   
   \begin{subfigure}[b]{0.7\textwidth}
