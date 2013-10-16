@@ -465,8 +465,8 @@ There are three ways this can be achieved:
  unpacking process, since this approach requires a \textit{prefix sum} to be computed for the array of element-wise leading zero counts as O'Neil et al. \cite{O'Neil:2011:FDC:1964179.1964189} 
  points out.
  
- A prefix sum (or \textit{scan}) can be defined on any binary associative operator, $\oplus$ over an ordered set with $I$ as its identity. If $A=[a_{0},a_{1},\dots,a_{n-1}]$ 
- is an ordered set then the prefix sum scan is defined as $scan(A):=[I,a_{0},(a_{0} \oplus a_{1}),\dots,(a_{0} \oplus a_{1} \oplus ... \oplus a_{n-2})]$. 
+ A prefix sum \textit{prescan} can be defined on any binary associative operator, $\oplus$ over a sequence with $I$ as its identity. If $A=[a_{0},a_{1},\dots,a_{n-1}]$ 
+ is a sequence then the scan is defined as $scan(A):=[I,a_{0},(a_{0} \oplus a_{1}),\dots,(a_{0} \oplus a_{1} \oplus ... \oplus a_{n-2})]$.
  
  In the context of the packing scheme proposed here, the prefix scan is defined over the normal integer addition operator. An example of this will be $scan[2,1,3,4] = [0,2,3,6]$ 
  under normal integer addition. The leading zero counts are saved to an array, \textit{A}, after which the scan operation is computed on the array. The accumulated values are 
@@ -734,8 +734,8 @@ FUNCTION INT32 pivotMedian(INT32[] data, int n) {
   \begin{verbatim}
    SUBROUTINE scan(out INT32[] out, INT32[] in)
     INT32 i = 0
+    out[0] = 0;
     INT32 sum = in[0]
-    out[0] = sum;
     WHILE i < length(in) DO
       ++i
       sum += in[i]
@@ -851,7 +851,7 @@ POW(2,n) = (2 << n-1) //where "<<" is the arithmetic left-shift operator
   \subsubsection{Parallelization approaches and optimizations on the CPU}
   The initial implementation considered parallelizing the algorithm at element level using prefix sums as described in the previous section. Even when using up to 16 CPU threads through OpenMP the overheads of computing a prefix 
   sum over all the elements turned out to be too costly on a CPU-based architecture. Although the implementation scaled roughly linear in throughput per core added it only managed to achieve compression throughputs of around 
-  400 MiB/s and decompression throughputs of around 600 MiB/s on a 16 core test. This is a lot slower than the required throughput of 5 GiB/s. It is duely noted that the throughput rates achieved in the element-wise parallelization 
+  400 MiB/s and decompression throughputs of around 600 MiB/s on a 16 core test. This is a lot slower than the required throughput of 5 GiB/s. It is duly noted that the throughput rates achieved in the element-wise parallelization 
   includes several optimizations such as the removal of branches (for example branchless implementations of minimums and maximums are employed \footnote{Sean E. Anderson 
   provides several bittwiddled implementations of minimums, maximums and binary logarithms on his website: \url{graphics.stanford.edu/~seander/bithacks.html}. Last accessed: 3 
   October 2013} for the arithmetic bit shifting operations shown in the pseudo code), as well as the removal of some of the atomic operations as discussed in the previous sections.
@@ -899,13 +899,13 @@ POW(2,n) = (2 << n-1) //where "<<" is the arithmetic left-shift operator
   the ability to perform both integer-arithmetic operations and floating-point operations on any continuous sequence of elements stored into these special registers. It imposes the special condition that the 
   elements loaded into a single register are all of the same bit-length (64,32,16 or 8-bit values).
   
-  As the name suggests these special machine instructions are focussed on providing greater flexibility for performing a single instruction on multiple data. A good example of where
+  As the name suggests these special machine instructions are focused on providing greater flexibility for performing a single instruction on multiple data. A good example of where
   a speedup can be expected is in parallelizing vector addition. However, in the case of implementing a packing algorithm the original SSE instructions are not sufficient since it only allows 
   bit-shifting multiple elements by the same amount. The packing algorithm requires that four 32-bit values each be shifted by a different amount. A simple solution is to employ the AMD XOP 
   instruction set which adds the ability to perform element-wise arithmetic bit shifting. The problem with this approach is that no Intel processor prior to the latest (at the time of writing) 
   Haswell series of processors support this operation through the AVX 2 extensions.
   
-  The next major problem is that there is both a limited number of registers available and a packing algorithm does not have the same number of outputs as inputs. Altough
+  The next major problem is that there is both a limited number of registers available and a packing algorithm does not have the same number of outputs as inputs. Although
   the majority of the algorithm can be written as SSE and XOP instructions while the storage section can be written as as four separate instructions this avenue of research
   proved fruitless because of both the limited number of registers available and the overheads of employing both normal instructions and vectorized code (specifically conversion
   between the two). In both the compressor and decompressor the augmented code halves the throughput achieved before the SSE and XOP instructions were added. This finding precludes
@@ -922,15 +922,15 @@ POW(2,n) = (2 << n-1) //where "<<" is the arithmetic left-shift operator
   earlier.
   
   Due to the fact that both the packing and unpacking algorithm is so similar in their construction, and for the sake of time constraints, only the packing algorithm was implemented in CUDA, as it 
-  gives a fair estimation on whether a decompression scheme is feasible. As mentioned previously the GPU implementation can be viewed as a postprocessing step, after existing signal processing 
+  gives a fair estimation on whether a decompression scheme is feasible. As mentioned previously the GPU implementation can be viewed as a post-processing step, after existing signal processing 
   routines have been executed on the data. A general compacting kernel requires the use of atomics as mentioned earlier, but still achieves up to 5.2 GiB/s on a GT670, and up to 13.6 GiB/s on a 
   GT780 when processing a sufficiently large number of observations (distributed over time as before), which fills the memory capacity of the GPU. It was found that the best performance in terms 
   of throughput is given when block sizes of 256 elements are used. However, using such small blocks (and the associated increase in header information) can result in a penalty on the compression 
   ratio of up to 2.7\% compared to a CPU version using a small number of blocks.
   
-  Currently the number of correlated antennae are limited to 7+1 sources each with 2 polarizations. However, as the number of antennae grow (to arround 3000) the number of correlations will exhibit 
-  a factorial growth rate. It therefore makes sense to flood the SIMD environment of the cards with enough information to fill the onboard memory of the card completely in order to mitigate the setup 
-  costs involved when launching device kernels. The current datasets are artifically extended by duplicating the observations at time \textit{t} until it fills the memory of the card being tested on 
+  Currently the number of correlated antennae are limited to 7+1 sources each with 2 polarizations. However, as the number of antennae grow (to around 3000) the number of correlations will exhibit 
+  a factorial growth rate. It therefore makes sense to flood the SIMD environment of the cards with enough information to fill the on-board memory of the card completely in order to mitigate the setup 
+  costs involved when launching device kernels. The current datasets are artificially extended by duplicating the observations at time \textit{t} until it fills the memory of the card being tested on 
   (it is reasonable to assume that the overall properties of the datasets are preserved if the number of antennae are increased).
   
   The approaches to remove the atomic operations from both prefix and residual compaction, as discussed previously, was implemented without much success. As mentioned earlier branch divergence and multiple
@@ -939,18 +939,24 @@ POW(2,n) = (2 << n-1) //where "<<" is the arithmetic left-shift operator
   After considering all the kernel-level optimizations, including minimizing branch divergence, using shared memory (and associated issues regarding bank conflicts) and investigating the removal of atomic 
   operations, the issue of memory transfer between the device and host was taken into consideration. This copy operation should be taken into account in a scenario where post-processing is required, since
   no other operations are likely to follow a compression step, as well as due to the limitations in transfer speeds imposed by the PCI-Express bus. Normally the cost of transfer should be hidden by executing multiple 
-  kernels while memory transfers are made through the use of asyncronous memory calls. However, due to the limited amount of memory on these cards and the amount of data being processed, duplicating memory allocations
-  in order to execute kernels and memory copies asyncronously is not a viable option. On both the GT670 and the GT780 the latency associated with a memory copy between each kernel launch proved to be very detremental to
+  kernels while memory transfers are made through the use of asynchronous memory calls. However, due to the limited amount of memory on these cards and the amount of data being processed, duplicating memory allocations
+  in order to execute kernels and memory copies asynchronously is not a viable option. On both the GT670 and the GT780 the latency associated with a memory copy between each kernel launch proved to be very detrimental to
   the high throughputs seen for the execution of the compression kernel itself. When taking the transfer of the blocks of residuals and prefixes into account the compression throughput dropped to below 1 GiB/s.
   
-  Several different strategies were taken to minimize this latency, including transfering all the blocks of residuals and prefixes using a single copy operation (with the necessary padding between blocks of residuals to
+  Several different strategies were taken to minimize this latency, including transferring all the blocks of residuals and prefixes using a single copy operation (with the necessary padding between blocks of residuals to
   take into account the variable length of the blocks of residuals) and doing all the splitting on the host, \textit{pinning} host memory, as well as \textit{zero-copy} operations. Pinned memory simply allocates a block 
   of memory in host RAM that cannot be swapped out to secondary storage, whereas zero-copy operations make memory transfers between host and device transparent, by mapping the host memory address space directly to the GPU memory 
-  address space. Such zero-copy operations are particularly useful when the memory allocation needed exceeds the limited onboard memory of a GPU. 
+  address space. Such zero-copy operations are particularly useful when the memory allocation needed exceeds the limited on-board memory of a GPU. 
   
   None of these approaches made a significant improvement in terms of throughput, although pinned memory showed a small 200-300 MiB/s increase in throughput if a large number of observations are transfered between the 
   device and the host. In light of these results a post-processing GPU implementation may not be feasible unless the latency added by the memory copy operation can be hidden as part of the transfer cost between the host and RAID disk
   array (which can sustain transfer rates up to 4GB/s according to sources at the MeerKAT offices in Pinelands). Such a modification is, however, beyond the scope of the current investigation.
+  \subsubsection{Memory overheads}
+  Due to the fact that the parallel algorithm is based on a block-based approach, all the observations at time \textit{t} should be received before compression can commence. It will therefore be necessary to allocate
+  enough space to accomodate buffering data while compression is completed in a production environment. The difference-based predictor scheme (compacting up to 3 bytes at a time) requires at most $2n + 2n/8 + n + c$ 32-bit values every 
+  time the algorithm is executed. This is due to the fact that all the observations at time \textit{t} and $t-1$ have to 
+  be stored, as well as an array of $2n/8$ to store the prefixes, and an array $n$ to store residuals (this includes padding the residual array in order to avoid unnecessary branch divergence within the algorithm). Some negligible 
+  amount, \textit{c} accounts for the rest of the program.
 \section{Results}
 \subsection{Constraints on benchmarking environment}
 In order to eliminate the influence of the external testing environment the following special conditions are specified:
@@ -975,12 +981,11 @@ achieved for larger files. As mentioned previously the compression ratio varies 
   8		1.57681			2.60314333333333
   16		2.97051111111111	5.14965111111111
   32		5.12028666666667	9.55265444444444
+  48		4.06238444444444	6.42964444444444
   64		6.01956888888889	6.46924555555556
   }\datatable
 
   \begin{axis}[
-    %ybar,   % Stacked horizontal bars
-    %enlargelimits=0.15, 
     legend style={at={(0.5,-0.15)}, anchor=north,legend columns=-1},
     ymin=0,         % Start y axis at 0
     xmin=0,
@@ -990,13 +995,12 @@ achieved for larger files. As mentioned previously the compression ratio varies 
     grid=major,
     visualization depends on=x \as \rawx,
     visualization depends on=y \as \rawy,
-    nodes near coords={(\pgfmathprintnumber{\rawx},\pgfmathprintnumber{\rawy})},
-    %bar width=20pt,
-    width=0.8\textwidth,
+    nodes near coords={(\pgfmathprintnumber{\rawx},\pgfmathprintnumber{\rawy})}, 
+    width=0.7\textwidth,
     minor y tick num=1
     ]
-    \addplot [every node near coord/.append style={shift={(20pt,-10pt)},font=\tiny},mark=square*, color=red] table [x=Threads, y=Compression] {\datatable};
-    \addplot [every node near coord/.append style={shift={(-20pt,-10pt)},font=\tiny},mark=triangle*, color=blue] table [x=Threads, y=Decompression] {\datatable};
+    \addplot [every node near coord/.append style={shift={(17pt,-10pt)},font=\tiny, color=black},mark=square*, color=red] table [x=Threads, y=Compression] {\datatable};
+    \addplot [every node near coord/.append style={shift={(-17pt,-10pt)},font=\tiny, color=black},mark=triangle*, color=blue] table [x=Threads, y=Decompression] {\datatable};
     \legend{Compression , Decompression}
   \end{axis}
     
@@ -1006,7 +1010,8 @@ achieved for larger files. As mentioned previously the compression ratio varies 
   \end{mdframed}
 \end{figure}
 \subsection{Benchmark against standard compression utilities}
-The implementation was benchmarked against the standard compression utilities GZIP, BZIP2 and ZIP on a 8 core Intel Xeon E5-2650 CPU that supports up to 16 threads. 
+The implementation was benchmarked against the standard compression utilities GZIP, BZIP2 and ZIP on an 8 core Intel Xeon E5-2650 CPU\footnote{This processor does not have 
+the \texttt{LZCNT} machine instruction and is therefore much slower than the AMD Opteron.} that supports up to 16 threads. 
 Disk I/O (network-based) has been enabled for this run of the block-based parallel difference predictive scheme implementation. The performance comparison can be seen
 in figure~\ref{ALG_UTILITY_COMPARISON}. The experiment was run using the same file used for the throughput experiment. The utilities was using default compression 
 and decompression settings. Using fast settings gives a 59.15\% improvement (39.159s) for GZIP and a 76.36\% improvement (36.386s) for ZIP. BZIP2 does not show an improvement 
@@ -1015,7 +1020,7 @@ the rest of the time is spent reading from the original HDF5 files, writing a co
 \begin{figure}[ht!]
  \begin{mdframed}
  \centering
- \begin{subfigure}[b]{\textwidth}
+ \begin{subfigure}[b]{0.5\textwidth}
  \centering
  \begin{tikzpicture}
   \pgfplotstableread{ % Read the data into a table macro
@@ -1029,15 +1034,16 @@ the rest of the time is spent reading from the original HDF5 files, writing a co
   \begin{axis}[
     ybar,   % Stacked horizontal bars
     enlargelimits=0.15, 
-    legend style={at={(0.5,-0.15)}, anchor=north,legend columns=-1},
+    legend style={at={(0.5,-0.25)}, anchor=north,legend columns=-1},
     ymin=0,         % Start y axis at 0
     xtick=data,     % Use as many tick labels as x coordinates
     xticklabels from table={\datatable}{Utility},  % Get the labels from the Threads column of the \datatable
     xlabel=Compression Utility,
     ylabel=Seconds,
     nodes near coords,
-    bar width=25pt,
-    width=0.7\textwidth,
+    every node near coord/.append style={font=\tiny},
+    bar width=15pt,
+    width=\textwidth,
     ]
     \addplot [pattern weight=doublethick,pattern=north west lines,pattern color=blue] table [x expr=\coordindex, y=Compression] {\datatable};    % Plot the "Compression" column against the data index
     \addplot table [x expr=\coordindex, y=Decompression] {\datatable};    % Plot the "Decompression" column against the data index
@@ -1066,7 +1072,63 @@ the rest of the time is spent reading from the original HDF5 files, writing a co
   \end{mdframed}
 \end{figure}
 \subsection{Comparison to what was achieved in concurrent research}
-{\color{red}TODO}
+Research into both a Huffman entropy encoder, as well as a Zero-Length Coding scheme (Run-length encoding on binary data) achieved the results showed in figure~\ref{CONCURRENT_WORK} on the same
+file used in the previous experiments, on the same Intel Xeon E5-2650 CPU that was used in the comparison to standard utilities.
+\begin{figure}[ht!]
+ \begin{mdframed}
+ \centering
+  \begin{subfigure}[b]{\textwidth}
+ \centering
+ \begin{tikzpicture}
+  \pgfplotstableread{ % Read the data into a table macro
+	Threads		Huffman		Predictive	ZLE
+	1		0.0072		0.1587168	0
+	4		0.02449		0.6040148	0
+	8		0.046784	1.080432	0
+	16		0.073802	1.855014	0
+  }\datatable
+
+  \begin{axis}[
+    legend style={at={(0.5,-0.15)}, anchor=north,legend columns=-1},
+    ymin=0,         % Start y axis at 0
+    xmin=0,
+    xmax=16,
+    xlabel=Number of cores,
+    ylabel=Throughput (GiB/s),
+    grid=major,
+    nodes near coords, 
+    width=0.7\textwidth,
+    minor x tick num=1,
+    minor y tick num=1
+    ]
+    \addplot [every node near coord/.append style={font=\tiny},mark=square*, color=red] table [x=Threads, y=Huffman] {\datatable};
+    \addplot [every node near coord/.append style={font=\tiny},mark=triangle*, color=blue] table [x=Threads, y=Predictive] {\datatable};
+    \addplot [every node near coord/.append style={font=\tiny},mark=*, color=purple] table [x=Threads, y=ZLE] {\datatable};
+    \legend{Huffman , Predictive, ZLE}
+  \end{axis}  
+  \end{tikzpicture}
+  \caption{Comparison of compression speeds achieved}
+  \label{SPEED_CONCURRENT_COMPARISON}
+  \end{subfigure}
+  
+  \begin{subfigure}[b]{0.7\textwidth}
+    \centering
+    \vspace{20pt}
+    \begin{tabular}{|c|c|c|}
+      \hline
+      Huffman & Predictive & ZLE \\
+      \hline
+      0.41 & 0.933001 & 0.969\\
+      \hline
+    \end{tabular}
+  \caption{Comparison between compression ratios (on raw data, excluding h5 headers)}
+  \label{RATIO_CONCURRENT_COMPARISON}  
+  \end{subfigure}
+  
+  \caption{Comparison between Predictive Compressor, RLE and Huffman coding (excluding Disk I/O)}
+  \label{CONCURRENT_WORK}
+  \end{mdframed}
+\end{figure}
 \section{Discussion}
 The block-based parallel approach achieved roughly a linear scaling (doubling the number of cores doubles the throughput achieved) up to 32-cores for both the compressor and decompressor. 
 After that point increasing the number of cores sees deminishing returns due to the overheads of processing smaller blocks in parallel, coupled with limited memory throughput capacity. 
@@ -1076,12 +1138,13 @@ leading zero count per element in the Compressor. Even through this leading zero
 twice as fast as the compression step. This result is not surprising and corresponds to results reported for 64-bit double precision compression schemes 
 \cite{4976448,O'Neil:2011:FDC:1964179.1964189}.
 
-Even when operating using only 16 threads the predictive compressor implementation greatly outperforms the standard compression utilities set at their fastest settings. When common
-disk I/O is subtracted the predictive compressor is roughly 50 times faster than ZIP (the fastest compression utility by comparison). That said, the predictive compressor fails to 
-achieve good compression ratios when compared to both the standard utilities and the parallel Huffman entropy encoder discussed in concurrent research. The lack of compression ratio 
-can be contributed to noise in the data. Although there is some correlation between consecutive observations, the effectiveness of the predictor not only relies on consecutive 
-observations having the same magnitude (the 1 byte exponents should be identical for most predictions), but the values should change very slowly in the top-most bits of the 23-bit 
-significant. This limitation is not only apparent when compressing 32-bit single precision floating point values, but applies to 64-bit double precision floating point values as well.
+Even when operating using only 16 threads on a processor without support for the leading zero count instruction, the predictive compressor implementation greatly outperforms the 
+standard compression utilities set at their fastest settings. When common disk I/O is subtracted the predictive compressor is roughly 50 times faster than ZIP (the fastest compression 
+utility by comparison). That said, the predictive compressor fails to achieve good compression ratios when compared to both the standard utilities and the parallel Huffman entropy encoder 
+discussed in concurrent research. The lack of compression ratio can be contributed to noise in the data. Although there is some correlation between consecutive observations, the effectiveness 
+of the predictor not only relies on consecutive observations having the same magnitude (the 1 byte exponents should be identical for most predictions), but the values should change very 
+slowly in the top-most bits of the 23-bit significant. This limitation is not only apparent when compressing 32-bit single precision floating point values, but applies to 64-bit double 
+precision floating point values as well.
 \section{Conclusion}
 This investigation set out to evaluate the feasibility of using a predictive compression scheme in order to achieve high throughput compression on the data produced by the MeerKAT radio telescope array, currently under construction
 in the central Karoo region in South Africa. The array will require processing facilities and network infrastructure capable of handling up 1 Petabyte of data every 20 seconds once completed. A fast compression scheme will be able
@@ -1108,7 +1171,7 @@ parallelogram and Lagrange predictor). Only a median-based approach was found to
 select the median for each prediction, the implementation is too slow to be considered a viable alternative to the simple difference-based predictor.
 
 The prediction scheme therefore proves to be a viable solution for future implementation as part of the network stack employed by the MeerKAT and ultimately the SKA. It remains to be investigated whether a predictive 
-compression scheme, based on the use of lookup tables gives better results, although this may have considerable memory requirements (see \cite{1607248,4589203,4976448}). The predictive scheme clearly outperforms 
+compression scheme, based on the use of lookup tables gives better results, although this may have considerable memory requirements depending on block size (see \cite{1607248,4589203,4976448}). The predictive scheme clearly outperforms 
 regular compression utilities, as well as a Huffman entropy encoder in terms of throughput, but sacrifices a considerable amount of the possible compression ratio in doing so. An entropy encoder such as Huffman or a
 parallelization of a Lempel-Ziv scheme, as discussed by Klein et al. \cite{klein2005parallel}, may be better tailored to address the long-term storage requirements of the project.
 \section{Glossary}
