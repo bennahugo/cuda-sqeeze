@@ -47,12 +47,14 @@
 \usepackage{mdframed}
 \usepackage{pgfplots, pgfplotstable}
 \usepackage{float}
+\usepackage{multirow}
+\usepackage[nonumberlist]{glossaries}
 \usetikzlibrary{patterns}
+\makeglossaries
 
 \begin{document}
-
+\include{glossaries}
 \begin{titlepage}
-
 \newcommand{\HRule}{\rule{\linewidth}{0.5mm}} % Defines a new command for the horizontal lines, change thickness here
 
 \center % Center everything on the page
@@ -97,7 +99,7 @@ Dr. Patrick \textsc{Marais}\\
 \emph{External Advisor:} \\
 Jason \textsc{Manley}
 \end{flushright}
-\end{minipage}\\[4cm]
+\end{minipage}\\[2cm]
 
 % If you don't want a supervisor, uncomment the two lines below and remove the section above
 %\Large \emph{Author:}\\
@@ -106,13 +108,37 @@ Jason \textsc{Manley}
 %----------------------------------------------------------------------------------------
 %	DATE SECTION
 %----------------------------------------------------------------------------------------
-\vspace{15pt}
 \begin{center}
  A thesis presented to the Department of Computer Science, UCT, in partial fulfillment of the course CSC4000W, Honours in Computer Science.
 \end{center}
-\vspace{90pt}
-{\large \today}\\[3cm] % Date, change the \today to a set date if you want to be precise
+\vspace{1cm}
 
+{\large \today}\\[1cm] % Date, change the \today to a set date if you want to be precise
+\begin{tabular}{|c|l|c|c|c|}
+ \hline
+   & \textbf{Category} & \textbf{Min} & \textbf{Max} & \textbf{Chosen} \\
+ \hline
+ 1 & Requirement Analysis and Design & 0 & 20 & ? \\
+ \hline
+ 2 & Theoretical Analysis & 0 & 25 & ? \\
+ \hline
+ 3 & Experiment Design and Execution & 0 & 20 & ? \\
+ \hline
+ 4 & System Development and Implementation & 0 & 15 & ? \\
+ \hline
+ 5 & Results, Findings and Conclusion & 10 & 20 & ? \\
+ \hline
+ 6 & Aim Formulation and Background Work & 10 & 15 & ? \\
+ \hline
+ 7 & Quality of Report Writing and Presentation & \multicolumn{2}{|c|}{10} & 10 \\
+ \hline
+ 8 & Adherence to Project Proposal and Quality of Deliverables & \multicolumn{2}{|c|}{10} & 10 \\
+ \hline
+ 9 & Overall General Project Evaluation & 0 & 10 & ? \\
+ \hline
+ \multicolumn{2}{|l|}{\textbf{Total marks}} & \multicolumn{2}{|c|}{\textbf{80}} & \textbf{80} \\
+ \hline
+\end{tabular}
 %----------------------------------------------------------------------------------------
 %	LOGO SECTION
 %----------------------------------------------------------------------------------------
@@ -131,7 +157,8 @@ Jason \textsc{Manley}
  radio telescope currently under construction in southern Africa and Australia, which will produce data at rates up to 1 Petabyte every 20 seconds. The compression technique being 
  investigated is based on predictive compression, which has proven successful at achieving high-speed compression in previous research. Several different predictive 
  techniques (which includes polynomial extrapolation), along with CPU- and GPU-based parallelization approaches are discussed. The implementation successfully achieves throughput rates 
- in excess of 6 GiB/s for compression and much higher rates for decompression using a 64-core AMD Opteron machine.
+ in excess of 6 GiB/s for compression and much higher rates for decompression using a 64-core AMD Opteron machine, achieving file-size reductions of between 7\% and 8\%. Furthermore
+ the results of concurrent investigations into block-based parallel Huffman encoding and Zero-length encoding are compared.
 \end{abstract}
 
 \pagebreak
@@ -335,7 +362,7 @@ for real-time analysis and observation. Low resolution samples can be consistent
 \subsection{Overview of predictive compression}
 Previous research \cite{1607248,4589203,engelson2000lossless,lindstrom2006fast,O'Neil:2011:FDC:1964179.1964189,4976448,CGF:CGF681} in this area has yielded good results both in terms of compression ratio and speed. 
 The common line of thought is to predict successive values with reasonable precision. Depending on the accuracy of the prediction, the difference between the predicted and actual value will be much smaller than the actual value itself. 
-This difference can then be encoded using fewer bytes/bits of data (depending if compression occurs at a byte or bit level) by compressing the leading zeros after either an XOR or integer subtraction 
+This difference can then be encoded using fewer bytes/bits of data (depending if compression occurs at a byte or bit level) by compressing the leading zeros after either an exclusive or operator or integer subtraction 
 operation. Machine instructions to count the leading zeros can be found on AMD, newer Intel Processors and CUDA architectures. The leading zero count is then encoded as a prefix stream while the remaining bits/bytes 
 are encoded as a residual stream.
 
@@ -389,10 +416,10 @@ As pointed out in previous research \cite{engelson2000lossless,lindstrom2006fast
 rounding errors. A simple alternative approach is proposed by Engelson et al. \cite{engelson2000lossless}: floating-point memory is simply treated as integer memory and all operations performed on that memory are integer operations. This
 approach ensures the predictive scheme achieves lossless compression. In light of this only schemes that conform to this approach will be considered. Engelson et al. gives an example of how floating-point numbers
 can be treated with integer operations. Figure~\ref{INT_REP} shows that if two floating-point numbers are relatively close to each other (in terms of magnitude) it is possible to discard some repeated bytes of information after performing 
-an XOR operation to extract the remaining, seemingly random, residual bits. Therefore if an accurate prediction can be made for consecutive numbers a reasonable
-saving in terms of compression ratio can be made. An XOR operation is a \textit{binary} operation (taking two operands). It returns false if both operands are the same. If $\oplus$ represents the XOR operation then 
-inversion can be achieved as follows: $A\oplus B = C \implies (C\oplus A = B) \wedge (C\oplus B = A)$. The XOR operation is furthermore commutative, meaning: $A\oplus B = B\oplus A$. The inversion property is obviously critical 
-to achieve decompression since the difference can be XORed with the observation at time $t-1$ to obtain the observation at time \textit{t}.
+an exclusive or operation to extract the remaining, seemingly random, residual bits. Therefore if an accurate prediction can be made for consecutive numbers a reasonable
+saving in terms of compression ratio can be made. An exclusive or operation is a \textit{binary} operation (taking two operands). It returns false if both operands are the same. If $\oplus$ represents the exclusive or operation then 
+inversion can be achieved as follows: $A\oplus B = C \implies (C\oplus A = B) \wedge (C\oplus B = A)$. The exclusive or operation is furthermore commutative, meaning: $A\oplus B = B\oplus A$. The inversion property is obviously critical 
+to achieve decompression since the difference can be exclusive ored with the observation at time $t-1$ to obtain the observation at time \textit{t}.
 \begin{figure}[h!]
 \begin{mdframed}
 \centering
@@ -442,7 +469,7 @@ zero count does not have to be computed for each element being decompressed. Ref
 \end{mdframed}
 \end{figure}
 The construction of the algorithm being specified in figure~\ref{PACKING_ALGORITHM} is used because it allows for easy swapping between different predictors. The predictor in this case 
-can be any n-element predictor. As mentioned earlier the predicted value is XORed with the actual value to get a residual which can be compacted at either bit or byte level. This 
+can be any n-element predictor. As mentioned earlier the predicted value is exclusive ored with the actual value to get a residual which can be compacted at either bit or byte level. This 
 compaction simply removes the leading zeros from each leading zero count and stores each residual as a fixed-length prefix count. The number of bits needed to store $n$ leading 
 zeros can be calculated as $\lfloor\log_2n\rfloor+1$ bits where $n\in\mathbb{N}_{>0}$. It remains to find the residual compaction scheme that gives the best results: packing at 
 bit or byte level. Although a bit-packing scheme can pack an arbitrary number of zeros it requires longer prefixes to store the leading zero counts. The opposite is true 
@@ -628,7 +655,7 @@ END SUBROUTINE
 \end{verbatim}
 The decompression algorithm is remarkably similar, except that the leading zero count is not computed, but is instead retrieved from the prefix array. The shift
 operations are inverted to retrieve the bits (that may be splitted over two consecutive elements) in both the prefix and residual arrays. The prediction step is moved towards
-the end of the routine, where the predicted value is XORed with the residual to restore the original, uncompressed, value.
+the end of the routine, where the predicted value is exclusive ored with the residual to restore the original, uncompressed, value.
  \subsection{Alternative linear prediction schemes}
   The most basic prediction scheme simply encodes the difference between observations at time \textit{t} and $t+1$. This difference is given as $O[t]$ xor $O[t-1]$. The 
   downside to this basic predictor is that it is particularly sensitive to the structure of the underlying data. It will only work if \emph{most} consecutive values varies 
@@ -824,7 +851,7 @@ POW(2,n) = (2 << n-1) //where "<<" is the arithmetic left-shift operator
   \textit{n} leading zeros. When packing up to 31 leading zeros 5 bits are needed whereas 3 bytes of leading zeros can be packed using only 2 bits for each prefix as explained earlier. Which scheme
   works better is entirely dependent on the properties of the data and how accurate the predictions are. From experimentation, packing at byte level (up to 3 bytes of leading zeros) is the most 
   efficient scheme. It gives compression ratios approximately 1\% better than the closest bit-level packing scheme. The compression ratios achieved when encoding the
-  difference between successive observations (by means of an XOR operation) are not very high. Depending on the dataset compression ratios of between 92\% and 93\% are observed. This shows that 
+  difference between successive observations (by means of an exclusive or operation) are not very high. Depending on the dataset compression ratios of between 92\% and 93\% are observed. This shows that 
   although the compression scheme is rather basic there is some coherence between successive observations. 
   
   The ratios mentioned above includes storing the following information:
@@ -863,9 +890,9 @@ POW(2,n) = (2 << n-1) //where "<<" is the arithmetic left-shift operator
   floating point representation, implying that there will be no leading zeros to encode). A solution to this is to dedicate an extra bit per prefix in order to store the sign value. From experimentation it was determined that
   this trade-off between storing an extra bit for every prefix and the number of signed differences is not worth encoding: a saving of less than 0.01\% is made for a number of the sample datasets. 
   
-  The next simple modification to the scheme is to test whether using normal integer subtraction fairs better than an XOR operation. Burtscher et al. points out that integer subtraction faired much worse both in terms of
+  The next simple modification to the scheme is to test whether using normal integer subtraction fairs better than an exclusive or operation. Burtscher et al. points out that integer subtraction faired much worse both in terms of
   compression ratio and throughput for their FPC compressor operating on 64-bit floating points values \cite{4589203}. This is the same for the 32-bit KAT-7 being considered in this report. A loss of between 2\% to 3\% in 
-  compression ratio is observed. It is therefore better to stick with a simple XOR operation.
+  compression ratio is observed. It is therefore better to stick with a simple exclusive or operation.
   
   The integer mean predictor fairs poorly compared to the simple difference scheme by degrading the compression ratio by 3\% to almost 7\% (thereby inflating the data). The effect worsens when the number of prediction 
   steps are increased. As pointed out earlier such a mean scheme is prone to outliers (which can be expected in noisy data). The median scheme was expected to fair better as mentioned earlier and an implementation of the pivoting 
@@ -887,7 +914,7 @@ POW(2,n) = (2 << n-1) //where "<<" is the arithmetic left-shift operator
   The Intel Multimedia Extensions (MMX), SSE and AVX along with the original 3DNow, SSE extensions and XOP extensions added by AMD, forms a family of vectorized instruction sets which adds the ability to 
   perform a single instruction on multiple data elements of the same type in parallel. The original SSE instruction set added eight special 128-bit registers. The instruction set adds 
   the ability to perform both integer-arithmetic operations and floating-point operations on any continuous sequence of elements stored into these special registers. It imposes the special condition that the 
-  elements loaded into a single register are all of the same bit-length (64,32,16 or 8-bit values).
+  elements loaded into a single register are all of the same bit-length (64, 32, 16 or 8-bit values).
   
   As the name suggests these special machine instructions are focused on providing greater flexibility for performing a single instruction on multiple data. A good example of where
   a speedup can be expected is in parallelizing vector addition. However, in the case of implementing a packing algorithm the original SSE instructions are not sufficient since it only allows 
@@ -1202,7 +1229,7 @@ and processing those blocks in parallel on a GPU as a post-processing operation 
 latencies associated with copying memory back to the host into account, GPU-based processing was found to be ineffective if these latencies cannot be mitigated through asynchronous disk operations.
 
 After investigating improvements in throughput the investigation shifted its focus on improving the average compression ratio achieved by a basic difference between successive samples. Such a basic difference
-scheme takes observations at times $t-1$ and xors them with observations at time \textit{t} (it was found that using the xor operator instead of normal integer subtraction was both faster and improved the average
+scheme takes observations at times $t-1$ and exclusive ors them with observations at time \textit{t} (it was found that using the exclusive or operator instead of normal integer subtraction was both faster and improved the average
 compression ratio). The scheme failed to achieve a similar compression ratio when compared to the standard compression utilities GZIP, BZIP2 and ZIP, by only achieving savings of between 7\% and 8\% in final file size.
 However, the predictive compression scheme is 20.801 seconds faster than the fastest compression utility (ZIP), when operating at its maximum speed setting. When the common disk I/O latencies are subtracted from these 
 timings the solution is roughly 50 times faster than ZIP on a 16-core machine.
@@ -1215,8 +1242,9 @@ The prediction scheme therefore proves to be a viable solution for future implem
 compression scheme, based on the use of lookup tables gives better results, although this may have considerable memory requirements depending on block size (see \cite{1607248,4589203,4976448}). The predictive scheme clearly outperforms 
 regular compression utilities, as well as a Huffman entropy encoder in terms of throughput, but sacrifices a considerable amount of the possible compression ratio in doing so. An entropy encoder such as Huffman or a
 parallelization of a Lempel-Ziv scheme, as discussed by Klein et al. \cite{klein2005parallel}, may be better tailored to address the long-term storage requirements of the project.
-\section{Glossary}
-{\color{red}TODO}
+
+\glsaddall
+\printglossary
 \bibliographystyle{plain}
 \bibliography{litRefs}
 \end{document}

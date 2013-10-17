@@ -1,0 +1,293 @@
+\newglossaryentry{Compression}
+ {name={Compression},
+  description={removal of redundancy according to some statistical model of the data. This redundancy may be repeated values or wasteful character encoding practices}
+ }
+\newglossaryentry{Decompression}
+ {name={Decompression},
+  description={the inverse of compression. Unpacks a file to its original state or a similar representation thereof (depending whether lossy or lossless compression is
+  desired}
+ }
+\newglossaryentry{KAT-7}
+ {name={KAT-7},
+  description={Initial 7 dish prototype radio telescope array constructed near Carnarvon, South Africa}
+ }
+\newglossaryentry{MeerKAT}
+ {name={MeerKAT},
+  description={Successor to the KAT-7 prototype}
+ }
+\newglossaryentry{Square Kilometer Array (SKA)}
+ {
+  name={Square Kilometer Array},
+  description={The combined low and medium-range frequency antennae constructed in Southern Africa and Australia will be collectively known as the SKA}
+ }
+\newglossaryentry{Petabyte} 
+ {
+  name={Petabyte},
+  description={1024 Terrabytes (TiB)}
+ }
+\newglossaryentry{Pixel} 
+ {
+  name={Pixel},
+  description={Picture element (or colour value). An image is a discretized roster of these pixels}
+ }
+\newglossaryentry{Scanline}
+ {
+  name={Scanline},
+  description={A horizontal row of pixels that stretches across the width of the image}
+ }
+\newglossaryentry{Run-Length Encoding (RLE)}
+ {
+  name={Run-Length Encoding (RLE)},
+  description={A technique that clusters runs of symbols into length-based representations (aaabbbb is represented as 3a4b for example). See the introduction}
+ }
+\newglossaryentry{Lossless Compression}
+ {
+  name={Lossless Compression},
+  description={Can be inverted with no loss of information. The opposite will be lossy compression}
+ }
+\newglossaryentry{Online Compression}
+ {
+  name={Online Compression},
+  description={Compression is completed as part of the primary function of the system (and not afterwards). An online process is normally required to
+  add no significant latencies to an existing system}
+ }
+\newglossaryentry{Quantization}
+ {
+  name={Quantization},
+  description={In terms of lossy compression this process refers to binning values in close proximity into groups}
+ }
+\newglossaryentry{Compression ratio}
+ {
+  name={Compression ratio},
+  description={Ratio between output size and input size}
+ }
+\newglossaryentry{Throughput}
+ {
+  name={Throughput},
+  description={input processed in GiB per second}
+ }
+\newglossaryentry{Graphical Processing Unit (GPU)}
+ {
+  name={Graphical Processing Unit (GPU)},
+  description={Independent streaming processor that is tailored towards processing graphics}
+ }
+\newglossaryentry{General Purpose Graphical Processing Unit (GPU)}
+ {
+  name={General Purpose Graphical Processing Unit Programming (GPGPU)},
+  description={General purpose (for instance scientific computing) programming using SIMD style instructions on a GPU}
+ }
+\newglossaryentry{Simple Instruction Multiple Data (SIMD)}
+ {
+  name={Simple Instruction Multiple Data (SIMD)},
+  description={Can apply to contexts where a large number of elements are subject to the same instruction. A good example where this style of programming
+  can be used is vector addition}
+ }
+\newglossaryentry{Lempel-Ziv (LZ) Compression}
+ {
+  name={Lempel-Ziv (LZ) Compression},
+  description={A compression scheme where repeated sequences of symbols are encoded as distance-length pairs. See background chapter}
+ }
+\newglossaryentry{Entropy}
+ {
+  name={Entropy},
+  description={The measurement of the information contained in a single base-n symbol (transmitted per unit time by some source)}
+ }
+\newglossaryentry{Redundancy}
+ {
+  name={Redundancy},
+  description={The difference between the optimal entropy of a dataset and the actual entropy}
+ }
+\newglossaryentry{Huffman coding}
+ {
+  name={Huffman coding},
+  description={An entropy encoder that assigns shorter codes to frequently used symbols in a dataset. See background chapter}
+ }
+\newglossaryentry{Arithmetic coding}
+ {
+  name={Arithmetic coding},
+  description={An entropy encoder that assigns sub-intervals of [0,1). This encoder is closer to an optimal entropy encoder, achieving better compression than 
+  Huffman coding. See background chapter}
+ }
+\newglossaryentry{Discrete Cosine Transform (DCT)}
+ {
+  name={Discrete Cosine Transform (DCT)},
+  description={A finite sequence of samples can be represented as a sum of transformed cosine functions. This is one example of where transforms can be used to
+  achieve compression on level-of-detail. See background chapter}
+ }
+\newglossaryentry{Compute Unified Device Architecture (CUDA)}
+ {
+  name={Compute Unified Device Architecture (CUDA)},
+  description={A programming framework used to compile GPGPU programs for Nvidia GPUs}
+ } 
+\newglossaryentry{Lagrange predictor}
+ {
+  name={Lagrange predictor},
+  description={A polynomial extrapolation technique used for prediction of successive values for smooth functions. See design section}
+ } 
+\newglossaryentry{Lorenzo predictor}
+ {
+  name={Lorenzo predictor},
+  description={A scheme that extends the parallelogram rule to higher dimensions which can be used for polynomial reconstruction. See design section}
+ } 
+\newglossaryentry{IEEE 754}
+ {
+  name={IEEE 754},
+  description={A widely employed standard defined for the storage of 32-bit, 64-bit or 128-bit floating point values. See background chapter}
+ } 
+\newglossaryentry{Symmetrical algorithm}
+ {
+  name={Symmetrical algorithm},
+  description={In terms of compression and decompression this refers to executing a compression algorithm in reverse in order to achieve decompression}
+ }
+\newglossaryentry{Prefix sum}
+ {
+  name={Prefix sum},
+  description={An element-wise accumulation of an array of values over some binary associative operator. See design chapter}
+ }
+\newglossaryentry{Race condition}
+ {
+  name={Race condition},
+  description={A condition that occurs when two threads compete to update the same resource which correctness depends on the order and timing of these updates. This 
+  constitutes non-deterministic behavior which invalidates the state of such a resource. See design chapter on how this affects a parallel packing algorithm}
+ }
+\newglossaryentry{Streaming Multiprocessor (SM)}
+ {
+  name={Streaming Multiprocessor (SM)},
+  description={A sub-component of Nvidia GPU architecture. Such a multiprocessor consists of many arithmetic units which operate in parallel. A GPU will normally have
+  multiple of these multiprocessors which will operate independently of eachother unless a global synchronization barrier is imposed. See design chapter}
+ }
+\newglossaryentry{Warp of threads}
+ {
+  name={Warp of threads},
+  description={In a GPU each Streaming Multiprocessor is divided into atomic groups of threads that executes in parallel. See design chapter}
+ }
+\newglossaryentry{Shared memory}
+ {
+  name={Shared memory},
+  description={In CPUs shared memory refers to the sharing of primary memory between multiple processor cores, or even multiple processors. In GPUs the threads within
+  a single SM has access to dedicated fast memory that can be used to avoid calls to global device memory. See design chapter}
+ }
+\newglossaryentry{Coalesced memory access}
+ {
+  name={Coalesced memory access},
+  description={On a GPU a coalesced read occurs when the global memory calls of multiple threads are grouped together in order to share the latency of such a call
+  between threads. This normally requires memory aligned access patterns. See design chapter}
+ }
+\newglossaryentry{Bank conflict}
+ {
+  name={Bank conflict},
+  description={On a GPU a bank conflict occurs when multiple threads try to access the same bank of shared memory. Such accesses will then be completed sequentially.
+  See design chapter}
+ }
+\newglossaryentry{Open Systems Interconnection (OSI) network stack}
+ {
+  name={Open Systems Interconnection (OSI) network stack},
+  description={An abstraction of the layered nature of network protocols. From top to bottom the stack contains the following layers: application, presentation, session,
+  transport, network, link and physical layers. A decompression operation may form part of the presentation layer in such a stack.}
+ }
+\newglossaryentry{Streaming SIMD Extensions (SSE)}
+ {
+  name={Streaming SIMD Extensions (SSE)},
+  description={A vectorized instruction set (see design and implementation chapters) that adds the capability of performing SIMD instructions on 128-bit registers (for example
+  4 32-bit integers) in one machine clock cycle}
+ }
+\newglossaryentry{eXtended Operations (XOP)}
+ {
+  name={eXtended Operations (XOP)},
+  description={An AMD extension to SSE instruction set that adds, amongst others, the ability to perform per-element bit-shifting on 4 integers contained in a 128-bit 
+  register}
+ }
+\newglossaryentry{Advanced Vector Extensions (AVX)}
+ {
+  name={Advanced Vector Extensions (AVX)},
+  description={An Intel extension to SSE instruction set that adds, 256-bit registers (which may be used to perform simultaneous operations on up to 8 32-bit 
+  integers/floating-point values}
+ }
+\newglossaryentry{GNU ZIP (GZIP)}
+ {
+  name={GNU ZIP (GZIP)},
+  description={A standard free compression utility that implements the DEFLATE (LZ-77 based) algorithm}
+ }
+\newglossaryentry{BZIP2}
+ {
+  name={BZIP2},
+  description={A standard free compression utility that implements the Burrows-Wheeler Transform (which groups matching elements into runs, in order to perform
+  Run-Length Encoding), as well as Huffman encoding}
+ }
+\newglossaryentry{ZIP}
+ {
+  name={ZIP},
+  description={A standard compression utility that implements a collection of LZ, entropy and transform methods that is useful when archiving a group of files}
+ }
+\newglossaryentry{Decoupling}
+ {
+  name={Decoupling},
+  description={A software engineering term used to measure the dependency of one component on another}
+ }
+\newglossaryentry{Cohesion}
+ {
+  name={Cohesion},
+  description={A software engineering term used to measure the the degree to which a component separates operations. Ideally a component should only house supporting
+  operations to perform a single task to ease future maintenance and usability}
+ }
+\newglossaryentry{Exclusive Or (XOR)}
+ {
+  name={Exclusive Or (XOR)},
+  description={A bitwise binary (taking two inputs) operation that returns false if the inputs are identical}
+ }
+\newglossaryentry{Pivot}
+ {
+  name={Pivot},
+  description={A pivot divides a dataset into 2 groups (useful in applications of fast sorting techniques). One group is larger than the pivot, while the other is smaller (or equal)
+  to the pivot}
+ }
+\newglossaryentry{OpenMP}
+ {
+  name={OpenMP},
+  description={A package that allows for easy parallelization of C and Fortran code using compiler flags}
+ }
+\newglossaryentry{POSIX threads (pthreads)}
+ {
+  name={POSIX threads (pthreads)},
+  description={An API that allows for the creation of native process-based threading on Unix-like systems}
+ }
+\newglossaryentry{Intel Multimedia eXtensions (MMX)}
+ {
+  name={Intel Multimedia eXtensions (MMX)},
+  description={A vectorized instruction set that added support for performing operations on two 32-bit integers through the 64-bit registers this technology added.
+  The MMX instruction set was extended by the AMD 3DNow! extensions and later the SSE extensions}
+ }
+\newglossaryentry{3DNow!}
+ {
+  name={3DNow!},
+  description={An AMD vectorized instruction set that extended the capabilities of Intel's MMX instruction set by adding supporting instructions for 32-bit floating-point 
+  processing}
+ }
+\newglossaryentry{Pinned host memory}
+ {
+  name={Pinned host memory},
+  description={A method used to allocate a non-swappable block of primary memory that improves memory transfers between a host machine and a GPU}
+ }
+\newglossaryentry{Zero-copy}
+ {
+  name={Zero-copy},
+  description={A support mechanism in the Nvidia API that allows for sharing pinned host and device memory space}
+ } 
+\newglossaryentry{User Datagram Protocol (UDP)}
+ {
+  name={User Datagram Protocol (UDP)},
+  description={A fast networking protocol that sends data packets with no built-in support for verifying package integrity, and checking (and by extension correcting) 
+  transmission losses}
+ }
+\newglossaryentry{Merkle Damgard 5 (MD5)}
+ {
+  name={Merkle Damgard 5 (MD5)},
+  description={An iterative message digest algorithm that creates a fixed-length checksum of a message, with the intension of verifying data integrity. See section
+  on approach feasibility}
+ }
+\newglossaryentry{HDF5 file format}
+ {
+  name={HDF5 file format},
+  description={A hierarchical file format that supports the storage of large sets of numerical data and associated meta-data that is generally faster than
+  storage using relational databases\footnote{The HDF Group. Hierarchical data format version 5, 2000-2010. http://www.hdfgroup.org/HDF5.}}
+ }
