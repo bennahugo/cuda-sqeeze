@@ -155,7 +155,7 @@ Jason \textsc{Manley}
 \pagebreak
 \begin{abstract}
  This report investigates the fast, lossless compression of 32-bit single precision floating-point values. High speed compression is critical in the context of the MeerKAT 
- radio telescope currently under construction in southern Africa and Australia, which will produce data at rates up to 1 Petabyte every 20 seconds. The compression technique being 
+ radio telescope currently under construction in Southern Africa and Australia, which will produce data at rates up to 1 Petabyte every 20 seconds. The compression technique being 
  investigated is based on predictive compression, which has proven successful at achieving high-speed compression in previous research. Several different predictive 
  techniques (which includes polynomial extrapolation), along with CPU- and GPU-based parallelization approaches are discussed. The implementation successfully achieves throughput rates 
  in excess of 6 GiB/s for compression and much higher rates for decompression using a 64-core AMD Opteron machine, achieving file-size reductions of between 7\% and 8\%. Furthermore
@@ -208,7 +208,7 @@ grid of 24-bit colours (8-bits for each of the red, green and blue channels) a l
 reduce redundancy in this example is to store each horizontal line (or \textit{scanline}) of pixels as runs of colours, instead of individual colours. The first 
 scanline can therefore be reduced to 9 white, 5 white, 5 orange, 1 white runs of pixels. This is known as \textit{Run-Length Encoding}. However, this is not the only 
 form of redundancy: if each colour is represented as a 24-bit value, but only 5 colours are used from the $2^{24}$ colours available, a lot of storage space is wasted. 
-In this case only  $\lfloor\log_{2}{5}\rfloor+1 = 4$ bits are needed to store all 5 colours uniquely. This variable-length encoding is often accomplished using an 
+In this case only  $\lfloor\log_{2}{5}\rfloor+1 = 3$ bits are needed to store all 5 colours uniquely. This variable-length encoding is often accomplished using an 
 entropy encoding scheme which will be described to greater detail in the background section. Decompression can be thought of as the inverse operation to the compression 
 process, which will reconstruct the original data from its encoded version.
 \begin{figure}[ht!]
@@ -252,7 +252,7 @@ voice data at a lower rate than music or to employ a commonly used technique cal
 (or \textit{bins}).
 
 An online compression scheme refers to a process of compressing data on-the-fly as it is being transmitted. The results are sent off to subsequent 
-processes such transmission over a network or storage to disk. This is in contrast to to an offline scheme where data is compressed as a separate process which does not
+processes such transmission over a network or storage to disk. This is in contrast to an offline scheme where data is compressed as a separate process which does not
 form part of the primary work-flow of a system. An online process is normally required to be fast enough, as not to slow the overall data processing capabilities of 
 a system.
 
@@ -291,7 +291,7 @@ The more intuitive methods include commonly employed methods such as \textit{Run
 RLE, simply put, encodes runs of characters using some reserved character and a number indicating the length of the run. In the context of compressing floating-point data such a scheme will 
 focus on encoding runs of zeros and ones at a bit level. 
 
-Move-to-front attempts to place frequently occurring symbols from an alphabet of symbols near the front of the alphabet. It encodes each incoming symbol as the number of 
+Move-to-front coding attempts to place frequently occurring symbols from an alphabet of symbols near the front of the alphabet. It encodes each incoming symbol as the number of 
 symbols preceding it in the alphabet. The symbol is then moved to the front of the alphabet with the hope that the symbol will occur frequently in future input. After completion 
 variable-length Huffman codes (discussed shortly) are assigned to each symbol (with shorter codes assigned to more frequent characters). This approach is known to significantly increase 
 the effectiveness of Huffman Coding in the best case scenario and only performs slightly worse than standard Huffman in the worst case \cite[ch. 1]{salomon2004data}. 
@@ -307,7 +307,7 @@ One example of such an LZ method is used in the GNU compression utility GZIP. GZ
 \cite[ch. 3]{salomon2004data}. LZ algorithms can furthermore be parallelized, as discussed by Klein et al. \cite{klein2005parallel}. 
 
 LZ-77 encodes these recurrent phrases as length-distance pairs. If a sequence of characters are found to be the same as a sub-sequence of characters in the search buffer, the 
-distance to the start of that sub-sequence, together with the length of the match is encoded. The size of the search buffer can be up to 32 kiB in some implementations of the 
+distance to the start of that sub-sequence, together with the length of the match are encoded. The size of the search buffer can be up to 32 kiB in some implementations of the 
 algorithm \cite[ch. 3]{salomon2004data}.
 \subsubsection{Statistical methods}
 This class of algorithms normally uses variable-length codes to achieve an optimal (or near optimal) encoding of dataset. In information theory this optimal encoding is 
@@ -360,7 +360,7 @@ can then be further compressed using other techniques, for example, Huffman codi
 decompression) is tolerable, quantization can be used to discard unimportant values (for example the high frequency features of an image) \cite{952804}\cite[ch. 5]{salomon2004data}.
 
 Another example of a useful transform is the Burrows-Wheeler transform. This transform groups similar symbols together by cyclically rotating blocks of symbols in order to 
-obtain \textit{n} permutations of the block of length n. This $nxn$ matrix is then sorted, after which the runs in the last column can be encoded using RLE. This approach, coupled
+obtain \textit{n} permutations of the block of length n. This $n\times n$ matrix is then sorted, after which the runs in the last column can be encoded using RLE. This approach, coupled
 with move-to-front encoding and Huffman coding is successfully employed in the standard compression utility BZIP2 which will be used later in this investigation\cite[ch. 8]{salomon2004data}\cite{seward1996bzip2}.
 \begin{figure}[h!]
 \begin{mdframed}
@@ -422,7 +422,7 @@ construction with the following subfields:
 \end{figure}
 The primary scheme proposed in this paper takes its inspiration from the work of O'Neil et al. \cite{O'Neil:2011:FDC:1964179.1964189}, but will operate on 32-bit 
 IEEE 754 \textit{single} precision floating-point values, as pointed out in the introduction. The uncompressed data itself is also structured slightly 
-differently to the model used by O'Neil et al. Instead of compressing each consecutive value the proposed compressor will operate 
+differently to the model used by O'Neil et al. Instead of compressing each neighboring value the proposed compressor will operate 
 over consecutive time slices (refer to figure~\ref{MeerKAT_PIPELINE}).
 
 As pointed out in previous research \cite{engelson2000lossless,lindstrom2006fast} using floating-point operations in the prediction step can cause an irreversible loss of information due to floating-point
@@ -438,7 +438,7 @@ to achieve decompression since the difference can be exclusive ored with the obs
 \centering
 \begin{tabular}{|c|c|c|c|}
  \hline
-  & & byte & 1\hspace{8 pt}2\hspace{8 pt}3\hspace{8 pt}4\hspace{8 pt}5\hspace{8 pt}6\hspace{8 pt}7\hspace{8 pt}8\\
+  & & byte & 1\hspace{10 pt}2\hspace{10 pt}3\hspace{10 pt}4\hspace{10 pt}5\hspace{10 pt}6\hspace{10 pt}7\hspace{10 pt}8\\
  \hline
  $a_{1}$ & 2.3667\textbf{1}76745585676 & $\Rightarrow$ & 40 02 ef \textbf{09 ad 18 c0 f6} \\
  \hline
@@ -517,7 +517,7 @@ There are three ways this can be achieved:
  
  In the context of the packing scheme proposed here, the prefix scan is defined over the normal integer addition operator. An example of this will be $scan[2,1,3,4] = [0,2,3,6]$ 
  under normal integer addition. The leading zero counts are saved to an array, \textit{A}, after which the scan operation is computed on the array. The accumulated values are 
- stored in place and hence the algorithm has a \textit{constant} memory overhead (uses no extra memory). Each index \textit{A}[\textit{i}] will therefore store the starting 
+ stored in place and hence the algorithm has a \textit{constant} memory overhead (uses little extra memory). Each index \textit{A}[\textit{i}] will therefore store the starting 
  position (in bits) of the residual of the $i^{th}$ element \cite{blelloch1990prefix}. 
 
  This scan operation can be computed in parallel. Blelloch suggests such an approach \cite{blelloch1990prefix}. The algorithm will be discussed in greater detail in the 
@@ -540,7 +540,7 @@ There are three ways this can be achieved:
  AVX respectively). It remains to be investigated whether it is worthwhile to implement the proposed packing algorithm using SSE and XOP instructions.
 \end{enumerate}
 \subsection{Porting the implementation to CUDA}
-General Purpose programming using Graphics Processing Units (GPGPU) brings a host of associated challenges. These challenges arise primarily due to the widely differing architecture of GPUs if compared
+General Purpose programming using Graphics Processing Units (GPGPU) brings about a host of associated challenges. These challenges arise primarily due to the widely differing architecture of GPUs when compared
 with the classical architectures of Central Processing Units (CPUs). Refer to figure~\ref{FERMI_ARCH} for a detailed overview of the microchip die structure of a Nvidia Fermi generation GPU. 
 However, each generation of GPUs have widely differing architectures, each making many architecture specific optimizations. Each generation, for instance, will have both a 
 different ratio and configuration of arithmetic cores to floating-point and special operations cores, per group of processing \textit{CUDA cores}. These cores are also known as 
@@ -563,7 +563,7 @@ will be made and the implementation will take adequate precaution to \textit{coa
 
 Coalesced memory accesses are made if a continuous chunk of memory is accessed by a half-warp of threads at the same time. Normally these accesses have to be made in a uniform pattern that is aligned perfectly
 with the structure of global memory. Individual memory calls to global graphics memory is a very costly operation (and therefore random accesses have to be avoided). Coalesced accesses are made simultaneously by 
-the memory controller. Such accesses retrieve / write memory in larger chunks, which counters the latency associated with such an access. 
+the memory controller. Such accesses retrieve / write memory in larger chunks, which counters any latencies associated with such an access. 
 
 In GPU architectures (at the very least with Nvidia cards) \emph{shared} memory is divided up into banks. When multiple threads (specifically a half-warp of threads) try to 
 access the same bank of memory, the memory accesses will be made sequentially. The general approach to avoid such a situation is to add padding between blocks of shared memory.
@@ -582,7 +582,7 @@ characteristics of the data itself as well as the range of frequencies being mon
 
 It should be noted that the headers cannot be compressed with the algorithm being proposed. An LZ variant / entropy encoder may be better tailored for this task. 
 The headers vary between 13-14\% of the total h5 file size. However, the data is only written to these formats after it is received by the processing cluster (see 
-figure~\ref{MeerKAT_PIPELINE}). Therefore if the algorithm being proposed is integrated into the front end of the pipeline as seen in figure~\ref{MeerKAT_PIPELINE} (as part of 
+figure~\ref{MeerKAT_PIPELINE}). Therefore if the algorithm being proposed is integrated into the front end of the pipeline, as seen in figure~\ref{MeerKAT_PIPELINE} (as part of 
 future work) it may still provide a significant saving in network I/O. 
 \subsection{Structure and scope of the benchmarks}
 Some of these HDF5 files measure more than 30GiB in size, each containing many timestamps (some spans over 4000 frequencies). It is reasonable to assume that once the number of correlations grow, emphasis will be placed on processing each 
@@ -696,7 +696,7 @@ the end of the routine, where the predicted value is exclusive ored with the res
   \end{figure} 
  \subsubsection{Moving average and moving mean}
   An integer-based moving mean is simple to implement and involves only a summation and an integer division (and therefore clearly has a linear computational complexity).
-  However, the mean of a sample is sensitive to outliers, and therefore will not work well for noisy data. A simple solution will be to use a median based scheme
+  However, the mean of a sample is sensitive to outliers, and therefore will not work well for noisy data. A simple solution will be to use a median-based scheme
   where the predicted value is the center value of a \textit{sorted} list of observations. However, a naive implementation of such a median-based scheme will
   be slow due to the overheads of sorting. Wirth suggests an algorithm \cite{wirth76} to select the median using a basic \textit{pivoting} scheme in $\theta(n)$
   time. A pivot divides a dataset into two groups. The elements in the group to the right of the pivot are larger than the pivot and the elements in the group to
@@ -835,7 +835,7 @@ POW(2,n) = (2 << n-1) //where "<<" is the arithmetic left-shift operator
  compute the prefix sum of a sub-sequence of numbers and store its last value of the accumulation as $S_{i}$. Each block total, $S_{i}$ is then distributed to the $i+1\dots n$ blocks of sub-sequence prefix sums in 
  parallel \cite{harris2007parallel}.
  
- The last, distribution, step adds additional overhead to the parallel algorithm. Instead, the dataset can be split into blocks that is a multiple of the warp size in length. This means that the data can be
+ The last, distribution, step adds additional overhead to the parallel algorithm. Instead, the dataset can be split into blocks, each a multiple of the warp size in length. This means that the data can be
  spread throughout the entire GPU to achieve a high \textit{occupancy} of the available SMs. Each SM then packs its block in parallel by computing a short prefix sum only for leading zero counts of the block 
  it is processing. 
  
@@ -856,8 +856,8 @@ POW(2,n) = (2 << n-1) //where "<<" is the arithmetic left-shift operator
  SM is forced to let all the threads perform both tasks in sequence, each time discarding values from the threads that are not supposed to execute through a masking operation. This means that double the number of clock cycles are needed
  to perform a branch. This problem becomes worse if a 3- or 4-way branch is necessary. This branch-diversion, coupled with multiple costly memory accesses may prove worse than using an atomic operation. 
  
- Additionally, it is possible to remove the atomic operations from the prefix compaction operation by storing only prefixes with a length that divides the length of the closest atomic unit (byte, short or integer). If the compacting 
- operation is constrained to packing up to 3 leading zero bytes of residuals, only 2 bits are needed to store this count per element. Every $16^{th}$ thread then has to compute 16 leading zero counts and store them simultaneously 
+ Furthermore, it is possible to remove the atomic operations from the prefix compaction operation by storing only prefixes with a length that divides the length of the closest atomic unit (byte, short or integer). If the compacting 
+ operation is constrained to packing up to 3 leading zero bytes of residuals, only 2 bits are needed to store this count per element. Every $16^{th}$ thread then has to store 16 leading zero counts simultaneously 
  into a single 32-bit prefix store. In order to avoid multiple write operations to global memory the 16 prefixes can be stored into a register before a call to global memory is made.
  \subsection{Feasibility analysis}
   \subsubsection{Compression feasibility}
@@ -910,7 +910,7 @@ POW(2,n) = (2 << n-1) //where "<<" is the arithmetic left-shift operator
   
   The integer mean predictor fairs poorly compared to the simple difference scheme by degrading the compression ratio by 3\% to almost 7\% (thereby inflating the data). The effect worsens when the number of prediction 
   steps are increased. As pointed out earlier such a mean scheme is prone to outliers (which can be expected in noisy data). The median scheme was expected to fair better as mentioned earlier and an implementation of the pivoting 
-  scheme confirmed this suspicion. Compression ratios similar or slightly smaller (roughly 1\%) than the normal difference based scheme are observed, depending on the number of prediction steps being used. However, although the 
+  scheme confirmed this suspicion. Compression ratios similar or slightly smaller (roughly 1\%) than the normal difference-based scheme are observed, depending on the number of prediction steps being used. However, although the 
   pivoting algorithm discussed earlier has an average linear computational complexity, it does have a number of branches. This caries a severe penalty on throughput: over 
   71\% of the throughput is lost in the case of compression, while just short of 90\% is lost when decompressing. The effect worsens as the number of predictive steps are increased. In light of this result the median scheme is not
   a viable alternative to the basic difference scheme.
@@ -933,12 +933,12 @@ POW(2,n) = (2 << n-1) //where "<<" is the arithmetic left-shift operator
   As the name suggests these special machine instructions are focused on providing greater flexibility for performing a single instruction on multiple data. A good example of where
   a speedup can be expected is in parallelizing vector addition. However, in the case of implementing a packing algorithm the original SSE instructions are not sufficient since it only allows 
   bit-shifting multiple elements by the same amount. The packing algorithm requires that four 32-bit values each be shifted by a different amount. A simple solution is to employ the AMD XOP 
-  instruction set which adds the ability to perform element-wise arithmetic bit shifting. The problem with this approach is that no Intel processor prior to the latest (at the time of writing) 
-  Haswell series of processors support this operation through the AVX 2 extensions.
+  instruction set which adds the ability to perform element-wise arithmetic bit-shifting. The problem with this approach is that no Intel processor prior to the latest (at the time of writing) 
+  Haswell series of processors support this operation (the Haswell series adds this functionality through the AVX 2 extensions).
   
-  The next major problem is that there is both a limited number of registers available and a packing algorithm does not have the same number of outputs as inputs. Although
+  The next major problem is that there is both a limited number of registers available, and a packing algorithm does not have the same number of outputs as inputs. Although
   the majority of the algorithm can be written as SSE and XOP instructions while the storage section can be written as as four separate instructions this avenue of research
-  proved fruitless because of both the limited number of registers available and the overheads of employing both normal instructions and vectorized code (specifically conversion
+  proved fruitless, because of both the limited number of registers available, and the overheads of employing both normal instructions and vectorized code (specifically conversion
   between the two). In both the compressor and decompressor the augmented code halves the throughput achieved before the SSE and XOP instructions were added. This finding precludes
   using the AVX 2 instruction set which adds several 256-bit registers (that can be used to perform 8 32-bit integer/floating point operations), since it will likely suffer from
   the same problems as the SSE- and XOP-augmented implementation.
@@ -949,8 +949,8 @@ POW(2,n) = (2 << n-1) //where "<<" is the arithmetic left-shift operator
   
   The implementation of the packing algorithm is based arround the parallel prefix sum implementation described in GPU Gems 3 \cite{harris2007parallel}. The parallel prefix sum computes two 
   elements at a time, making use shared memory to store preliminary results for each parallel step of the scan algorithm as discussed earlier. The block size, therefore, has to be both a power of 
-  two, as well as small enough in order for the leading zero count array and its accumulation to be stored in shared memory with the necessary padding per level to avoid bank conflicts as mentioned 
-  earlier.
+  two, as well as small enough in order for the leading zero count array and its accumulation to be stored in shared memory (with the necessary padding per level to avoid bank conflicts as mentioned 
+  earlier).
   
   Due to the fact that both the packing and unpacking algorithm is so similar in their construction, and for the sake of time constraints, only the packing algorithm was implemented in CUDA, as it 
   gives a fair estimation on whether a decompression scheme is feasible. As mentioned previously the GPU implementation can be viewed as a post-processing step, after existing signal processing 
@@ -984,9 +984,9 @@ POW(2,n) = (2 << n-1) //where "<<" is the arithmetic left-shift operator
   array (which can sustain transfer rates up to 4GB/s according to sources at the MeerKAT offices in Pinelands). Such a modification is, however, beyond the scope of the current investigation.
   \subsubsection{Notes on memory overheads}
   Due to the fact that the parallel algorithm is based on a block-based approach, all the observations at time \textit{t} should be received before compression can commence. It will therefore be necessary to allocate
-  enough space to accomodate buffering data while compression is completed in a production environment. The difference-based predictor scheme (compacting up to 3 bytes at a time) requires at most $2n + 2n/8 + n + c$ 32-bit values every 
+  enough space to accommodate buffering data, while compression is completed in a production environment. The difference-based predictor scheme (compacting up to 3 bytes at a time) requires at most $2n + \lceil 2n/8 \rceil + n + c$ 32-bit values every 
   time the algorithm is executed. This is due to the fact that all the observations at time \textit{t} and $t-1$ have to 
-  be stored, as well as an array of $2n/8$ to store the prefixes, and an array $n$ to store residuals (this includes padding the residual array in order to avoid unnecessary branch divergence within the algorithm). Some negligible 
+  be stored, as well as an array of $\lceil 2n/8\rceil$ to store the prefixes, and an array $n$ to store residuals (this includes padding the residual array in order to avoid unnecessary branch divergence within the algorithm). Some negligible 
   amount, \textit{c} accounts for the rest of the program.
   \subsubsection{Notes on fault tolerance and error propagation}
   Due to the fact that the reconstruction of each observation at time \textit{t} depends on the preciding, corresponding, observation at time $t-1$, which in turn 
@@ -1059,7 +1059,7 @@ achieved for larger files. As mentioned previously the compression ratio varies 
 \subsection{Benchmark against standard compression utilities}
 The implementation was benchmarked against the standard compression utilities GZIP, BZIP2 and ZIP on an 8 core Intel Xeon E5-2650 CPU\footnote{This processor does not have 
 the \texttt{LZCNT} machine instruction and is therefore much slower than the AMD Opteron.} that supports up to 16 threads. 
-Disk I/O (network-based) has been enabled for this run of the block-based parallel difference predictive scheme implementation. The performance comparison can be seen
+Disk I/O (network-based) has been enabled for this run of the block-based parallel difference-predictive-scheme implementation. The performance comparison can be seen
 in figure~\ref{ALG_UTILITY_COMPARISON}. The experiment was run using the same file (including header) used for the throughput experiment. The utilities was using default compression 
 and decompression settings. Using fast settings gives a 59.15\% improvement (39.159s) for GZIP and a 76.36\% improvement (36.386s) for ZIP. BZIP2 does not show an improvement 
 in speed and the decompression times stay roughly the same for all the utilities.  Only around 0.39s was spent on compression and 0.18s on decompression for the predictive scheme, 
@@ -1215,7 +1215,7 @@ The block-based parallel approach achieved roughly a linear scaling (doubling th
 After that point increasing the number of cores sees deminishing returns due to the overheads of processing smaller blocks in parallel, coupled with limited memory throughput capacity. 
 
 Although the compression and decompression algorithm is very similar in construction, the large difference in throughput between them can be contributed to the computation of a 
-leading zero count per element in the Compressor. Even through this leading zero count is computed using a dedicated machine instruction, the decompression step is roughly 
+leading zero count per element in the compressor. Even through this leading zero count is computed using a dedicated machine instruction, the decompression step is roughly 
 twice as fast as the compression step. A faster decompression throughput is not surprising and corresponds to results reported for 64-bit double precision compression schemes 
 \cite{4976448,O'Neil:2011:FDC:1964179.1964189}.
 
@@ -1227,7 +1227,7 @@ of the predictor not only relies on consecutive observations having the same mag
 slowly in the top-most bits of the 23-bit significant. This limitation is not only apparent when compressing 32-bit single precision floating point values, but applies to 64-bit double 
 precision floating point values as well.
 
-When compared to the Zero-Length Encoder and Huffman coder on the Xeon E5 processor (without a leading zero count machine instruction) the predictor shows roughly a 3.6\% improvement
+When compared to the Zero-Length Encoder and Huffman coder on the Xeon E5 processor (without a leading zero count machine instruction) the predictive scheme shows roughly a 3.6\% improvement
 in compression ratio compared to ZLE (this may vary by 1\%-2\% depending on the characteristics of the input file), but the ZLE compressor is significantly faster (2.79 times faster than
 the predictive scheme using 16 threads). Additionally the ZLE scheme does not have the memory requirement of storing observations at both time $t-1$ and \textit{t}. Either one
 of these methods will help in reducing network bandwidth requirements. Although huffman encoding does not meet the throughput requirements of an online compression scheme it is worthwhile to note that this technique may be useful in addressing 
@@ -1243,7 +1243,7 @@ to reduce both network bandwidth requirements and ultimately the storage space r
 \begin{enumerate}
  \item Determining whether a predictive compression scheme achieved comparable results to that of standard compression utilities.
  \item Determining whether such a predictive scheme could operate at infiniband network speeds of up to 5 GiB/s.
- \item Whether using different predictors to trade throughput for improved compression ratios and vice-versa.
+ \item Whether, using different predictors to trade throughput for improved compression ratios and vice-versa, were feasible.
 \end{enumerate}
 Although several parallel implementations were tested it was found that a block-based parallel approach achieved significantly better throughput rates (up to, and exceeding 5 GiB/s, using 32 cores) compared to an 
 element-wise parallel approach in which the packing scheme is centered around the computation of a parallel prefix sum. This throughput was found to scale roughly linearly up to 32 CPU cores. Furthermore, it was 
@@ -1251,11 +1251,11 @@ found that employing a vectorized instruction set to enhance the performance of 
 and processing those blocks in parallel on a GPU as a post-processing operation achieved high throughput rates of up to 13.6 GiB/s on a GT780. However, since such a post-processing operation should take the 
 latencies associated with copying memory back to the host into account, GPU-based processing was found to be ineffective if these latencies cannot be mitigated through asynchronous disk operations.
 
-After investigating improvements in throughput the investigation shifted its focus on improving the average compression ratio achieved by a basic difference between successive samples. Such a basic difference
-scheme takes observations at times $t-1$ and exclusive ors them with observations at time \textit{t} (it was found that using the exclusive or operator instead of normal integer subtraction was both faster and improved the average
-compression ratio). The scheme failed to achieve a similar compression ratio when compared to the standard compression utilities GZIP, BZIP2 and ZIP, by only achieving savings of between 7\% and 8\% in final file size.
+After investigating improvements in throughput the investigation shifted its focus on improving the average compression ratio achieved by taking the difference between successive samples. Such a basic difference
+scheme takes observations at time $t-1$ and exclusive ors them with observations at time \textit{t} (it was found that using the exclusive or operator instead of normal integer subtraction was both faster and improved the average
+compression ratio). The scheme failed to achieve similar compression ratios compared to the standard compression utilities GZIP, BZIP2 and ZIP, and only achieved savings of between 7\% and 8\% in final file size.
 However, the predictive compression scheme is 20.801 seconds faster than the fastest compression utility (ZIP), when operating at its maximum speed setting. When the common disk I/O latencies are subtracted from these 
-timings the solution is roughly 50 times faster than ZIP on a 16-core machine.
+timings the solution is roughly 50 times faster than ZIP on a 16-thread implementation (without processor-based leading zero count support).
 
 Using alternative predictors (employing only integer arithmetic operations) proved unsuccessful. These alternative predictors included basing each prediction on a mean, a median and polynomial extrapolation (using both a 
 parallelogram and Lagrange predictor). Only a median-based approach was found to give slightly better results (roughly 1\%) using a small number of previous observations. Even though a pivoting algorithm is employed to 
