@@ -1233,6 +1233,9 @@ the predictive scheme using 16 threads). Additionally the ZLE scheme does not ha
 of these methods will help in reducing network bandwidth requirements. Although huffman encoding does not meet the throughput requirements of an online compression scheme it is worthwhile to note that this technique may be useful in addressing 
 long term storage requirements. The compression ratios produced by this scheme is on par with BZIP2, while being significantly faster (up to 2.9 times faster compressing
 and 1.43 times faster decompressing).
+
+The difference in throughput of the implementation discussed in this report and those described in past research may be contributed to different processor speeds, memory clock speed
+and memory access patterns. The compressors mentioned in previous research operates on 64-bit double precision floating-point data and predictions are made on neighboring elements. 
 \section{Conclusion}
 This investigation set out to evaluate the feasibility of using a predictive compression scheme in order to achieve high throughput compression on the data produced by the MeerKAT radio telescope array, currently under construction
 in the central Karoo region in South Africa. The array will require processing facilities and network infrastructure capable of handling up 1 Petabyte of data every 20 seconds once completed. A fast compression scheme will be able
