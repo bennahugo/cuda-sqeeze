@@ -48,7 +48,8 @@
 \usepackage{pgfplots, pgfplotstable}
 \usepackage{float}
 \usepackage{multirow}
-\usepackage[nonumberlist]{glossaries}
+\usepackage[nonumberlist,toc]{glossaries}
+\usepackage[nottoc,numbib]{tocbibind}
 \usetikzlibrary{patterns}
 \makeglossaries
 
@@ -109,7 +110,7 @@ Jason \textsc{Manley}
 %	DATE SECTION
 %----------------------------------------------------------------------------------------
 \begin{center}
- A thesis presented to the Department of Computer Science, UCT, in partial fulfillment of the course CSC4000W, Honours in Computer Science.
+ A thesis presented to the Department of Computer Science, UCT, in partial fulfillment of the requirements of the course CSC4000W, Honours in Computer Science.
 \end{center}
 \vspace{1cm}
 
@@ -158,7 +159,9 @@ Jason \textsc{Manley}
  investigated is based on predictive compression, which has proven successful at achieving high-speed compression in previous research. Several different predictive 
  techniques (which includes polynomial extrapolation), along with CPU- and GPU-based parallelization approaches are discussed. The implementation successfully achieves throughput rates 
  in excess of 6 GiB/s for compression and much higher rates for decompression using a 64-core AMD Opteron machine, achieving file-size reductions of between 7\% and 8\%. Furthermore
- the results of concurrent investigations into block-based parallel Huffman encoding and Zero-length encoding are compared.
+ the results of concurrent investigations into block-based parallel Huffman encoding and Zero-length Encoding are compared to the predictive scheme and it was found that
+ the predictive scheme obtains approximately 3\% better compression ratios than the Zero-Length Encoder and is 25 times faster than Huffman encoding on an Intel Xeon E5 processor. The
+ scheme may be well-suited to address the large network bandwidth requirements of the MeerKAT project.
 \end{abstract}
 
 \pagebreak
@@ -172,7 +175,7 @@ I would like to acknowledge A/Prof. James Gain and Dr. Patrick Marais of the Dep
 Secondly I would like to thank Jason Manley, a Digital Signals Processing specialist at the MeerKAT offices in Pinelands, Cape Town for providing us with technical information
 on the MeerKAT project. Jason has also kindly prepared a 100 GiB of sample of KAT-7 output data for testing purposes.
 
-Thirdly I would like to note that all tests were performed on the ICTS High Performance (\textit{HEX}) cluster at the University of Cape Town. The cluster has 4 DELL C6145 nodes each boasting 4 16-core
+Thirdly I would like to note that the majority of tests were performed on the ICTS High Performance (\textit{HEX}) cluster at the University of Cape Town. The cluster has 4 DELL C6145 nodes each boasting 4 16-core
 AMD Opteron 6274 CPUs, clocked at 2200 MHz with 16 MiB L3 cache memory. There are two additional GPU nodes with 4 Tesla M2090 GPU cards each. Each GPU card has 6 GiB GDDR5 and 2048 CUDA cores. I want to 
 especially thank Andrew Lewis from ICTS for his assistance and support during testing.
 
@@ -283,9 +286,15 @@ different implementation strategies, along with technical details, and a section
 There are considered to be 4 broad categories of compression techniques \cite{salomon2004data}. These are the basic methods, Lempel-Ziv methods, statistical methods 
 and transforms.
 \subsubsection{Basic methods}
-The more intuitive methods include commonly employed methods such as Run-Length Encoding, which, simply put, encodes runs of characters using some reserved 
-character and a number indicating the length of the run. In the context of compressing floating-point data such a scheme will focus on encoding runs of zeros and ones
-at a bit level.
+The more intuitive methods include commonly employed methods such as \textit{Run-Length Encoding} (RLE), \textit{Move-to-Front Coding} and \textit{Prediction-based} Compression. 
+
+RLE, simply put, encodes runs of characters using some reserved character and a number indicating the length of the run. In the context of compressing floating-point data such a scheme will 
+focus on encoding runs of zeros and ones at a bit level. 
+
+Move-to-front attempts to place frequently occurring symbols from an alphabet of symbols near the front of the alphabet. It encodes each incoming symbol as the number of 
+symbols preceding it in the alphabet. The symbol is then moved to the front of the alphabet with the hope that the symbol will occur frequently in future input. After completion 
+variable-length Huffman codes (discussed shortly) are assigned to each symbol (with shorter codes assigned to more frequent characters). This approach is known to significantly increase 
+the effectiveness of Huffman Coding in the best case scenario and only performs slightly worse than standard Huffman in the worst case \cite[ch. 1]{salomon2004data}. 
 
 Another basic technique which is particularly relevant for application on numerical data is a predictive compression scheme. Such a compression scheme encodes the 
 difference between each predicted and actual succeeding value as explained earlier. This can be quite successfully employed to compress data 
@@ -295,7 +304,7 @@ Lempel-Ziv, commonly referred to as “LZ” or dictionary methods, is a class o
 in modern compression utilities. In their simplest form these methods normally use both a search- and lookahead buffer to encode recurrent phrases using fixed-size codes. An 
 adaptive compression technique is useful in circumstances where the probability distribution of the underlying dataset is not known in advance or may change over time. 
 One example of such an LZ method is used in the GNU compression utility GZIP. GZIP implements the DEFLATE algorithm which is a variant of the first LZ scheme, LZ-77 
-\cite[ch. 3]{salomon2004data}.
+\cite[ch. 3]{salomon2004data}. LZ algorithms can furthermore be parallelized, as discussed by Klein et al. \cite{klein2005parallel}. 
 
 LZ-77 encodes these recurrent phrases as length-distance pairs. If a sequence of characters are found to be the same as a sub-sequence of characters in the search buffer, the 
 distance to the start of that sub-sequence, together with the length of the match is encoded. The size of the search buffer can be up to 32 kiB in some implementations of the 
@@ -341,13 +350,18 @@ required \cite{ray1995database,williams1999compressing}\cite[ch. 2]{salomon2004d
 
 \subsubsection{Transforms}
 As the name suggest it can be useful to transform a dataset from one form to another in order to exploit its features for the purposes of compression. Such transformations 
-includes, for example, wavelet transforms. A wavelet is a small, wave-like, function that is only non-zero over a very small domain and is useful
-to separate the low frequency components from the high frequency components of, for example, an image. JPEG2000 and DjVu are popular formats that use 
-wavelet transforms. The dataset is generally sampled at increasing frequencies to produce a series of representations that gradually increases in resolution. When added together 
-these representations will reconstruct the original dataset. A sample of the Discrete Cosine Transform of an image (as employed by JPEG2000) is shown in figure~\ref{TRANSFORM_SAMPLE}. 
-Only the transformation coefficients have to be stored in order to reconstruct each value in this series. The coefficients within this transformation can then be further compressed 
-using other techniques, for example, Huffman coding and Run-Length Encoding (as is done in JPEG2000). If lossy compression (loss of accuracy which cannot be recovered after 
+includes, for example, \textit{wavelet} transforms and the \textit{Burrows-Wheeler Transform}. 
+
+A wavelet is a small, wave-like, function that is only non-zero over a very small domain and is useful to separate the low frequency components from the high frequency components of, 
+for example, an image. JPEG2000 and DjVu are popular formats that use wavelet transforms. The dataset is generally sampled at increasing frequencies to produce a series of representations 
+that gradually increases in resolution. When added together these representations will reconstruct the original dataset. A sample of the Discrete Cosine Transform of an image (as employed by JPEG2000) 
+is shown in figure~\ref{TRANSFORM_SAMPLE}. Only the transformation coefficients have to be stored in order to reconstruct each value in this series. The coefficients within this transformation 
+can then be further compressed using other techniques, for example, Huffman coding and Run-Length Encoding (as is done in JPEG2000). If lossy compression (loss of accuracy which cannot be recovered after 
 decompression) is tolerable, quantization can be used to discard unimportant values (for example the high frequency features of an image) \cite{952804}\cite[ch. 5]{salomon2004data}.
+
+Another example of a useful transform is the Burrows-Wheeler transform. This transform groups similar symbols together by cyclically rotating blocks of symbols in order to 
+obtain \textit{n} permutations of the block of length n. This $nxn$ matrix is then sorted, after which the runs in the last column can be encoded using RLE. This approach, coupled
+with move-to-front encoding and Huffman coding is successfully employed in the standard compression utility BZIP2 which will be used later in this investigation\cite[ch. 8]{salomon2004data}\cite{seward1996bzip2}.
 \begin{figure}[h!]
 \begin{mdframed}
  \centering
@@ -369,12 +383,11 @@ are encoded as a residual stream.
 Previous research suggests several different constructions of predictors. The use of a \textit{Lorenzo} predictor \cite{lindstrom2006fast,CGF:CGF681} generalizes the well known parallelogram predictor. 
 The Lorenzo predictor extends the parallelogram to arbitrary dimensions. More detail on the parallelogram predictor will be given
 in the implementation section, but it is useful to note that this approach is particularly useful for compressing large meshes. Other approaches include the use of prediction history 
-(via a simple lookup table construction) as suggested by Burtscher et al. \cite{1607248,4589203,4976448}. Burtscher et al. reports a throughput of up to 670 MiB/s on a CPU implementation of their FPC 
-compressor. An even simpler scheme by O'Neil et al. \cite{O'Neil:2011:FDC:1964179.1964189} reportedly achieved throughputs of up to 75GiB/s for compression and up to 90GiB/s 
-decompression, implemented in CUDA. In this scheme only the difference between successive values are encoded (this will clearly only work if pairs of data points 
-vary very little from one time step to the next). It is duly noted that the speeds achieved  are on the post-processing of results, already stored in graphics memory. 
-The implementations by \cite{O'Neil:2011:FDC:1964179.1964189,1607248,4589203,4976448,engelson2000lossless} target 64-bit IEEE 754 
-\textit{double} precision floating-point data.
+(via a simple lookup table construction) as suggested by Burtscher et al. \cite{1607248,4589203,4976448}. Burtscher et al. reports a throughput of up to 670 MiB/s on a serial CPU implementation of their FPC 
+compressor and 1.36 GiB/s as a block-based parallel implementation on a 3 Ghz Intel Xeon quad-core processor \cite{4976448}. An even simpler scheme by O'Neil et al. \cite{O'Neil:2011:FDC:1964179.1964189} reportedly 
+achieved throughputs of up to 75GiB/s for compression and up to 90GiB/s decompression, implemented in CUDA. In this scheme only the difference between successive values are encoded (this will clearly only work if 
+pairs of data points vary very little from one time step to the next). It is duly noted that the speeds achieved  are on the post-processing of results, already stored in graphics memory. 
+The implementations by \cite{O'Neil:2011:FDC:1964179.1964189,1607248,4589203,4976448,engelson2000lossless} target 64-bit IEEE 754 \textit{double} precision floating-point data.
 
 The IEEE 754 standard of 2008 defines 3 interchange formats (32-bit, 64-bit and 128-bit). See figures~\ref{IEEE_FLOAT}~\&~\ref{IEEE_FLOAT_TAB}. Each of these have a common 
 construction with the following subfields:
@@ -535,6 +548,15 @@ different ratio and configuration of arithmetic cores to floating-point and spec
 the warps are swapped in/out, along with many other properties. Each SM is split into groups of threads which are executed in parallel (normally this is specified as 32 threads per warp). 
 These groups of threads are executed in \emph{atomic} batches, for example this may be a half-warp of threads on a G80 GPU \cite{harris2007parallel}.
 
+\begin{figure}[h!]
+\begin{mdframed}
+ \centering
+ \includegraphics[width=0.8\textwidth]{fermi_arch.png}
+ \caption{Architecture of the Fermi family of Nvidia GPUs \cite{wittenbrink2011fermi}}
+ \label{FERMI_ARCH}
+\end{mdframed}
+\end{figure}
+
 A basic CUDA implementation will be provided to see if doing compression as a post-processing step on signal data already loaded to GPU (as part of the current pipeline) is a 
 feasible alternative to a regular multi-threaded CPU implementation. Adaquite use of shared memory (as figure~\ref{FERMI_ARCH} shows GPUs have very large L1 and L2 caches available per SM) 
 will be made and the implementation will take adequate precaution to \textit{coalesce} memory accesses and to avoid \textit{bank conflicts} when possible. 
@@ -550,14 +572,6 @@ More details will be provided in the implementation section, but it is clear tha
 adequate use of the GPU architecture. This proposed implementation will consider assigning a block of data to each SM, which will, in turn, process that block in parallel without 
 regard to operations performed on other SMs. This ensures that no unnecessary overheads due to costly card-wide synchronization steps are introduced. Instead all atomic 
 operations and synchronization steps will be performed per-SM only.
-\begin{figure}[h!]
-\begin{mdframed}
- \centering
- \includegraphics[width=0.8\textwidth]{fermi_arch.png}
- \caption{Architecture of the Fermi family of Nvidia GPUs \cite{wittenbrink2011fermi}}
- \label{FERMI_ARCH}
-\end{mdframed}
-\end{figure}
 \subsection{Test data}
 The correlated data is provided in the form of HDF5 files. Each of these files stores a three dimensional array of complex pairs. The first dimension is time. The second 
 is signal frequency (as mentioned in the background section the telescope array will monitor a wide range of frequencies). The third dimension is a combination of two 
@@ -905,8 +919,8 @@ POW(2,n) = (2 << n-1) //where "<<" is the arithmetic left-shift operator
   method of prediction unsuitable for the purposes of compression. Similar to the mean-based predictor, the scheme inflated the data when up to ten predictive steps were chosen. Similarly, the parallelogram predictor 
   also degraded the compression ratio by approximately 3\%.
   
-  Other solutions not explored in this project include using a lookup table to store predictions. This approach is used in the FPC predictor mentioned earlier \cite{4589203}. The scheme is fast and reportedly achieves up to 
-  1.36 GiB/s \cite{4976448} as a parallel implementation on a 3 Ghz Intel Xeon quad-core processor. This scheme uses the same block-based parallel approach investigated in this report. However, the primary concern with this 
+  Other solutions not explored in this project include using a lookup table to store predictions. This approach is used in the FPC predictor mentioned earlier \cite{4589203,4976448}.
+  This scheme uses the same block-based parallel approach investigated in this report. However, the primary concern with this 
   scheme is that, as the number of observed values grow, so does the size of the lookup table. This approach is therefore not as well-tailored towards a GPU implementation as the difference-based scheme investigated 
   in this report, because it will require more global memory accesses than a simple lookup of a single previous observation. It may be worthwhile to investigate whether a CPU implementation of FPC will work on the sample 
   data produced by the KAT-7 array in future work.
@@ -1015,7 +1029,6 @@ achieved for larger files. As mentioned previously the compression ratio varies 
   8		1.57681			2.60314333333333
   16		2.97051111111111	5.14965111111111
   32		5.12028666666667	9.55265444444444
-  48		4.06238444444444	6.42964444444444
   64		6.01956888888889	6.46924555555556
   }\datatable
 
@@ -1047,7 +1060,7 @@ achieved for larger files. As mentioned previously the compression ratio varies 
 The implementation was benchmarked against the standard compression utilities GZIP, BZIP2 and ZIP on an 8 core Intel Xeon E5-2650 CPU\footnote{This processor does not have 
 the \texttt{LZCNT} machine instruction and is therefore much slower than the AMD Opteron.} that supports up to 16 threads. 
 Disk I/O (network-based) has been enabled for this run of the block-based parallel difference predictive scheme implementation. The performance comparison can be seen
-in figure~\ref{ALG_UTILITY_COMPARISON}. The experiment was run using the same file used for the throughput experiment. The utilities was using default compression 
+in figure~\ref{ALG_UTILITY_COMPARISON}. The experiment was run using the same file (including header) used for the throughput experiment. The utilities was using default compression 
 and decompression settings. Using fast settings gives a 59.15\% improvement (39.159s) for GZIP and a 76.36\% improvement (36.386s) for ZIP. BZIP2 does not show an improvement 
 in speed and the decompression times stay roughly the same for all the utilities.  Only around 0.39s was spent on compression and 0.18s on decompression for the predictive scheme, 
 the rest of the time is spent reading from the original HDF5 files, writing a compressed file, reading the compressed file and finally writing a decompressed file.
@@ -1115,11 +1128,11 @@ file used in the previous experiments, on the same Intel Xeon E5-2650 CPU that w
  \centering
  \begin{tikzpicture}
   \pgfplotstableread{ % Read the data into a table macro
-	Threads		Huffman		Predictive	ZLE	Huffman_Decomp	Predictive_Decomp	ZLE_Decomp
-	1		0.0072		0.1587168	0	0.019802	0.3731228		0
-	4		0.02449		0.6040148	0	0.019802	1.36565			0
-	8		0.046784	1.080432	0	0.019802	2.436506		0
-	16		0.073802	1.855014	0	0.019802	4.415304		0
+	Threads		Huffman		Predictive	ZLE
+	1		0.0072		0.1587168	0.3275123047
+	4		0.02449		0.6040148	1.0272662109
+	8		0.046784	1.080432	2.9061765625
+	16		0.073802	1.855014	5.192562793
   }\datatable
 
   \begin{axis}[
@@ -1135,8 +1148,8 @@ file used in the previous experiments, on the same Intel Xeon E5-2650 CPU that w
     minor x tick num=1,
     minor y tick num=1
     ]
-    \addplot [every node near coord/.append style={font=\tiny},mark=square*, color=red] table [x=Threads, y=Huffman] {\datatable};
-    \addplot [every node near coord/.append style={font=\tiny},mark=triangle*, color=blue] table [x=Threads, y=Predictive] {\datatable};
+    \addplot [every node near coord/.append style={font=\tiny,shift={(20pt,-3pt)}},mark=square*, color=red] table [x=Threads, y=Huffman] {\datatable};
+    \addplot [every node near coord/.append style={font=\tiny,shift={(-10pt,-3pt)}},mark=triangle*, color=blue] table [x=Threads, y=Predictive] {\datatable};
     \addplot [every node near coord/.append style={font=\tiny},mark=*, color=purple] table [x=Threads, y=ZLE] {\datatable};
     \legend{Huffman, Predictive, ZLE}
   \end{axis}  
@@ -1150,10 +1163,10 @@ file used in the previous experiments, on the same Intel Xeon E5-2650 CPU that w
  \begin{tikzpicture}
   \pgfplotstableread{ % Read the data into a table macro
 	Threads		Huffman		Predictive	ZLE
-	1		0.019802	0.3731228	0
-	4		0.019802	1.36565		0
-	8		0.019802	2.436506	0
-	16		0.019802	4.415304	0
+	1		0.020975	0.3731228	0.4102287109
+	4		0.027808	1.36565		1.5583790039
+	8		0.029639	2.436506	3.1913351563
+	16		0.03158743	4.415304	5.4654459961
   }\datatable
 
   \begin{axis}[
@@ -1169,8 +1182,8 @@ file used in the previous experiments, on the same Intel Xeon E5-2650 CPU that w
     minor x tick num=1,
     minor y tick num=1
     ]
-    \addplot [every node near coord/.append style={font=\tiny},mark=square*, color=red] table [x=Threads, y=Huffman] {\datatable};
-    \addplot [every node near coord/.append style={font=\tiny},mark=triangle*, color=blue] table [x=Threads, y=Predictive] {\datatable};
+    \addplot [every node near coord/.append style={font=\tiny,shift={(20pt,-3pt)}},mark=square*, color=red] table [x=Threads, y=Huffman] {\datatable};
+    \addplot [every node near coord/.append style={font=\tiny,shift={(-10pt,-3pt)}},mark=triangle*, color=blue] table [x=Threads, y=Predictive] {\datatable};
     \addplot [every node near coord/.append style={font=\tiny},mark=*, color=purple] table [x=Threads, y=ZLE] {\datatable};
     \legend{Huffman , Predictive, ZLE}
   \end{axis}  
@@ -1203,7 +1216,7 @@ After that point increasing the number of cores sees deminishing returns due to 
 
 Although the compression and decompression algorithm is very similar in construction, the large difference in throughput between them can be contributed to the computation of a 
 leading zero count per element in the Compressor. Even through this leading zero count is computed using a dedicated machine instruction, the decompression step is roughly 
-twice as fast as the compression step. This result is not surprising and corresponds to results reported for 64-bit double precision compression schemes 
+twice as fast as the compression step. A faster decompression throughput is not surprising and corresponds to results reported for 64-bit double precision compression schemes 
 \cite{4976448,O'Neil:2011:FDC:1964179.1964189}.
 
 Even when operating using only 16 threads on a processor without support for the leading zero count instruction, the predictive compressor implementation greatly outperforms the 
@@ -1213,6 +1226,13 @@ discussed in concurrent research. The lack of compression ratio can be contribut
 of the predictor not only relies on consecutive observations having the same magnitude (the 1 byte exponents should be identical for most predictions), but the values should change very 
 slowly in the top-most bits of the 23-bit significant. This limitation is not only apparent when compressing 32-bit single precision floating point values, but applies to 64-bit double 
 precision floating point values as well.
+
+When compared to the Zero-Length Encoder and Huffman coder on the Xeon E5 processor (without a leading zero count machine instruction) the predictor shows roughly a 3.6\% improvement
+in compression ratio compared to ZLE (this may vary by 1\%-2\% depending on the characteristics of the input file), but the ZLE compressor is significantly faster (2.79 times faster than
+the predictive scheme using 16 threads). Additionally the ZLE scheme does not have the memory requirement of storing observations at both time $t-1$ and \textit{t}. Either one
+of these methods will help in reducing network bandwidth requirements. Although huffman encoding does not meet the throughput requirements of an online compression scheme it is worthwhile to note that this technique may be useful in addressing 
+long term storage requirements. The compression ratios produced by this scheme is on par with BZIP2, while being significantly faster (up to 2.9 times faster compressing
+and 1.43 times faster decompressing).
 \section{Conclusion}
 This investigation set out to evaluate the feasibility of using a predictive compression scheme in order to achieve high throughput compression on the data produced by the MeerKAT radio telescope array, currently under construction
 in the central Karoo region in South Africa. The array will require processing facilities and network infrastructure capable of handling up 1 Petabyte of data every 20 seconds once completed. A fast compression scheme will be able
@@ -1238,13 +1258,13 @@ Using alternative predictors (employing only integer arithmetic operations) prov
 parallelogram and Lagrange predictor). Only a median-based approach was found to give slightly better results (roughly 1\%) using a small number of previous observations. Even though a pivoting algorithm is employed to 
 select the median for each prediction, the implementation is too slow to be considered a viable alternative to the simple difference-based predictor.
 
-The prediction scheme therefore proves to be a viable solution for future implementation as part of the network stack employed by the MeerKAT and ultimately the SKA. It remains to be investigated whether a predictive 
-compression scheme, based on the use of lookup tables gives better results, although this may have considerable memory requirements depending on block size (see \cite{1607248,4589203,4976448}). The predictive scheme clearly outperforms 
-regular compression utilities, as well as a Huffman entropy encoder in terms of throughput, but sacrifices a considerable amount of the possible compression ratio in doing so. An entropy encoder such as Huffman or a
-parallelization of a Lempel-Ziv scheme, as discussed by Klein et al. \cite{klein2005parallel}, may be better tailored to address the long-term storage requirements of the project.
-
-\glsaddall
-\printglossary
+Both a predictive or Zero-Length Encoding scheme therefore proves to be a viable solutions for future implementation as part of the network stack employed by the MeerKAT and ultimately the SKA. It remains to be investigated whether a predictive 
+compression scheme, based on the use of lookup tables gives better results, although this may have considerable memory requirements depending on block size (see \cite{1607248,4589203,4976448}). Using a Zero-Length Encoder on the residual
+stream should also be investigated as this may result in a slight improvement in compression ratio. The predictive scheme clearly outperforms regular compression utilities, as well as a Huffman entropy encoder in terms of throughput, 
+but sacrifices a considerable amount of the possible compression ratio in doing so. An entropy encoder such as Huffman or a parallelization of a Lempel-Ziv scheme, as discussed by Klein et al. \cite{klein2005parallel}, may be better tailored 
+to address the long-term storage requirements of the project.
 \bibliographystyle{plain}
 \bibliography{litRefs}
+\glsaddall
+\printglossary
 \end{document}
