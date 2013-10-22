@@ -1,0 +1,97 @@
+<!DOCTYPE HTML>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<meta name="description" content="Website for Honours project SAK-SQUEEZE at UCT">
+		<meta name="author" content="Brandon James Talbot">
+
+		<title>SAK-SQUEEZE</title>
+
+		<!-- Bootstrap core CSS -->
+		<link href="css/bootstrap.css" rel="stylesheet">
+	</head>
+
+	<body style="">
+
+		<div class="navbar navbar-inverse navbar-fixed-top">
+			<div class="container">
+				<div class="navbar-header">
+					<button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+					</button>
+					<a class="navbar-brand" href="#">SKA-SQUEEZE</a>
+				</div>				
+				<div class="navbar-collapse collapse">
+					<ul class="nav navbar-nav">
+						<li class="active">
+							<a onclick="newPage('HTMLPages/test.html'); return(false);" href="#">Home</a>
+						</li>
+						<li>
+							<a onclick="newPage('www.google.com'); return(false);" href="#">Test</a>
+						</li>
+					</ul>
+				</div><!--/.nav-collapse -->
+			</div>
+		</div>
+		
+		<div class="container" style="padding-top: 75px">
+		<div class="logoBar">
+			<div class="row">
+				<div class="col-md-2 col-sm-2">
+					<img src="images/UCT.jpg" style="width: 100%;" />
+				</div>
+				<div class="col-md-2 col-sm-2">
+					<img src="images/ska_logo.jpg" style="width: 100%" />
+				</div>
+				<div class="col-md-2 col-sm-2" >
+					<img src="images/intelamd.jpeg" style="width: 100%" />
+				</div>
+				<div class="col-md-2 col-sm-2">
+					<img src="images/nvidia.jpeg" style="width: 100%" />
+				</div>
+				<div class="col-md-2 col-sm-2">
+					<img src="images/hex.jpg" style="width: 100%" />
+				</div>
+				<div class="col-md-2 col-sm-2">
+					<img src="images/cmpscie.jpg" style="width: 100%" />
+				</div>
+			</div>
+		</div>
+
+		<div id="data" style="display: none;">
+		</div>
+		</div>
+
+		<!-- Bootstrap core JavaScript
+		================================================== -->
+		<!-- Placed at the end of the document so the pages load faster -->
+		<script src="js/jquery.js"></script>
+		<script src="js/bootstrap.min.js"></script>
+		<script>
+			function newPage(page) {
+				if (document.getElementById) {
+					$("#data").fadeOut(1000, function() {
+						$("#data").load(page);
+						$("#data").fadeIn(1000);
+					});
+				}
+			};
+
+			$(document).ready(function() {
+				$('.navbar-nav li a').on('click', function() {
+					$(this).parent().parent().find('.active').removeClass('active');
+					$(this).parent().addClass('active');
+				});
+				
+				$("#data").load("HTMLPages/test.html");
+				$("#data").fadeIn(1000);
+				
+				
+			});
+		</script>
+
+	</body>
+</html>
