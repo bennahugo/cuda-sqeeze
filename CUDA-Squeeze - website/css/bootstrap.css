@@ -1094,6 +1094,7 @@ pre code {
     float: left;
   }
   .col-md-1 {
+	vertical-align: middle;
     width: 8.333333333333332%;
   }
   .col-md-2 {
