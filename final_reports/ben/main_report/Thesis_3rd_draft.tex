@@ -181,7 +181,9 @@ especially thank Andrew Lewis from ICTS for his assistance and support during te
 
 This research is made possible under grant of the National Research Foundation (hereafter \textit{NRF}) of the Republic of South Africa. All views expressed in this report are those of the author and not 
 necessarily those of the NRF.
-
+\pagebreak
+\glsaddall
+\printglossary
 \pagebreak
 \tableofcontents
 \pagebreak
@@ -191,34 +193,34 @@ necessarily those of the NRF.
 \section{Introduction}
 \subsection{The KAT-7, MeerKAT and SKA}
 South Africa and Australia are the two primary hosting countries for what is to become the largest radio telescope array in the world, known as the Square Kilometer Array (SKA). 
-The SKA will give astronomers the opportunity to capture very high resolution images, over a wide field of view, covering a wide range of frequencies ranging 
+The SKA will give astronomers the opportunity to capture very high resolution images, over a wide field of view, covering a wide range of frequencies, ranging 
 from 70 MHz to 10 GHz. Upon completion in 2024 the array will consist of around 3000 dishes in the high frequency range and thousands of smaller antennae to 
 cover the low frequency band. The South African branch of the SKA will be completed in 3 main phases. Phase 1 is a fully operational prototype 7-dish array 
-called the KAT-7. The second phase, known as the MeerKAT, will consist of approximately 90 dishes. These are to be erected in the central Karoo region of South Africa. 
+called the KAT-7. The second phase, known as MeerKAT, will consist of approximately 90 dishes. These are to be erected in the central Karoo region of South Africa. 
 The final phase will add the remaining dishes and increase the baseline of the telescope to roughly 3000 km.
 
 Due to the high signal sampling rate it is expected that each of these dishes will produce data rates of up to 420 GBit/s, while the lower frequency aperture arrays 
 will produce up to 16 TBit/s. These rates, coupled with the scale of the SKA, will require a processing facility capable of handling as much as 1 Petabyte of 
-data every 20 seconds, necessitating massive storage facilities. Innovative techniques are required to deal with the complex dual-requirement of high 
-\textit{throughput rates} while effectively reducing the large storage requirements by means of \textit{data compression}. 
+data every 20 seconds, necessitating massive storage facilities. Data compression may prove useful to reduce both the network bandwidth requirements, as well as long term
+storage requirements.
 \subsection{Data compression \& decompression}
-Data compression seek to encode data using a fewer number of bits than that of the original encoding. By removing such redundant data it is possible to effectively 
-reduce the size of the dataset. A simple illustration of this can be found in figure~\ref{COMP_ILLUS}. It is clear that if this picture is stored naively as a 20x20
-grid of 24-bit colours (8-bits for each of the red, green and blue channels) a lot of redundant data will be written to disk. A simple, yet effective, technique to 
+Data compression seek to encode data using fewer bits than that of the original encoding. By removing such redundant data it is possible to effectively 
+reduce the size of the dataset. A simple illustration of this can be found in figure~\ref{COMP_ILLUS}. It is clear that if this picture is stored na\"{\i}vely as a 20x20
+grid of 24-bit colours (8-bits for each of the red, green and blue channels) 1200 bytes of data will be written to disk. A simple, yet effective, technique to 
 reduce redundancy in this example is to store each horizontal line (or \textit{scanline}) of pixels as runs of colours, instead of individual colours. The first 
 scanline can therefore be reduced to 9 white, 5 white, 5 orange, 1 white runs of pixels. This is known as \textit{Run-Length Encoding}. However, this is not the only 
 form of redundancy: if each colour is represented as a 24-bit value, but only 5 colours are used from the $2^{24}$ colours available, a lot of storage space is wasted. 
 In this case only  $\lfloor\log_{2}{5}\rfloor+1 = 3$ bits are needed to store all 5 colours uniquely. This variable-length encoding is often accomplished using an 
-entropy encoding scheme which will be described to greater detail in the background section. Decompression can be thought of as the inverse operation to the compression 
-process, which will reconstruct the original data from its encoded version.
+entropy encoding scheme, which will be described to greater detail in the background section. Decompression can be thought of as the inverse operation to the compression 
+process, as it reconstructs the original data from its encoded version.
 \begin{figure}[ht!]
 \begin{mdframed}
   \centering
  \begin{tikzpicture}(1,1)
   \draw [fill=red,red] (0,0) rectangle (1.39,1.68); 
   \draw [fill=blue,blue] (0.59,1.4) rectangle (2.23,3.65);
-  \draw [fill=green,green] (2.55,0.6) rectangle (4.8,4.45);
-  \draw [fill=orange,orange] (3.9,3.4) rectangle (5.3,5.6);
+  \draw [fill=green,green] (2.55,0.57) rectangle (4.8,4.47);
+  \draw [fill=orange,orange] (3.95,3.4) rectangle (5.35,5.6);
   \multiput(0, 0)(8, 0){21}{\line(0, 1){160}}
   \multiput(0, 0)(0, 8){21}{\line(1, 0){160}}
  \end{tikzpicture}
@@ -227,37 +229,46 @@ process, which will reconstruct the original data from its encoded version.
 \end{mdframed}
 \end{figure}
 \subsection{Predictive compression of KAT-7 data}
-All compression techniques build on the central concept of reducing redundant data as pointed out previously. The exact definition of this redundancy is of course context 
-dependent. In the case of the KAT-7 / MeerKAT array this redundancy may be defined in terms of the coherency of consecutive observations from each pair of dishes 
-(or \textit{correlated} pairs). If the observations made are not particularly noisy it is reasonable to assume that the differences between consecutive values will be small.
-Rather than storing each value it is possible to store the differences between observations (each over a fixed time interval) instead. See figure~\ref{MeerKAT_PIPELINE}. 
-The array observes a large spectrum of frequencies over a large number of correlated pairs, as indicated in the illustration. Each of these correlated frequency 
+All compression techniques build on the central concept of reducing redundant data. The exact definition of this redundancy is, of course, context 
+dependent. In the case of the KAT-7 / MeerKAT array this redundancy may be defined in terms of the coherence of consecutive observations from each 
+\textit{correlated} pair of dishes. Instead of building a single dish with a large collecting surface, which is obviously only feasible for relatively small
+collecting areas, the current trend of thought is to combine the collecting capabilities of hundreds of small dishes to artifically create an equivalent collecting
+area to that of a single large antenna. In simplest terms this correlation operator crosses the output between pairs of antennae and therefore scales quadratically as the
+number of antennae are increased. 
+
+If the observations are not particularly noisy it is reasonable to assume that the differences between consecutive values will be small, since every observed frequency
+will stay relatively constant, or grow and decay slowly. Rather than storing each value it is possible to store the differences between observations (each over a fixed time 
+interval) instead. The array observes a large spectrum of frequencies over a large number of correlated pairs, as indicated in figure~\ref{MeerKAT_PIPELINE}. Each of these correlated frequency 
 observations can be considered as steps of a time series. This report investigates how linear prediction can be employed to predict consecutive values for each of these time 
 series. The goal is to minimise the difference between consecutive values, which can then be encoded using fewer bits than the original 32-bit sample size that is received 
-by the processing and storage cluster. Such a scheme has the additional requirements of being \textit{lossless}, \textit{online} and fast.
+by the processing and storage cluster. Such a scheme must satisfy the additional requirements of being \textit{lossless}, \textit{online} and fast.
 
 \begin{figure}[h!]
 \begin{mdframed}
  \centering
- \includegraphics[width=0.8\textwidth]{Process.png}
- \caption{High-level overview of the MeerKAT pipeline}
+ \includegraphics[width=0.95\textwidth]{Process.png}
+ \caption{High-level overview of the MeerKAT pipeline. Although future work should focus on implementing compression near the front of the pipeline in order to save on 
+ network bandwidth, only the feasibility of achieving compression at linerates of 40 GiB/s are being considered in this investigation.}
  \label{MeerKAT_PIPELINE}
 \end{mdframed}
 \end{figure}
 \subsection{Compression algorithm properties and measurements}
 In a lossless compression scheme the compression is completely invertible with \textit{no} loss of information after a decompression step is performed. Lossy
-compression on the other hand discards unimportant data and gives much higher compression ratios than lossless methods. Lossy compression is useful in many
-instances where subtle changes in data is not considered problematic. Some examples of this are the removal of high frequency data from images, sampling 
-voice data at a lower rate than music or to employ a commonly used technique called \textit{quantization} where data is simply binned into consecutive ranges 
+compression, on the other hand, discards unimportant data and achieves much higher compression ratios than lossless methods. Lossy compression is useful in many
+instances where subtle changes in data is not considered problematic. This includes the removal of high frequency data from images, sampling 
+voice data at a lower rate than music, or employing a commonly used technique called \textit{quantization} where data is simply binned into consecutive ranges 
 (or \textit{bins}).
 
 An online compression scheme refers to a process of compressing data on-the-fly as it is being transmitted. The results are sent off to subsequent 
-processes such transmission over a network or storage to disk. This is in contrast to an offline scheme where data is compressed as a separate process which does not
-form part of the primary work-flow of a system. An online process is normally required to be fast enough, as not to slow the overall data processing capabilities of 
-a system.
+processes such as transmission over a network or storage to disk. This is in contrast to an offline scheme where data is compressed as a separate process that does not
+form part of the primary work-flow of a system. An online process is normally required to be sufficiently fast that it does not to slow the overall data processing 
+capabilities of a system.
 
 Compression performance will be measured both in terms of effectiveness through a compression ratio described below \cite[p. 10]{salomon2004data} and throughput. A 
-compression ratio closer to 0 indicates a smaller output file and values greater than 1 indicates that the algorithm inflated the data instead of shrinking it.
+compression ratio closer to 0 indicates a smaller output file and values greater than 1 indicate that the algorithm inflated the data instead of shrinking it. Refering
+back to the example on Run-Length Encoding (RLE) and variable length codes: using a standard compression utility known as BZIP2 the grid is compressed using RLE, in combination 
+with the Burrows Wheeler Transform and a variable length encoder known as a Huffman encoder (both will be fully described in the background section of this report) the size 
+of the output is reduced from 1200 to a mear 84 bytes. The compression ratio will therefore be computed as $84 \text{ bytes} / 1200 \text{ bytes} = 0.07$; a saving of 93\%. 
 \begin{equation}
  \text{Compression ratio} := \frac{\text{size of the output stream}}{\text{size of the input stream}}
 \end{equation}
@@ -265,114 +276,201 @@ compression ratio closer to 0 indicates a smaller output file and values greater
  \text{Throughput} := \frac{\text{input processed (in GiB)}}{\text{difference in time (in seconds)}}
 \end{equation}
 \subsection{Research questions}
-Due to the limited scope of the project this report will only focus on evaluating algorithm performance and not algorithm integration into the KAT-7 / MeerKAT processing
+Due to the limited scope of the project this report will focus on evaluating algorithm performance rather than integration into the KAT-7 / MeerKAT processing
 pipeline. This research will include the construction of a parallel algorithm, as well as the investigation of the feasibility of porting this algorithm to the General 
-Purpose Graphics Processing Unit (GPGPU)-accelerated nodes currently employed by the KAT-7 signal processing nodes as illustrated in figure~\ref{MeerKAT_PIPELINE}.
+Purpose Graphics Processing Unit (GPGPU)-accelerated nodes currently employed by the KAT-7 signal processing nodes, as illustrated in figure~\ref{MeerKAT_PIPELINE}.
 
-The algorithm will have to meet two primary criteria: high throughput and effective compression ratios. These are outlined below:
+A predictive compression implementation has to meet two primary criteria: high throughput and effective compression ratios. These are outlined below:
 \begin{enumerate}
- \item Are predictive techniques fast enough? The algorithm should be able of achieving throughput rates of at least 40 GBit/s. These represent Infiniband network speeds 
- and is a reasonable first milestone towards achieving compression at line rates.
+ \item Are predictive techniques fast enough? The algorithm should be able to achieve throughput rates of at least 40 GBit/s. These speeds represent Infiniband network speeds 
+ and are a reasonable first milestone towards achieving compression at line rates.
  \item Are predictive techniques effective? The algorithm should reduce the size of transmissions by several percent and hopefully this reduction can take the form of 
-       double digit figures. It has, however, been pointed out by the SKA office that the data may be too noisy to expect great reductions, while maintaining the throughput 
-       rate mentioned above.
+       double digit figures. It has, however, been pointed out by the SKA office that the data may be too noisy to expect significant reductions, while maintaining the throughput 
+       rate mentioned above. Even though shaving a few percent off the output size may seem insignificant, in the context of the SKA this can translate back to a saving of 71.68 TiB
+       every 20 seconds (if peak transfer rates of 1 PiB are achieved and compression ratios of 93\% can be maintained). This may result in significant monetery savings, both in
+       initial network and storage infrastructure, and long term maintenance costs on storage.
  \item Can throughput be traded for compression ratio using different predictors?
 \end{enumerate}
 
-Next a detailed breakdown of the most commonly used compression techniques is given. Thereafter a discussion will be given on a design of a predictive compression scheme, 
+Next a breakdown of the most commonly used compression techniques is given. Thereafter we will present our design of a predictive compression scheme, 
 different implementation strategies, along with technical details, and a section with results and discussion.
 \section{Background}
 \subsection{Overview of data compression techniques}
-There are considered to be 4 broad categories of compression techniques \cite{salomon2004data}. These are the basic methods, Lempel-Ziv methods, statistical methods 
-and transforms.
+There are considered to be 4 broad categories of compression techniques \cite{salomon2004data}: 
+\begin{enumerate}
+ \item Basic methods include commonly employed methods such as \textit{Run-Length Encoding} (RLE), \textit{Move-to-Front Coding} and \textit{Prediction-based} compression. 
+ \item Lempel-Ziv stores repeating sequences of symbols as distance-length pairs.
+ \item Statistical methods, including Huffman and Arithmetic coding, encodes symbols as variable length codes, based on their probability of occurrence.
+ \item Transforms are usually combined with other forms of encoding including RLE and Statistical methods but maps a dataset into a form that is better suitable to these
+ forms of encoding.
+\end{enumerate}
 \subsubsection{Basic methods}
-The more intuitive methods include commonly employed methods such as \textit{Run-Length Encoding} (RLE), \textit{Move-to-Front Coding} and \textit{Prediction-based} Compression. 
-
-RLE, simply put, encodes runs of characters using some reserved character and a number indicating the length of the run. In the context of compressing floating-point data such a scheme will 
-focus on encoding runs of zeros and ones at a bit level. 
+RLE, simply put, encodes runs of characters using some reserved character and a number indicating the length of the run. In the context of compressing floating-point data such a scheme would 
+focus on encoding runs of zeros and ones at a bit level. A run of characters abbbbcccaddddddd can be encoded as a\#4b\#3ca\#7d.
 
 Move-to-front coding attempts to place frequently occurring symbols from an alphabet of symbols near the front of the alphabet. It encodes each incoming symbol as the number of 
 symbols preceding it in the alphabet. The symbol is then moved to the front of the alphabet with the hope that the symbol will occur frequently in future input. After completion 
-variable-length Huffman codes (discussed shortly) are assigned to each symbol (with shorter codes assigned to more frequent characters). This approach is known to significantly increase 
-the effectiveness of Huffman Coding in the best case scenario and only performs slightly worse than standard Huffman in the worst case \cite[ch. 1]{salomon2004data}. 
+variable-length Huffman codes (discussed shortly) are assigned to each symbol, with shorter codes assigned to more frequent characters. This approach assigns small numbers to
+frequently occurring symbols and is known to significantly increase the effectiveness of Huffman encoding in the best case scenario. It performs slightly worse than standard 
+Huffman in the worst case \cite[ch. 1]{salomon2004data}.
+
+MTF coding is best explained using an example. Consider encoding the following string of characters: woooof. Initially the alphabet is defined as abcdefghijklmnopqrstuvwxyz. 
+After completion the runs can be encoded using variable length codes and RLE.
+
+\begin{center} 
+ \begin{tabular}{|c|c|c|}
+ \hline 
+ Iteration & Alphabet & Encoding \\
+ \hline 
+ \textbf{w}oooof & abcdefghijklmnopqrstuvwxyz & 22\\
+ \hline 
+ w\textbf{o}ooof & wabcdefghijklmnpqrstuvxyz & 22,15\\
+ \hline 
+ wo\textbf{o}oof & owabcdefghijklmnpqrstuvxyz & 22,15,0\\
+ \hline 
+ woo\textbf{o}of & owabcdefghijklmnpqrstuvxyz & 22,15,0,0\\
+ \hline 
+ wooo\textbf{o}f & owabcdefghijklmnpqrstuvxyz & 22,15,0,0,0\\
+ \hline 
+ woooo\textbf{f} & owabcdefghijklmnpqrstuvxyz & 22,15,0,0,0,7\\
+ \hline 
+ Final state & fowabcdeghijklmnpqrstuvxyz & 22,15,0,0,0,7\\
+ \hline
+ \end{tabular}
+\end{center}
 
 Another basic technique which is particularly relevant for application on numerical data is a predictive compression scheme. Such a compression scheme encodes the 
-difference between each predicted and actual succeeding value as explained earlier. This can be quite successfully employed to compress data 
-generated from time series \cite{engelson2000lossless}, but does rely on data coherence.
+difference between each predicted and actual succeeding value. This can be employed quite successfully to compress data generated from time series \cite{engelson2000lossless}, 
+but does rely on data coherence, in the sense that the difference between consecutive observed values should be small (at a minimum be similar in magnitude). 
 \subsubsection{Lempel-Ziv methods}
 Lempel-Ziv, commonly referred to as “LZ” or dictionary methods, is a class of algorithms with many variants. It is one of the more popular \textit{adaptive} techniques 
-in modern compression utilities. In their simplest form these methods normally use both a search- and lookahead buffer to encode recurrent phrases using fixed-size codes. An 
+in modern compression utilities. In their simplest form these methods normally use both a search and lookahead buffer to encode recurrent phrases using fixed-size codes. An 
 adaptive compression technique is useful in circumstances where the probability distribution of the underlying dataset is not known in advance or may change over time. 
 One example of such an LZ method is used in the GNU compression utility GZIP. GZIP implements the DEFLATE algorithm which is a variant of the first LZ scheme, LZ-77 
 \cite[ch. 3]{salomon2004data}. LZ algorithms can furthermore be parallelized, as discussed by Klein et al. \cite{klein2005parallel}. 
 
 LZ-77 encodes these recurrent phrases as length-distance pairs. If a sequence of characters are found to be the same as a sub-sequence of characters in the search buffer, the 
 distance to the start of that sub-sequence, together with the length of the match are encoded. The size of the search buffer can be up to 32 kiB in some implementations of the 
-algorithm \cite[ch. 3]{salomon2004data}.
+algorithm. In LZ-78 the recurring phrase is replaced by a reference to a dictionary item (constructed as the scanner progresses through the text). These dictionaries
+can then be further encoded using statistical methods \cite[ch. 3]{salomon2004data}.
+
+The LZ family of compression techniques perform well on structured data, for example texts in the Canterbury Corpus\footnote{The Canterbury Corpus serves as a benchmark
+for lossless compression techniques. More information is available at \url{http://corpus.canterbury.ac.nz/}. Last accessed 23 October 2013.}, and Shanmugasundaram et al.
+\cite{shanmugasundaram2011comparative} shows that methods derived from LZ77 and LZ78 perform reasonably well in this context. Detailed results will be given after a discussion
+on transforms.
 \subsubsection{Statistical methods}
-This class of algorithms normally uses variable-length codes to achieve an optimal (or near optimal) encoding of dataset. In information theory this optimal encoding is 
+This class of algorithms normally uses variable-length codes to achieve an optimal (or near optimal) encoding of a dataset. In information theory this optimal encoding is 
 described as an \textit{entropy} encoding. Entropy is the measurement of the information contained in a single base-n symbol (as transmitted per unit time by some source).
 
-\textit{Redundancy} is defined as the difference in entropy between the optimal encoding and the current encoding of a data. It is expressed in the following equation  
+\textit{Redundancy} (\textit{R}) is defined as the difference in entropy between the optimal encoding and the current encoding of a data item. It is expressed in the following equation  
 ($n$ is the size of a symbol set and $P_{i}$ is the probability that a symbol $c_{i}$ is transmitted from a source)\cite[p. 46 - 47]{salomon2004data}:
 \begin{equation}
  R := \log_2n + \sum_1^nP_i\log_2P_i
 \end{equation}
-As the name may suggest these techniques use the probability of occurrence of a value to assign shorter codes to frequently occurring values in order to eliminate redundancy. This 
-class include two widely employed techniques known as Huffman and Arithmetic coding respectively. Huffman coding assigns shorter \textit{integral-length} codes, while arithmetic 
+As the name suggests these techniques use the probability of occurrence of a value to assign shorter codes to frequently occurring values in order to eliminate redundancy. This 
+class includes two widely employed techniques: Huffman and Arithmetic coding. Huffman coding assigns shorter \textit{integral-length} codes, while arithmetic 
 coding assigns \textit{real-length} subintervals of [0,1) to frequently occurring symbols \cite{Witten:1987:ACD:214762.214771}\cite[ch. 2]{salomon2004data}.
 
 Huffman coding counts the number of occurrences of a particular symbol, sorts this list in ascending order and merges the rarest pairs of symbols into a single \textit{binary} 
-sub-tree (a tree in which each node can have up to 2 children) and re-inserts the merged sub-tree into the list (still preserving the previously established order). The number of occurrences 
+sub-tree (a tree in which each node can have up to 2 children) and re-inserts the merged sub-tree into the list, while preserving the previously established order. The number of occurrences 
 of each subtree will be the sum of occurrences of all its leaf nodes. Upon termination of this process only a single binary tree is left in the list. Each left-traversal adds a 0 to the encoding 
-of a symbol, while each right-traversal adds a 1. When a leaf-node is reached the constructed encoding is an \textit{unambiguous} code for the symbol. Refer to figure~\ref{HUFFMAN} for an example.
-In this case the symbol \textit{H} will be represented as 11 while some of the least frequent symbols, such as \textit{B}, will be represented by a longer code (0001 in this case).
+of a symbol, while each right-traversal adds a 1. When a leaf-node is reached the constructed encoding is an \textit{unambiguous} code associated with the symbol at the leaf node. Refer to figure~\ref{HUFFMAN} for an example.
+In this case the symbol \textit{H} will be represented as 11, while some of the least frequent symbols, such as \textit{B}, will be represented by longer codes (0001 is associated with \textit{B}).
 \begin{figure}[h!]
 \begin{mdframed}
  \centering
- \includegraphics[width=0.15\textwidth]{huffmanTree.png}
- \caption{Sample of a completed Huffman-coding binary tree \cite[p. 70]{salomon2004data}}
+ \includegraphics[width=0.2\textwidth]{huffmanTree.png}
+ \caption{Sample of a completed Huffman-coding binary tree \cite[p. 70]{salomon2004data}. The internal nodes represent the a number of times the symbols in the subtree below it occur over the entire
+ dataset. These frequencies have to be determined before the tree can be constructed. This tree is used to assign unambiguous, variable-length codes, depending on the frequency a symbol occurs.
+ More frequent codes like \textit{H} and \textit{F} gets assigned shorter codes. A left-traversal along the tree results in adding a zero to the left-most bit of this code, while a right-traversal
+ adds a 1. Therefore 01 will be assigned to \textit{F} and 101 to \textit{G}}
  \label{HUFFMAN}
 \end{mdframed}
 \end{figure}
 
 Instead of assigning variable, \textit{integral}, length codes per symbol as is done by Huffman coding, Arithmetic coding encodes an entire message as a sub-interval of [0,1). As with
 Huffman a probability distribution has to be determined (or be specified) before the algorithm can be executed. The initial interval [0,1) is reduced by each consecutive 
-symbol. The length of the sub-interval is proportional to the probability of occurrence of the symbol being read. The final symbol gets assigned any value inside the remaining 
+symbol and the length of each sub-interval is proportional to the probability of occurrence of the symbol being read. Only the last symbol is treated differently: it gets assigned any value inside the remaining 
 sub-interval. As the interval decreases the number of bits required to encode each consecutive interval increases. However, the average number of bits needed to store 
-each symbol is closer to the that of the entropy encoding of the dataset, since this average number can be \textit{real} value, unlike that of the per-symbol encoding of Huffman \cite[ch. 2]{salomon2004data}.
+each symbol is closer to the entropy encoding of the dataset, since this average number can be a \textit{real} value, unlike that of the per-symbol encoding of Huffman \cite[ch. 2]{salomon2004data}.
 
 Both approaches lead to variable-size codes and both techniques have adaptive versions, which are useful in situations where the probability distributions change or have to be estimated. 
 This approach is also applicable to the situation where the symbol table has to be computed on the fly, because it is impossible to perform multiple passes over data. This can, for example,
 happen when processing streaming data and all compression has to be completed on the fly. Arithmetic coding achieves higher compression ratios in both adaptive and non-adaptive cases 
-when compared to Huffman coding. It should be pointed out that the decompression step of Arithmetic coding is slow and unsuitable for cases where fast access is 
+than Huffman coding. It should be pointed out that the decompression step of Arithmetic coding is slow and unsuitable for cases where fast access is 
 required \cite{ray1995database,williams1999compressing}\cite[ch. 2]{salomon2004data}.
-
 \subsubsection{Transforms}
 As the name suggest it can be useful to transform a dataset from one form to another in order to exploit its features for the purposes of compression. Such transformations 
-includes, for example, \textit{wavelet} transforms and the \textit{Burrows-Wheeler Transform}. 
+include, for example, \textit{wavelet} transforms and the \textit{Burrows-Wheeler Transform}. 
 
-A wavelet is a small, wave-like, function that is only non-zero over a very small domain and is useful to separate the low frequency components from the high frequency components of, 
+A wavelet is a small, wave-like, function that is only non-zero over a very small domain and is useful in separating the low frequency components from the high frequency components of, 
 for example, an image. JPEG2000 and DjVu are popular formats that use wavelet transforms. The dataset is generally sampled at increasing frequencies to produce a series of representations 
-that gradually increases in resolution. When added together these representations will reconstruct the original dataset. A sample of the Discrete Cosine Transform of an image (as employed by JPEG2000) 
-is shown in figure~\ref{TRANSFORM_SAMPLE}. Only the transformation coefficients have to be stored in order to reconstruct each value in this series. The coefficients within this transformation 
-can then be further compressed using other techniques, for example, Huffman coding and Run-Length Encoding (as is done in JPEG2000). If lossy compression (loss of accuracy which cannot be recovered after 
-decompression) is tolerable, quantization can be used to discard unimportant values (for example the high frequency features of an image) \cite{952804}\cite[ch. 5]{salomon2004data}.
+that gradually increases in resolution. When combined these representations will reconstruct the original dataset. A sample of the Discrete Cosine Transform of an image (as employed by JPEG2000) 
+is shown in figure~\ref{TRANSFORM_SAMPLE}. Only the transformation coefficients need be stored in order to reconstruct each value in this series. The coefficients within this transformation 
+can then be further compressed using other techniques, for example, Huffman coding and Run-Length Encoding, as is done in JPEG2000. If lossy compression (loss of accuracy which cannot be recovered after 
+decompression) is tolerable, quantization can be used to discard unimportant values, such as the high frequency features of an image \cite{952804}\cite[ch. 5]{salomon2004data}.
 
-Another example of a useful transform is the Burrows-Wheeler transform. This transform groups similar symbols together by cyclically rotating blocks of symbols in order to 
-obtain \textit{n} permutations of the block of length n. This $n\times n$ matrix is then sorted, after which the runs in the last column can be encoded using RLE. This approach, coupled
-with move-to-front encoding and Huffman coding is successfully employed in the standard compression utility BZIP2 which will be used later in this investigation\cite[ch. 8]{salomon2004data}\cite{seward1996bzip2}.
+Another example of a useful transform is the Burrows-Wheeler transform which groups similar symbols together, by cyclically rotating blocks of symbols, in order to 
+obtain \textit{n} permutations of the block of length n. The rows in the resulting $n\times n$ matrix are then sorted, after which the runs in the last column can be encoded using RLE. This approach, coupled
+with move-to-front encoding and Huffman coding is successfully employed in the standard compression utility BZIP2 which will be used later in this investigation \cite[ch. 8]{salomon2004data}\cite{seward1996bzip2}.
 \begin{figure}[h!]
 \begin{mdframed}
  \centering
  \includegraphics[width=1.0\textwidth]{DCTSample.png}
- \caption{Sample output from a Discrete Cosine Transform employed by JPEG2000 \cite{952804}}
+ \caption{Sample output from a Discrete Cosine Transform employed by JPEG2000 \cite{952804}. It is easy to see that if lower levels of detail are required, some of the detail weightings stored in
+ the lower portion of the transformation can simply be discarded and better compression ratios can be achieved, sacrificing quality.}
  \label{TRANSFORM_SAMPLE}
 \end{mdframed}
 \end{figure}
 
-Transforms are furthermore particularly useful where multiple levels of detail are desired. An example of this may include the transfer of scientific data over a network 
+Transforms are particularly useful where multiple levels of detail are desired. An example of this may include the transfer of scientific data over a network 
 for real-time analysis and observation. Low resolution samples can be consistently transferred, while higher resolution samples can be transferred upon request \cite{Tao:1994:PTS:951087.951108}.
+\subsection{Comparison between statistical methods and LZ methods}
+The analysis in figure~\ref{STATISTICAL_VS_LZ} is a summary compiled from works by Shanmugasundaram et al. \cite{shanmugasundaram2011comparative}. It shows the average bits 
+needed to encode each symbol in files taken from the Canterbury Corpus. The Canterbury Corpus website furthermore contains results for several common compression utilities 
+including the GNU compression utility GZIP (based on LZ-77), as well as BZIP2, which employs both the Burrows-Wheeler transform, RLE and Huffman coding. Extracts from the data 
+provided on the site are shown in figure~\ref{BZIP2_VS_GZIP}.
+\begin{figure}[h!]
+\begin{mdframed}
+\begin{tabular}{|c|c|c|c|c|c|c|c|c|c|c|}
+ \hline
+ & \multicolumn{3}{|c|}{Statistical methods} & \multicolumn{4}{|c|}{LZ-77 Derivatives} & \multicolumn{3}{|c|}{LZ-78 Derivatives} \\
+ \hline
+ RLE & Huff & A Huff & Arith & LZ77 & LZSS & LZH & LZB & LZ78 & LZW & LZFG \\
+ \hline
+ 7.93 & 5.27 & 5.21 & 5.15 & 3.88 & 3.32 & 3.22 & 3.11 & 4.26 & 4.90 & 2.89 \\
+ \hline
+\end{tabular}
+\caption{Table comparing average compression performance (bits per symbol) of statistical methods and the LZ family of methods \cite{shanmugasundaram2011comparative}. RLE performs
+ badly on most of the Canterbury Corpus datasets as can be expected, since structured English texts will not contain many runs of symbols. The LZ77 and LZ78 family performs well in most cases,
+ except for LZW, which fairs poorly on some of the binary files provided in this corpus.}
+ \label{STATISTICAL_VS_LZ}
+\end{mdframed}
+\end{figure}
+\begin{figure}[h!]
+\begin{mdframed}
+\begin{tabular}{|c|c|c|c|}
+ \hline
+ Utility & Bits Per Character & Comp. Speed & Decomp. Speed \\
+ \hline
+ BZIP2 (100k blocks) & 2.31 & 4.01  & 1.32 \\
+ \hline
+ BZIP2 (600k blocks) & 2.23 & 3.85 & 1.31 \\ 
+ \hline
+ BZIP2 (900k blocks) & 2.23 & 3.98  & 1.37 \\
+ \hline
+ GZIP & 2.54 & 1.72 & 0.81 \\
+ \hline
+ GZIP (Fast) & 2.91 & 1.10 & 0.79 \\
+ \hline
+ GZIP (Best) & 2.53 & 4.19 & 0.72 \\
+ \hline
+\end{tabular}
+\caption{Table}
+\label{BZIP2_VS_GZIP}
+\end{mdframed}
+\end{figure}
+
 \subsection{Overview of predictive compression}
 Previous research \cite{1607248,4589203,engelson2000lossless,lindstrom2006fast,O'Neil:2011:FDC:1964179.1964189,4976448,CGF:CGF681} in this area has yielded good results both in terms of compression ratio and speed. 
 The common line of thought is to predict successive values with reasonable precision. Depending on the accuracy of the prediction, the difference between the predicted and actual value will be much smaller than the actual value itself. 
@@ -1268,6 +1366,4 @@ but sacrifices a considerable amount of the possible compression ratio in doing 
 to address the long-term storage requirements of the project.
 \bibliographystyle{plain}
 \bibliography{litRefs}
-\glsaddall
-\printglossary
 \end{document}
