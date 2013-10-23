@@ -556,7 +556,9 @@ the observation at time \textit{t}.
  $a_{3}$ & 2.3667\textbf{3}76745585676 & $\Rightarrow$ & 40 & 02 & ef & \textbf{14} & \textbf{29} & \textbf{73} & \textbf{85} & \textbf{6a} \\
  \hline
 \end{tabular}
-\caption{Treating 64-bit IEEE 754 double precision floating-points as integer memory \cite{engelson2000lossless}}
+\caption{Treating 64-bit IEEE 754 double precision floating-points as integer memory \cite{engelson2000lossless}. Due to the fact that the values are
+ all of the same magnitude the most significant bits are equal. After exclusive oring pairs of these values the three bytes of leading zeros can be discarded, and 
+ the count stored as a prefix}
  \label{INT_REP}
 \end{mdframed}
 \end{figure}
@@ -580,6 +582,36 @@ The key success criteria for this investigation are the following:
  \item Throughput in excess of 40 GBit/s is achieved by both the compressor and decompressor.
  \item Effective compression ratios, comparable to those achieved by GZIP and BZIP2 are achieved.
 \end{enumerate}
+\subsection{Benchmarking platform}
+The benchmarking platform is designed with two primary software engineering goals in mind:
+\begin{itemize}
+ \item It should be as \textit{decoupled} as possible, making use of predefined interfaces. This will assist in the creation of several different implementations of the CPU 
+ version (for example SSE, different linear predictors and different parallelization approaches) and simplify swapping one implementation for another. Interactions between 
+ components must, thus, be kept to a minimum.
+ \item The components must be \textit{cohesive}: they should contain only relevant operations and should be considered as atomic units.
+\end{itemize}
+The architecture described in figure~\ref{TOOL_ARCH} is used for the benchmarking platform. All the external dependencies depicted in the component model are freely available
+and are actively maintained. Technical risk in using these libraries is negligible. The benchmark process is relatively simple and its flow is depicted in figure~\ref{TOOL_FLOW}.
+The implementation details will be provided in the next chapter.
+\begin{figure}[h!]
+\begin{mdframed}
+ \centering
+ \includegraphics[width=0.6\textwidth]{Thesis_Arc.png}
+ \caption{Architecture of the loosely coupled benchmarking platform, including external library dependencies. Dependencies are indicated with dashed arrows and interfaces
+ are specified using ball-and-socket notation (for example the ICompressor interface).}
+ \label{TOOL_ARCH}
+\end{mdframed}
+\end{figure}
+\begin{figure}[h!]
+\begin{mdframed}
+ \centering
+ \includegraphics[width=0.25\textwidth]{Thesis_Flow.png}
+ \caption{Behavioral model of the benchmarking platform. In order to optimize reading from HDF5 files, for testing purposes, data is buffered in blocks of 1 GiB and distibuted in time
+ to the compressor (and by implication the decompressor), as would be the case in a data received over a network. The MeerKAT engineering team plans to distribute the data, first in time
+ and then frequency to a large cluster of commodity servers.}
+ \label{TOOL_FLOW}
+\end{mdframed}
+\end{figure}
 \subsection{Packing algorithm}
 The compacting algorithm being proposed is based on the approach taken by O'Neil et al. \cite{O'Neil:2011:FDC:1964179.1964189}. Their approach to compressing floating point values
 focus on a GPU-based implementation. In their implementation they divide a sequence of 64-bit elements into 32-bit blocks. This is because on GPUs groups of threads (usually 32, depending on architecture) 
@@ -753,32 +785,6 @@ This report will focus on the following analysis:
  \item Finally, results from concurrent research being conducted into entropy encoding and run-length encoding will be compared to those achieved in this investigation. This comparison will include a 
        breakdown of performance in terms of both throughput and compression ratios.
 \end{enumerate}
-\subsection{Benchmarking platform}
-The benchmarking platform is designed with two primary software engineering goals in mind:
-\begin{itemize}
- \item It should be as \textit{decoupled} as possible, making use of predefined interfaces. This will assist in providing several implementations of the CPU version (for example SSE, different linear predictors and different parallelization
- approaches) and simply swapping one implementation for another. Interactions between components must be kept to a minimum.
- \item The components must be \textit{cohesive}: they should contain only relevant operations and should be considered as atomic units.
-\end{itemize}
-The architecture described in figure~\ref{TOOL_ARCH} is used for the benchmarking platform. All the external dependencies depicted in the component model is freely available
-and are actively maintained. There is no considerable technical risk in using these libraries. Technical details will be provided in the next section. The 
-benchmark process is relatively simple and its flow is depicted in figure~\ref{TOOL_FLOW}.
-\begin{figure}[h!]
-\begin{mdframed}
- \centering
- \includegraphics[width=0.6\textwidth]{Thesis_Arc.png}
- \caption{Architecture of the loosely coupled benchmarking platform, including external library dependencies}
- \label{TOOL_ARCH}
-\end{mdframed}
-\end{figure}
-\begin{figure}[h!]
-\begin{mdframed}
- \centering
- \includegraphics[width=0.25\textwidth]{Thesis_Flow.png}
- \caption{Behavioral model of the benchmarking platform}
- \label{TOOL_FLOW}
-\end{mdframed}
-\end{figure}
 \section{Implementation}
  \subsection{Basic algorithm}
   In order to give a more detailed description to the algorithm illustrated in figure~\ref{PACKING_ALGORITHM} in the previous section, the pseudo code for the compaction
