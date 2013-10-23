@@ -268,7 +268,7 @@ capabilities of a system.
 Compression performance will be measured both in terms of effectiveness through a compression ratio described below \cite[p. 10]{salomon2004data} and throughput. A 
 compression ratio closer to 0 indicates a smaller output file and values greater than 1 indicate that the algorithm inflated the data instead of shrinking it. Refering
 back to the example on Run-Length Encoding (RLE) and variable length codes: using a standard compression utility known as BZIP2 the grid is compressed using RLE, in combination 
-with the Burrows Wheeler Transform and a variable length encoder known as a Huffman encoder (both will be fully described in the background section of this report) the size 
+with the Burrows-Wheeler Transform and a variable length encoder known as a Huffman encoder (both will be fully described in the background section of this report) the size 
 of the output is reduced from 1200 to a mear 84 bytes. The compression ratio will therefore be computed as $84 \text{ bytes} / 1200 \text{ bytes} = 0.07$; a saving of 93\%. 
 \begin{equation}
  \text{Compression ratio} := \frac{\text{size of the output stream}}{\text{size of the input stream}}
@@ -469,7 +469,7 @@ provided on the site are shown in figure~\ref{BZIP2_VS_GZIP}.
  GZIP (Best) & 2.53 & 4.19 & 0.72 \\
  \hline
 \end{tabular}
-\caption{Table comparing DEFLATE (LZ77-based) and BZIP2 (combination of the Burrows Wheeler transform, RLE, MTF and Huffman coding). Although BZIP2 is significantly slower
+\caption{Table comparing DEFLATE (LZ77-based) and BZIP2 (combination of the Burrows-Wheeler transform, RLE, MTF and Huffman coding). Although BZIP2 is significantly slower
 it achieves better compression results than GZIP.}
 \label{BZIP2_VS_GZIP}
 \end{mdframed}
@@ -526,9 +526,10 @@ interchange formats (32-bit, 64-bit and 128-bit). See figures~\ref{IEEE_FLOAT}~\
 \end{figure}
 The primary scheme proposed in this paper takes its inspiration from the work of O'Neil et al. \cite{O'Neil:2011:FDC:1964179.1964189}, but will operate on 32-bit 
 IEEE 754 \textit{single} precision floating-point values (this is due to the fact that the correlation step in the MeerKAT pipeline transforms the data into 32-bit values). 
-The uncompressed data itself is also structured slightly differently to the model used by O'Neil et al. Instead of compressing each neighboring value, the proposed compressor will operate 
-over consecutive time slices. As figure~\ref{MeerKAT_PIPELINE} shows the data is distributed in time, frequency and correlated pairs. The predictor is based on frequency 
-(per correlation), since there should be some correlation between observations on a specific frequency. If the data is very noisy, little to no compression will be achieved. 
+The uncompressed data itself is also structured slightly differently to the model used by O'Neil et al and Burtscher et al. Instead of compressing each neighboring value (or 
+block of values), the proposed compressor will operate over consecutive time slices. As figure~\ref{MeerKAT_PIPELINE} shows the data is distributed in time, frequency and correlated pairs. 
+The predictor is based on frequency (per correlation), since there should be some correlation between observations on a specific frequency. If the data is very noisy, little to no 
+compression will be achieved. 
 
 As pointed out in previous research \cite{engelson2000lossless,lindstrom2006fast} using any floating-point operations in the prediction step can cause an irreversible loss of information due to floating-point
 rounding errors. A simple alternative is proposed by Engelson et al. \cite{engelson2000lossless}: floating-point memory is simply treated as integer memory and all operations performed on that memory 
@@ -562,15 +563,17 @@ the observation at time \textit{t}.
 \section{Design and Methodology}
 \subsection{Overview}
 In light of the research questions and the limited scope of this report, focus will be placed on the usefulness of a predictive data compression 
-step in the context of the MeerKAT project. This will be limited to an investigation on whether the algorithm can operate at the desired line rate of
-40 GBit/s and whether it provides reasonable compression ratios. This initial investigation precludes the implementation of the algorithm as part of 
-the networking stack employed in the KAT-7 pipeline. Reasonable compression in this context means achieving compression ratios, comparable to industry standard 
-tools like GZIP and BZIP2. The possibility of using alternative predictive schemes to trade some throughput for a better compression ratio will also be investigated.
+step in the context of the MeerKAT project. This will be limited to an investigation of whether a predictive compression algorithm can operate at the desired 
+line rate of 40 GBit/s and whether it provides reasonable compression ratios. This preliminary nature of the investigation precludes the implementation of the 
+algorithm as part of the networking stack employed in the KAT-7 pipeline. Reasonable compression in this context means achieving compression ratios comparable 
+to industry standard tools like GZIP and BZIP2. The possibility of using alternative predictive schemes to trade some throughput for a better compression ratio will also be investigated.
 Such alternative schemes will include the following (notes on their efficient implementation will be provided in the implementation section):
 \begin{enumerate}
- \item A Lagrange polynomial extrapolation.
- \item A parallelogram predictor.
- \item Moving mean \& median predictors.
+ \item A Lagrange polynomial extrapolation is a gradient-based method that can be used to predict values for functions that can be well-approximated by a n-element polynomial. 
+ The method employs only integer multiplication, addition and division.
+ \item A parallelogram predictor is a simple predictive scheme employing only integer addition and subtraction to make a prediction based on the previous 3 observed values.
+ \item Moving mean (using only integer addition and division) \& median predictors. The median predictor selects the $\left(\frac{m}{2}\right)^{th}$ largest element from \textit{m} previously observed
+ values, which makes this approach less sensitive to noise, compared to a mean or polynomial extrapolation method.
 \end{enumerate}
 The key success criteria for this investigation are the following:
 \begin{enumerate}
@@ -578,23 +581,31 @@ The key success criteria for this investigation are the following:
  \item Effective compression ratios, comparable to those achieved by GZIP and BZIP2 are achieved.
 \end{enumerate}
 \subsection{Packing algorithm}
-The compacting algorithm being proposed is based on the approach taken by O'Neil et al. \cite{O'Neil:2011:FDC:1964179.1964189}. The algorithm is almost \textit{symmetrical} in its compression and 
-decompression stages. In this context symmetry means the algorithm is executed in the opposite direction when performing decompression. The primary difference is that the leading 
-zero count does not have to be computed for each element being decompressed. Refer to figure~\ref{PACKING_ALGORITHM} for more details.
+The compacting algorithm being proposed is based on the approach taken by O'Neil et al. \cite{O'Neil:2011:FDC:1964179.1964189}. Their approach to compressing floating point values
+focus on a GPU-based implementation. In their implementation they divide a sequence of 64-bit elements into 32-bit blocks. This is because on GPUs groups of threads (usually 32, depending on architecture) 
+are executed in lockstep. The difference between corresponding elements are then computed, leading-zero-compacted and stored along with the sign-bit and byte count.
+
+Our algorithm is very similar, but operates on correlated 32-bit data and stores the difference between corresponding values at time $t-1$ and \textit{t}. It is almost \textit{symmetrical} in its 
+compression and decompression stages. In this context symmetry means the algorithm is executed in the opposite direction when performing decompression. The primary difference is that the leading 
+zero count does not have to be computed for each element being decompressed, since it is stored in a compacted prefix stream by the compressor. Refer to figure~\ref{PACKING_ALGORITHM} for more details.
 \begin{figure}[h!]
 \begin{mdframed}
  \centering
- \includegraphics[width=0.7\textwidth]{Thesis_Alg.png}
- \caption{Prediction and compaction process}
+ \includegraphics[width=0.85\textwidth]{Thesis_Alg.png}
+ \caption{Prediction and compaction process proposed for compressing SKA 32-bit IEEE 754 floating-point data, distributed in time. The predictor can use any number of previous time-slices to make its prediction,
+ but this will increase the memory requirement of the predictor. Once a prediction is made the prediction is exclusive ored with its corresponding observation at the time-slice currently being
+ processed. If the differences between predictions and the actual values are small the most significant bits of this difference will be a run of zeros, which is counted by a leading-zero counter. The count is 
+ stored as a prefix (compacted at bit level). The remaining bits, or residuals can be compacted at either bit or byte level.}
  \label{PACKING_ALGORITHM}
 \end{mdframed}
 \end{figure}
-The construction of the algorithm being specified in figure~\ref{PACKING_ALGORITHM} is used because it allows for easy swapping between different predictors. The predictor in this case 
-can be any n-element predictor. As mentioned earlier the predicted value is exclusive ored with the actual value to get a residual which can be compacted at either bit or byte level. This 
+
+The algorithm structure in figure~\ref{PACKING_ALGORITHM} is used because it allows for easy swapping between different predictors. The predictor in this case 
+can be any n-element predictor. As mentioned earlier the predicted value is exclusive ored with the actual value to obtain a residual which can be compacted at either bit or byte level. This 
 compaction simply removes the leading zeros from each leading zero count and stores each residual as a fixed-length prefix count. The number of bits needed to store $n$ leading 
 zeros can be calculated as $\lfloor\log_2n\rfloor+1$ bits where $n\in\mathbb{N}_{>0}$. It remains to find the residual compaction scheme that gives the best results: packing at 
 bit or byte level. Although a bit-packing scheme can pack an arbitrary number of zeros it requires longer prefixes to store the leading zero counts. The opposite is true 
-for byte-packing schemes. Since the prefixes are always short a bit-packing scheme is used to store these fixed-length codes. Basic pseudo code is given in the implementation section.
+for byte-packing schemes. Since the prefixes are always short in our case a bit-packing scheme is used to store these fixed-length codes. Basic pseudo code is given in the implementation section.
 
 Suppose the following two (converted) float values have to be compacted (the left-most byte is the most significant byte):
 \begin{center}
@@ -603,7 +614,7 @@ Suppose the following two (converted) float values have to be compacted (the lef
     #2: 00000000 00000000 11110001 11110010
   \end{verbatim}
 \end{center}
-In this scenario the compaction of the residuals is done at byte level and the prefixes are done at bit level (assume 3 bits are needed to store up to 4 bytes of leading zeros):
+In this scenario the compaction of the residuals is done at byte level and the prefixes done at bit level (assume three bits are needed to store up to four bytes of leading zeros): 
 \begin{center}
   \begin{verbatim}
     RESIDUALS:
@@ -613,100 +624,133 @@ In this scenario the compaction of the residuals is done at byte level and the p
     00101000
   \end{verbatim}
 \end{center} 
+The first value only has one byte of leading zeros, and its associated prefix is therefore $1_{10} = 001_{2}$. Similarly the second value has two bytes of leading zeros, its prefix therefore
+is $2_{10} = 010_{2}$. The remaining two bits are simply padding, since the atomic unit of storage is one byte (eight bits).
 \subsection{Parallelizing compression and decompression steps}
-There are three ways this can be achieved: 
-\begin{enumerate}
- \item Even though the residuals are of variable length it is possible to pack them in parallel. However, there is an additional overhead to \textit{both} the packing and 
- unpacking process, since this approach requires a \textit{prefix sum} to be computed for the array of element-wise leading zero counts as O'Neil et al. \cite{O'Neil:2011:FDC:1964179.1964189} 
- points out.
+This investigation considers three approaches to achieve parallelization on a CPU. This list is motivated by a trade-off in compression ratio and overheads, as well as the block-based 
+approaches taken in previous research, specifically that of Klein, Burtscher \& O'Neil et al. \cite{4976448,O'Neil:2011:FDC:1964179.1964189,klein2005parallel}
+ \subsubsection{Element-wise parallel execution}
+ Even though the residuals are of variable length it is possible to pack them in parallel. However, there is an additional overhead to \textit{both} the packing and 
+ unpacking process, since this approach requires a \textit{prefix sum} to be computed for the array of element-wise leading zero counts. 
  
- A prefix sum \textit{prescan} can be defined on any binary associative operator, $\oplus$ over a sequence with $I$ as its identity. If $A=[a_{0},a_{1},\dots,a_{n-1}]$ 
+ A prefix sum, \textit{prescan} can be defined on any binary associative operator, $\oplus$ over a sequence with $I$ as its identity. If $A=[a_{0},a_{1},\dots,a_{n-1}]$ 
  is a sequence then the scan is defined as $scan(A):=[I,a_{0},(a_{0} \oplus a_{1}),\dots,(a_{0} \oplus a_{1} \oplus ... \oplus a_{n-2})]$.
  
- In the context of the packing scheme proposed here, the prefix scan is defined over the normal integer addition operator. An example of this will be $scan[2,1,3,4] = [0,2,3,6]$ 
- under normal integer addition. The leading zero counts are saved to an array, \textit{A}, after which the scan operation is computed on the array. The accumulated values are 
- stored in place and hence the algorithm has a \textit{constant} memory overhead (uses little extra memory). Each index \textit{A}[\textit{i}] will therefore store the starting 
- position (in bits) of the residual of the $i^{th}$ element \cite{blelloch1990prefix}. 
+ In the context of the packing scheme proposed here, the prefix scan is defined over the normal integer addition operator. An example of this would be $scan[2,1,3,4] = [0,2,3,6]$ 
+ under normal integer addition. The used-bit counts are saved to an array, \textit{A}, after which the scan operation is computed on the array in order to obtain an, in-place, element-wise accumulation. 
+ Therefore the algorithm has a \textit{constant} memory overhead (uses little extra memory). Each index \textit{A}[\textit{i}] will therefore store the starting 
+ position (in bits) of the residual for the $i^{th}$ element \cite{blelloch1990prefix}. This can be illustrated by an example of compacting four differences in parallel:
+ \begin{center}
+  \begin{verbatim}
+    #1: 00000000 01100010 01101000 11001001
+    #2: 00000000 00000000 11110001 11110010
+    #3: 00000000 00000010 11010111 11111110
+    #4: 00000000 00000000 00000000 00101101
+    
+    The leading zeros are counted, subtracted 
+    from 32 and stored:
+    C = [23,16,18,6]
+    A scan operation is completed:
+    C = scan(C)
+    C will now be equal to [0,23,39,57]
+    
+    If the residual stream is compacted at bit 
+    level and indexed from bit 0, each element
+    can be packed by a different thread: 
+    11000100 11010001 10010011 11100011
+    ^0                       ^23       
+    11100101 01101011 11111111 01011010
+           ^39                  ^57
+    The last zero is simply padding to fill 
+    the byte.
+  \end{verbatim}
+ \end{center}
 
- This scan operation can be computed in parallel. Blelloch suggests such an approach \cite{blelloch1990prefix}. The algorithm will be discussed in greater detail in the 
+ This scan operation can be computed in parallel as suggested by Blelloch \cite{blelloch1990prefix}. This parallel algorithm will be discussed in greater detail in the 
  implementation section. Additionally a work-efficient CUDA version of the algorithm is discussed in GPU Gems 3 \cite{harris2007parallel}. In this version the algorithm is 
  optimized to avoid \textit{bank conflicts} (see the section on GPU architecture) and has been shown to be up to 6 times faster than a sequential CPU implementation for large 
  arrays.
  
- After the indexes have been accumulated using the prefix sum algorithm it is easy to see how different threads can pack residuals at the correct positions. Both a bit and byte
+ After the indices have been accumulated using the prefix sum algorithm it is easy to see how different threads can pack residuals at the correct positions. Both a bit and byte
  packing scheme will, however, require \textit{atomic} operations to ensure against the \textit{race condition} that arises when multiple threads write to the same memory 
  location simultaneously. This memory-level-synchronization mechanism adds additional overhead in terms of wasted machine clock cycles.
- \item Incoming data can also be separated into blocks, after which multiple of these blocks can be done in parallel (where each block is compressed/decompressed in serial). This overcomes the issue of 
- additional overheads arising due to computing prefix sums and using atomics. This approach may have a detrimental effect on the compression ratio since the length of the residual array of each block 
+ \subsubsection{Block-based approach}
+ Incoming data can also be separated into blocks, after which multiple of these blocks can be processed in parallel (where each block is compressed/decompressed in serial). This overcomes the issue of 
+ additional overheads arising from computing prefix sums and using atomics. However, this approach may have a detrimental effect on the compression ratio since the length of the residual array of each block 
  has to be stored.
- \item A more fine-grained parallelization is possible using vectorized instructions. The various Intel SSE, Steaming SIMD (Single Instruction Multiple Data) instruction set extensions (up to version 4.2) provide
+ \subsubsection{Vector intrinsics augmentation}
+ A more fine-grained parallelization is possible using vectorized instructions. The various Intel SSE, Steaming SIMD (Single Instruction Multiple Data) instruction set extensions (up to version 4.2) provide
  the opportunity to perform 4 instructions (adds, multiplies, logarithms, rounding, etc.) simultaneously per core. However, the SSE instruction sets do not have any element-wise bit-shift operations. A combination 
- of the Intel SSE and AMD XOP instruction sets, will however, provide enough support to write the most of the algorithm using vector intrinsics. The XOP instruction set extends the SSE instruction set by adding these 
- operations as one of its primary features. Adding these instructions will, however, make the implementation dependent on the architecture of the underlying machine it is executed on (and therefore less portable). 
+ of the Intel SSE and AMD XOP instruction sets, will however, provide enough support to execute most of the algorithm using vector intrinsics. The XOP instruction set extends the SSE instruction set by adding these 
+ operations as one of its primary features. Adding these instructions will, however, make the implementation dependent on the architecture of the underlying machine, and therefore less portable. 
+ 
  If this approach is successful the vectorized code should be extended to use the latest Intel AVX 2 instruction set in which Intel introduces element-wise shift operations and offset-loading operations as part of 
  future work. The AVX family of instructions can compute up to 8 SIMD operations in parallel per core. All these vectorized instruction sets make use of a very limited number of 128- and 256-bit registers (SSE and 
- AVX respectively). It remains to be investigated whether it is worthwhile to implement the proposed packing algorithm using SSE and XOP instructions.
-\end{enumerate}
+ AVX, respectively). It remains to be investigated whether it is worthwhile to implement the proposed packing algorithm using SSE and XOP instructions.
 \subsection{Porting the implementation to CUDA}
-General Purpose programming using Graphics Processing Units (GPGPU) brings about a host of associated challenges. These challenges arise primarily due to the widely differing architecture of GPUs when compared
-with the classical architectures of Central Processing Units (CPUs). Refer to figure~\ref{FERMI_ARCH} for a detailed overview of the microchip die structure of a Nvidia Fermi generation GPU. 
-However, each generation of GPUs have widely differing architectures, each making many architecture specific optimizations. Each generation, for instance, will have both a 
-different ratio and configuration of arithmetic cores to floating-point and special operations cores, per group of processing \textit{CUDA cores}. These cores are also known as 
-\textit{streaming multiprocessors} (SMs). Additionally each generation has widely differing memory controller layouts. These may determine how many \textit{warps} of threads can be executed, when 
-the warps are swapped in/out, along with many other properties. Each SM is split into groups of threads which are executed in parallel (normally this is specified as 32 threads per warp). 
-These groups of threads are executed in \emph{atomic} batches, for example this may be a half-warp of threads on a G80 GPU \cite{harris2007parallel}.
+General Purpose programming using Graphics Processing Units (GPGPU) provides a massively multi-core environment, with hundreds of cores, for performing SIMD-styled 
+processing on large numbers of elements. GPU architectures differs significantly from those of multi-core CPUs: memory and cache-memory layout is completely different (each group of cores have 
+has dedicated shared, cache and texture memory), direct manipulation of cache and shared memory is possible, individual cores on the GPU are less powerful than normal CPU cores (each core does not have its own dedicated floating point 
+processor) and these cores are furthermore grouped into \textit{warps} of threads, where each Streaming Multiprocessor (SM) consists of multiple warps. Figure~\ref{FERMI_ARCH} provides a detailed overview of the microchip die structure of a Nvidia Fermi generation GPU.
 
+Programming for GPU architectures brings about a host of associated challenges. For starters, each generation of GPUs have widely differing architectures, each making many architecture specific optimizations. Each generation, for instance, 
+will have both a different ratio and configuration of arithmetic cores to floating-point and special operation cores per SM. Additionally, each generation has widely differing memory controller layouts. These may determine how to schedule 
+the execution of warps of threads, when the warps are swapped in/out, along with many other properties. Furthermore, atomic groups of cores (half-warp of threads on most modern
+architectures) are executed in lockstep. 
 \begin{figure}[h!]
 \begin{mdframed}
  \centering
  \includegraphics[width=0.8\textwidth]{fermi_arch.png}
- \caption{Architecture of the Fermi family of Nvidia GPUs \cite{wittenbrink2011fermi}}
+ \caption{Architecture of the Fermi family of Nvidia GPUs \cite{wittenbrink2011fermi}. The GPU consists of multiple Streaming Multiprocessors (SMs), which in turn is divided into groups
+ of cores (called warps). Each of these warps will have dedicated floating point arithmetic units, along with an allocation fast special operations units, containing many instructions that
+ are commonly used for graphics processing (for instance a dedicated square root instruction is provided, because it is used for vector normalization). Each half-warp of threads
+ are executed in lockstep, all performing the same instruction, and each SM operates in parallel.}
  \label{FERMI_ARCH}
 \end{mdframed}
 \end{figure}
 
 A basic CUDA implementation will be provided to see if doing compression as a post-processing step on signal data already loaded to GPU (as part of the current pipeline) is a 
-feasible alternative to a regular multi-threaded CPU implementation. Adaquite use of shared memory (as figure~\ref{FERMI_ARCH} shows GPUs have very large L1 and L2 caches available per SM) 
-will be made and the implementation will take adequate precaution to \textit{coalesce} memory accesses and to avoid \textit{bank conflicts} when possible. 
+feasible alternative to a regular multi-threaded CPU implementation. Adequate use of shared memory will be required and the implementation will take precautions to \textit{coalesce} 
+memory accesses and to avoid \textit{bank conflicts} when possible. 
 
 Coalesced memory accesses are made if a continuous chunk of memory is accessed by a half-warp of threads at the same time. Normally these accesses have to be made in a uniform pattern that is aligned perfectly
 with the structure of global memory. Individual memory calls to global graphics memory is a very costly operation (and therefore random accesses have to be avoided). Coalesced accesses are made simultaneously by 
 the memory controller. Such accesses retrieve / write memory in larger chunks, which counters any latencies associated with such an access. 
 
-In GPU architectures (at the very least with Nvidia cards) \emph{shared} memory is divided up into banks. When multiple threads (specifically a half-warp of threads) try to 
-access the same bank of memory, the memory accesses will be made sequentially. The general approach to avoid such a situation is to add padding between blocks of shared memory.
+As for bank conflicts, in GPU architectures (at the very least with Nvidia cards) \emph{shared} memory is divided up into banks. When multiple threads within the same half-warp try to 
+access the same bank of memory, the memory accesses will be serialized. The general approach to avoid such a situation is to add padding between blocks of shared memory.
 
-More details will be provided in the implementation section, but it is clear that a combination of the approaches (1 \& 2) taken with the CPU version will be required to make 
-adequate use of the GPU architecture. This proposed implementation will consider assigning a block of data to each SM, which will, in turn, process that block in parallel without 
-regard to operations performed on other SMs. This ensures that no unnecessary overheads due to costly card-wide synchronization steps are introduced. Instead all atomic 
+More details will be provided in the implementation section, but it is clear that a combination of the block-based and element-wise parallel approaches, taken with the CPU version, will be 
+required to make adequate use of the GPU architecture. This proposed implementation will consider assigning a block of data to each SM, which will, in turn, process that block in parallel without 
+regard to operations performed on other SMs. This ensures that no unnecessary overheads due to costly card-wide synchronization steps are introduced. Instead, all atomic 
 operations and synchronization steps will be performed per-SM only.
 \subsection{Test data}
 The correlated data is provided in the form of HDF5 files. Each of these files stores a three dimensional array of complex pairs. The first dimension is time. The second 
 is signal frequency (as mentioned in the background section the telescope array will monitor a wide range of frequencies). The third dimension is a combination of two 
 properties. Each number represents a correlation between two antennae. The antennae additionally have two modes of polarization (a horizontal and vertical polarization). 
-The size of the last dimension is specified as two times the number of permutations of $n + 1$: $2\times((n+1)\mathbf{P}2)$ elements where $n$ is the number of
-antennae in the array. The headers of the HDF5 files contain meta-information on the state of the telescope and what it is currently observing (this will determine the 
-characteristics of the data itself as well as the range of frequencies being monitored). 
+The size of the last dimension is specified as twice the number of permutations of $n + 1$ (where $n$ is the number of antennae in the array). The headers of 
+MeerKAT HDF5 files contain meta-information on the state of the telescope and what it is currently observing. This will determine the 
+characteristics of the data itself as well as the range of frequencies being monitored. 
 
-It should be noted that the headers cannot be compressed with the algorithm being proposed. An LZ variant / entropy encoder may be better tailored for this task. 
-The headers vary between 13-14\% of the total h5 file size. However, the data is only written to these formats after it is received by the processing cluster (see 
-figure~\ref{MeerKAT_PIPELINE}). Therefore if the algorithm being proposed is integrated into the front end of the pipeline, as seen in figure~\ref{MeerKAT_PIPELINE} (as part of 
-future work) it may still provide a significant saving in network I/O. 
+It should be noted that the headers cannot be compressed with the algorithm being proposed and an LZ variant / entropy encoder may be better tailored for this task. 
+The headers vary between 13-14\% of the total HDF5 file size. However, the data is only written to these formats after it is received by the processing cluster (see 
+figure~\ref{MeerKAT_PIPELINE}). Therefore, if the algorithm being proposed is integrated into the front end of the pipeline, as shown in figure~\ref{MeerKAT_PIPELINE} 
+(as part of future work) it may still provide a significant saving in network I/O. 
 \subsection{Structure and scope of the benchmarks}
-Some of these HDF5 files measure more than 30GiB in size, each containing many timestamps (some spans over 4000 frequencies). It is reasonable to assume that once the number of correlations grow, emphasis will be placed on processing each 
-time step (or portion thereof) as soon as it is received over the network. In future research the compressor may be integrated into the 7-layer OSI networking stack currently employed by the KAT-7 prototype. Due to the limited
-scope of this project focus will be on analyzing the performance of the algorithms themselves and not to measure any disk I/O (except when comparing to other compression utilities for the sake of fairness).
+Some of these HDF5 files measure more than 30GiB in size, each containing many time-stamps (some span over 4000 frequencies). It is reasonable to assume that once the number of correlations grow, emphasis will be placed on processing each 
+time step (or portion thereof) as soon as it is received over the network. In future research the compressor may be integrated into the 7-layer OSI network stack currently employed by the KAT-7 prototype. Due to the limited
+scope of this project focus will be on analyzing the performance of the algorithms themselves and not measuring any disk I/O, except when comparing against other compression utilities for the sake of fairness.
 
 This report will focus on the following analysis:
 \begin{enumerate}
- \item A comparison between the a CPU implementation of the parallel (prefix sum-based algorithm) and the blocked approach (as specified previously) will be made.
- \item A detailed breakdown of how the algorithm performs on different numbers of cores (of whichever method is determined most fit in step 1) will be provided.
- \item The effectiveness of a parallelogram predictor, a Lagrange extrapolation predictor \cite{engelson2000lossless} and a moving mean and median scheme will be determined. 
+ \item A comparison between a CPU implementation of the parallel prefix sum-based algorithm and the blocked approach will be made.
+ \item For whichever method is determined most fit in step 1, a detailed breakdown of how the algorithm performs on different numbers of cores will be provided.
+ \item The effectiveness of a parallelogram predictor, a Lagrange extrapolation predictor \cite{engelson2000lossless} and a moving mean and median scheme will be compared. 
        Each of these methods will be described in greater detail in the implementation chapter.
  \item The feasibility of implementation using the Intel SSE and AMD XOP vectorized instruction sets will be investigated.
- \item Benchmarks of the algorithm against the standard programs used for comparison: GZIP, BZIP2 and ZIP. In this case the disk I/O will be included for the sake of fairness.
- \item The feasibility of a CUDA implementation, as outlined earlier, will be determined.
- \item Finally results from concurrent research being conducted into entropy encoding and run-length encoding will be compared to those achieved in this investigation. This comparison will include a 
+ \item Benchmarks will be undertaken of the algorithm, against the standard programs used for comparison: GZIP, BZIP2 and ZIP. In this case the disk I/O will be included for the sake of fairness.
+ \item The feasibility of a CUDA implementation, as outlined earlier, will be explored.
+ \item Finally, results from concurrent research being conducted into entropy encoding and run-length encoding will be compared to those achieved in this investigation. This comparison will include a 
        breakdown of performance in terms of both throughput and compression ratios.
 \end{enumerate}
 \subsection{Benchmarking platform}
