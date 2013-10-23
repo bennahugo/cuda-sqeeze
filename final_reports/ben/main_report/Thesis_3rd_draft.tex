@@ -224,7 +224,8 @@ process, as it reconstructs the original data from its encoded version.
   \multiput(0, 0)(8, 0){21}{\line(0, 1){160}}
   \multiput(0, 0)(0, 8){21}{\line(1, 0){160}}
  \end{tikzpicture}
- \caption{5-colour image illustrating encoding redundancy}
+ \caption{5-colour image illustrating encoding redundancy. Instead of storing a 20x20 raster of colours, runs of colours (per row / column) can be stored, along with variable-
+ length representations of the colours, instead of using 24 bits per colour.}
  \label{COMP_ILLUS}
 \end{mdframed}
 \end{figure}
@@ -255,7 +256,7 @@ by the processing and storage cluster. Such a scheme must satisfy the additional
 \subsection{Compression algorithm properties and measurements}
 In a lossless compression scheme the compression is completely invertible with \textit{no} loss of information after a decompression step is performed. Lossy
 compression, on the other hand, discards unimportant data and achieves much higher compression ratios than lossless methods. Lossy compression is useful in many
-instances where subtle changes in data is not considered problematic. This includes the removal of high frequency data from images, sampling 
+instances where subtle changes in data are not considered problematic. This includes the removal of high frequency data from images, sampling 
 voice data at a lower rate than music, or employing a commonly used technique called \textit{quantization} where data is simply binned into consecutive ranges 
 (or \textit{bins}).
 
@@ -432,6 +433,7 @@ including the GNU compression utility GZIP (based on LZ-77), as well as BZIP2, w
 provided on the site are shown in figure~\ref{BZIP2_VS_GZIP}.
 \begin{figure}[h!]
 \begin{mdframed}
+\centering
 \begin{tabular}{|c|c|c|c|c|c|c|c|c|c|c|}
  \hline
  & \multicolumn{3}{|c|}{Statistical methods} & \multicolumn{4}{|c|}{LZ-77 Derivatives} & \multicolumn{3}{|c|}{LZ-78 Derivatives} \\
@@ -449,6 +451,7 @@ provided on the site are shown in figure~\ref{BZIP2_VS_GZIP}.
 \end{figure}
 \begin{figure}[h!]
 \begin{mdframed}
+\centering
 \begin{tabular}{|c|c|c|c|}
  \hline
  Utility & Bits Per Character & Comp. Speed & Decomp. Speed \\
@@ -466,39 +469,42 @@ provided on the site are shown in figure~\ref{BZIP2_VS_GZIP}.
  GZIP (Best) & 2.53 & 4.19 & 0.72 \\
  \hline
 \end{tabular}
-\caption{Table}
+\caption{Table comparing DEFLATE (LZ77-based) and BZIP2 (combination of the Burrows Wheeler transform, RLE, MTF and Huffman coding). Although BZIP2 is significantly slower
+it achieves better compression results than GZIP.}
 \label{BZIP2_VS_GZIP}
 \end{mdframed}
 \end{figure}
 
 \subsection{Overview of predictive compression}
-Previous research \cite{1607248,4589203,engelson2000lossless,lindstrom2006fast,O'Neil:2011:FDC:1964179.1964189,4976448,CGF:CGF681} in this area has yielded good results both in terms of compression ratio and speed. 
-The common line of thought is to predict successive values with reasonable precision. Depending on the accuracy of the prediction, the difference between the predicted and actual value will be much smaller than the actual value itself. 
+Previous research \cite{1607248,4589203,engelson2000lossless,lindstrom2006fast,O'Neil:2011:FDC:1964179.1964189,4976448,CGF:CGF681} in predictive compression has yielded good results both in terms of compression ratio and speed. 
+The common line approach is to predict successive values with reasonable precision. Depending on the accuracy of the prediction, the difference between the predicted and actual value will be much smaller than the actual value itself. 
 This difference can then be encoded using fewer bytes/bits of data (depending if compression occurs at a byte or bit level) by compressing the leading zeros after either an exclusive or operator or integer subtraction 
 operation. Machine instructions to count the leading zeros can be found on AMD, newer Intel Processors and CUDA architectures. The leading zero count is then encoded as a prefix stream while the remaining bits/bytes 
 are encoded as a residual stream.
 
-Previous research suggests several different constructions of predictors. The use of a \textit{Lorenzo} predictor \cite{lindstrom2006fast,CGF:CGF681} generalizes the well known parallelogram predictor. 
-The Lorenzo predictor extends the parallelogram to arbitrary dimensions. More detail on the parallelogram predictor will be given
-in the implementation section, but it is useful to note that this approach is particularly useful for compressing large meshes. Other approaches include the use of prediction history 
-(via a simple lookup table construction) as suggested by Burtscher et al. \cite{1607248,4589203,4976448}. Burtscher et al. reports a throughput of up to 670 MiB/s on a serial CPU implementation of their FPC 
-compressor and 1.36 GiB/s as a block-based parallel implementation on a 3 Ghz Intel Xeon quad-core processor \cite{4976448}. An even simpler scheme by O'Neil et al. \cite{O'Neil:2011:FDC:1964179.1964189} reportedly 
-achieved throughputs of up to 75GiB/s for compression and up to 90GiB/s decompression, implemented in CUDA. In this scheme only the difference between successive values are encoded (this will clearly only work if 
-pairs of data points vary very little from one time step to the next). It is duly noted that the speeds achieved  are on the post-processing of results, already stored in graphics memory. 
-The implementations by \cite{O'Neil:2011:FDC:1964179.1964189,1607248,4589203,4976448,engelson2000lossless} target 64-bit IEEE 754 \textit{double} precision floating-point data.
+Previous research suggests several different constructions of predictors. The use of a \textit{Lorenzo} predictor \cite{lindstrom2006fast,CGF:CGF681} generalizes the well known parallelogram predictor by
+extending the parallelogram predictor to arbitrary dimensions. More detail on the parallelogram predictor will be given
+in the implementation section, but it is worth noting that this approach is particularly useful for compressing large polygon meshes used in computer graphics and engineering design. Other approaches include the use of prediction history 
+(via a simple lookup table construction) as suggested by Burtscher et al. \cite{1607248,4589203,4976448}. Burtscher et al. report a throughput of up to 670 MiB/s on a serial CPU implementation of their dictionary-based predictive 
+compressor (\textit{Fpc}) and 1.36 GiB/s as a block-based parallel implementation on a 3 Ghz Intel Xeon quad-core processor \cite{4976448}. An even simpler scheme by O'Neil et al. \cite{O'Neil:2011:FDC:1964179.1964189} reportedly 
+achieved throughputs of up to 75GiB/s for compression and up to 90GiB/s decompression, implemented in CUDA. In this scheme only the difference between successive values is encoded (this will clearly only work if 
+pairs of data points vary very little from one time step to the next). It should be noted that the speeds achieved  are on the post-processing of results, already stored in graphics memory and thus do not include the cost of transfering 
+from device to host. 
 
-The IEEE 754 standard of 2008 defines 3 interchange formats (32-bit, 64-bit and 128-bit). See figures~\ref{IEEE_FLOAT}~\&~\ref{IEEE_FLOAT_TAB}. Each of these have a common 
-construction with the following subfields:
+The implementations by \cite{O'Neil:2011:FDC:1964179.1964189,1607248,4589203,4976448,engelson2000lossless} target \textit{double} precision floating-point data which is described by the IEEE 754 standard (revised 2008).
+The design of these encoders rely on the underlying structure of the these 64-bit double precision floating-point numbers (specifically when computing the difference between predicted and actual values). The IEEE 754 standard defines three 
+interchange formats (32-bit, 64-bit and 128-bit). See figures~\ref{IEEE_FLOAT}~\&~\ref{IEEE_FLOAT_TAB}. Each of these have a common construction with the following subfields:
 \begin{itemize}
  \item A 1-bit sign
  \item A w-bit length biased exponent
- \item A (d-1)-bit significand, where the leading bit of the significand is implicitly encoded in the exponent.
+ \item A (p-1)-bit significand, where the leading bit of the significand is implicitly encoded in the exponent.
 \end{itemize}
 \begin{figure}[h!]
   \begin{mdframed}
   \centering
   \includegraphics[width=0.6\textwidth]{IEEEinterchangeFormat.png}
-  \caption{IEEE Interchange floating-point format \cite{4610935}}
+  \caption{IEEE Interchange floating-point format \cite{4610935}. If two numbers are of the same magnitude and differs very slightly, the biased exponent bits, along with the
+  top bits if the significant will be the same.}
   \label{IEEE_FLOAT}
   \end{mdframed}
 \end{figure}
@@ -519,30 +525,34 @@ construction with the following subfields:
 \end{mdframed}
 \end{figure}
 The primary scheme proposed in this paper takes its inspiration from the work of O'Neil et al. \cite{O'Neil:2011:FDC:1964179.1964189}, but will operate on 32-bit 
-IEEE 754 \textit{single} precision floating-point values, as pointed out in the introduction. The uncompressed data itself is also structured slightly 
-differently to the model used by O'Neil et al. Instead of compressing each neighboring value the proposed compressor will operate 
-over consecutive time slices (refer to figure~\ref{MeerKAT_PIPELINE}).
+IEEE 754 \textit{single} precision floating-point values (this is due to the fact that the correlation step in the MeerKAT pipeline transforms the data into 32-bit values). 
+The uncompressed data itself is also structured slightly differently to the model used by O'Neil et al. Instead of compressing each neighboring value, the proposed compressor will operate 
+over consecutive time slices. As figure~\ref{MeerKAT_PIPELINE} shows the data is distributed in time, frequency and correlated pairs. The predictor is based on frequency 
+(per correlation), since there should be some correlation between observations on a specific frequency. If the data is very noisy, little to no compression will be achieved. 
 
-As pointed out in previous research \cite{engelson2000lossless,lindstrom2006fast} using floating-point operations in the prediction step can cause an irreversible loss of information due to floating-point
-rounding errors. A simple alternative approach is proposed by Engelson et al. \cite{engelson2000lossless}: floating-point memory is simply treated as integer memory and all operations performed on that memory are integer operations. This
-approach ensures the predictive scheme achieves lossless compression. In light of this only schemes that conform to this approach will be considered. Engelson et al. gives an example of how floating-point numbers
-can be treated with integer operations. Figure~\ref{INT_REP} shows that if two floating-point numbers are relatively close to each other (in terms of magnitude) it is possible to discard some repeated bytes of information after performing 
-an exclusive or operation to extract the remaining, seemingly random, residual bits. Therefore if an accurate prediction can be made for consecutive numbers a reasonable
-saving in terms of compression ratio can be made. An exclusive or operation is a \textit{binary} operation (taking two operands). It returns false if both operands are the same. If $\oplus$ represents the exclusive or operation then 
-inversion can be achieved as follows: $A\oplus B = C \implies (C\oplus A = B) \wedge (C\oplus B = A)$. The exclusive or operation is furthermore commutative, meaning: $A\oplus B = B\oplus A$. The inversion property is obviously critical 
-to achieve decompression since the difference can be exclusive ored with the observation at time $t-1$ to obtain the observation at time \textit{t}.
+As pointed out in previous research \cite{engelson2000lossless,lindstrom2006fast} using any floating-point operations in the prediction step can cause an irreversible loss of information due to floating-point
+rounding errors. A simple alternative is proposed by Engelson et al. \cite{engelson2000lossless}: floating-point memory is simply treated as integer memory and all operations performed on that memory 
+are integer operations. This approach ensures the predictive scheme achieves lossless compression. In light of this, only schemes that conform to this integer approach will be considered. Engelson et al. give an example 
+of how floating-point numbers can be treated with integer operations. Figure~\ref{INT_REP} shows that if two floating-point numbers are relatively close to each other (in terms of magnitude) it is possible to discard 
+some repeated bytes of information after performing an exclusive or operation to extract the remaining, seemingly random, residual bits. Therefore if an accurate prediction can be made for consecutive numbers, a 
+reasonable saving in terms of compression ratio can be obtained.
+
+An exclusive or operation is a \textit{binary} operation (taking two operands). It returns false if both operands are the same. If $\oplus$ represents 
+the exclusive or operation then inversion can be achieved as follows: $A\oplus B = C \implies (C\oplus A = B) \wedge (C\oplus B = A)$. Furthermore, the exclusive or operation is commutative, 
+meaning: $A\oplus B = B\oplus A$. The inversion property is obviously critical to achieve decompression since the difference can be exclusive ored with the observation at time $t-1$ to obtain 
+the observation at time \textit{t}.
 \begin{figure}[h!]
 \begin{mdframed}
 \centering
-\begin{tabular}{|c|c|c|c|}
+\begin{tabular}{|c|c|c|c c c c c c c c|}
  \hline
-  & & byte & 1\hspace{10 pt}2\hspace{10 pt}3\hspace{10 pt}4\hspace{10 pt}5\hspace{10 pt}6\hspace{10 pt}7\hspace{10 pt}8\\
+  & & byte & 1 & 2 & 3 & 4 & 5 & 6 & 7 & 8\\
  \hline
- $a_{1}$ & 2.3667\textbf{1}76745585676 & $\Rightarrow$ & 40 02 ef \textbf{09 ad 18 c0 f6} \\
+ $a_{1}$ & 2.3667\textbf{1}76745585676 & $\Rightarrow$ & 40 & 02 & ef & \textbf{09} & \textbf{ad} & \textbf{18} & \textbf{c0} & \textbf{f6} \\
  \hline
- $a_{2}$ & 2.3667\textbf{2}76745585676 & $\Rightarrow$ & 40 02 ef \textbf{0e eb 46 23 2f} \\
+ $a_{2}$ & 2.3667\textbf{2}76745585676 & $\Rightarrow$ & 40 & 02 & ef & \textbf{0e} & \textbf{eb} & \textbf{46} & \textbf{23} & \textbf{2f} \\
  \hline
- $a_{3}$ & 2.3667\textbf{3}76745585676 & $\Rightarrow$ & 40 02 ef \textbf{14 29 73 85 6a} \\
+ $a_{3}$ & 2.3667\textbf{3}76745585676 & $\Rightarrow$ & 40 & 02 & ef & \textbf{14} & \textbf{29} & \textbf{73} & \textbf{85} & \textbf{6a} \\
  \hline
 \end{tabular}
 \caption{Treating 64-bit IEEE 754 double precision floating-points as integer memory \cite{engelson2000lossless}}
