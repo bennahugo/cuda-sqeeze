@@ -67,9 +67,9 @@
 		<script>
 			function newPage(page) {
 				if (document.getElementById) {
-					$("#data").fadeOut(1000, function() {
+					$("#data").fadeOut(2000, function() {
 						$("#data").load(page);
-						$("#data").fadeIn(1000);
+						$("#data").fadeIn(2000);
 					});
 				}
 			};
@@ -81,7 +81,7 @@
 				});
 
 				$("#data").load("HTMLPages/About.html");
-				$("#data").fadeIn(1000);
+				$("#data").fadeIn(2000);
 
 			});
 		</script>
