@@ -34,7 +34,7 @@
 \documentclass[12pt]{article}
 \usepackage[utf8]{inputenc}
 \usepackage{graphicx}
-\usepackage{caption}
+\usepackage[centerlast,small,sc]{caption}
 \usepackage{subcaption}
 \usepackage{color}
 \usepackage{amsmath}
@@ -224,7 +224,7 @@ process, as it reconstructs the original data from its encoded version.
   \multiput(0, 0)(8, 0){21}{\line(0, 1){160}}
   \multiput(0, 0)(0, 8){21}{\line(1, 0){160}}
  \end{tikzpicture}
- \caption{5-colour image illustrating encoding redundancy. Instead of storing a 20x20 raster of colours, runs of colours (per row / column) can be stored, along with variable-
+ \caption[Illustration of encoding redundancy]{5-colour image illustrating encoding redundancy. Instead of storing a 20x20 raster of colours, runs of colours (per row / column) can be stored, along with variable-
  length representations of the colours, instead of using 24 bits per colour.}
  \label{COMP_ILLUS}
 \end{mdframed}
@@ -248,7 +248,7 @@ by the processing and storage cluster. Such a scheme must satisfy the additional
 \begin{mdframed}
  \centering
  \includegraphics[width=0.95\textwidth]{Process.png}
- \caption{High-level overview of the MeerKAT pipeline. Although future work should focus on implementing compression near the front of the pipeline in order to save on 
+ \caption[MeerKAT data-processing pipeline]{High-level overview of the MeerKAT pipeline. Although future work should focus on implementing compression near the front of the pipeline in order to save on 
  network bandwidth, only the feasibility of achieving compression at linerates of 40 GiB/s are being considered in this investigation.}
  \label{MeerKAT_PIPELINE}
 \end{mdframed}
@@ -381,7 +381,7 @@ In this case the symbol \textit{H} will be represented as 11, while some of the 
 \begin{mdframed}
  \centering
  \includegraphics[width=0.2\textwidth]{huffmanTree.png}
- \caption{Sample of a completed Huffman-coding binary tree \cite[p. 70]{salomon2004data}. The internal nodes represent the a number of times the symbols in the subtree below it occur over the entire
+ \caption[Huffman coding illustration]{Sample of a completed Huffman-coding binary tree \cite[p. 70]{salomon2004data}. The internal nodes represent the a number of times the symbols in the subtree below it occur over the entire
  dataset. These frequencies have to be determined before the tree can be constructed. This tree is used to assign unambiguous, variable-length codes, depending on the frequency a symbol occurs.
  More frequent codes like \textit{H} and \textit{F} gets assigned shorter codes. A left-traversal along the tree results in adding a zero to the left-most bit of this code, while a right-traversal
  adds a 1. Therefore 01 will be assigned to \textit{F} and 101 to \textit{G}}
@@ -418,7 +418,7 @@ with move-to-front encoding and Huffman coding is successfully employed in the s
 \begin{mdframed}
  \centering
  \includegraphics[width=1.0\textwidth]{DCTSample.png}
- \caption{Sample output from a Discrete Cosine Transform employed by JPEG2000 \cite{952804}. It is easy to see that if lower levels of detail are required, some of the detail weightings stored in
+ \caption[Discrete Cosine Transform example]{Sample output from a Discrete Cosine Transform employed by JPEG2000 \cite{952804}. It is easy to see that if lower levels of detail are required, some of the detail weightings stored in
  the lower portion of the transformation can simply be discarded and better compression ratios can be achieved, sacrificing quality.}
  \label{TRANSFORM_SAMPLE}
 \end{mdframed}
@@ -443,7 +443,7 @@ provided on the site are shown in figure~\ref{BZIP2_VS_GZIP}.
  7.93 & 5.27 & 5.21 & 5.15 & 3.88 & 3.32 & 3.22 & 3.11 & 4.26 & 4.90 & 2.89 \\
  \hline
 \end{tabular}
-\caption{Table comparing average compression performance (bits per symbol) of statistical methods and the LZ family of methods \cite{shanmugasundaram2011comparative}. RLE performs
+\caption[Bits per symbol comparison between statistical and LZ methods]{Table comparing average compression performance (bits per symbol) of statistical methods and the LZ family of methods \cite{shanmugasundaram2011comparative}. RLE performs
  badly on most of the Canterbury Corpus datasets as can be expected, since structured English texts will not contain many runs of symbols. The LZ77 and LZ78 family performs well in most cases,
  except for LZW, which fairs poorly on some of the binary files provided in this corpus.}
  \label{STATISTICAL_VS_LZ}
@@ -469,8 +469,8 @@ provided on the site are shown in figure~\ref{BZIP2_VS_GZIP}.
  GZIP (Best) & 2.53 & 4.19 & 0.72 \\
  \hline
 \end{tabular}
-\caption{Table comparing DEFLATE (LZ77-based) and BZIP2 (combination of the Burrows-Wheeler transform, RLE, MTF and Huffman coding). Although BZIP2 is significantly slower
-it achieves better compression results than GZIP.}
+\caption[Speed and compression performance comparison of GZIP and BZIP2 using the Canterbury Corpus]{Table comparing DEFLATE (LZ77-based) and BZIP2 (combination of the Burrows-Wheeler transform, RLE, MTF and Huffman coding). Although BZIP2 is significantly slower
+it achieves better compression results than GZIP using the Canterbury Corpus.}
 \label{BZIP2_VS_GZIP}
 \end{mdframed}
 \end{figure}
@@ -503,7 +503,7 @@ interchange formats (32-bit, 64-bit and 128-bit). See figures~\ref{IEEE_FLOAT}~\
   \begin{mdframed}
   \centering
   \includegraphics[width=0.6\textwidth]{IEEEinterchangeFormat.png}
-  \caption{IEEE Interchange floating-point format \cite{4610935}. If two numbers are of the same magnitude and differs very slightly, the biased exponent bits, along with the
+  \caption[IEEE Interchange floating-point format]{IEEE Interchange floating-point format \cite{4610935}. If two numbers are of the same magnitude and differs very slightly, the biased exponent bits, along with the
   top bits if the significant will be the same.}
   \label{IEEE_FLOAT}
   \end{mdframed}
@@ -520,7 +520,7 @@ interchange formats (32-bit, 64-bit and 128-bit). See figures~\ref{IEEE_FLOAT}~\
  64-bit & 11 bits & 52 bits \\
  \hline
 \end{tabular}
-\caption{Specifications for the 32-bit and 64-bit interchange formats}
+\caption[IEEE Interchange floating-point 32- and 64-bit format specifications]{Specifications for the 32-bit and 64-bit interchange formats}
  \label{IEEE_FLOAT_TAB}
 \end{mdframed}
 \end{figure}
@@ -556,7 +556,7 @@ the observation at time \textit{t}.
  $a_{3}$ & 2.3667\textbf{3}76745585676 & $\Rightarrow$ & 40 & 02 & ef & \textbf{14} & \textbf{29} & \textbf{73} & \textbf{85} & \textbf{6a} \\
  \hline
 \end{tabular}
-\caption{Treating 64-bit IEEE 754 double precision floating-points as integer memory \cite{engelson2000lossless}. Due to the fact that the values are
+\caption[Treating 64-bit IEEE 754 floating-points as integer memory]{Treating 64-bit IEEE 754 double precision floating-points as integer memory \cite{engelson2000lossless}. Due to the fact that the values are
  all of the same magnitude the most significant bits are equal. After exclusive oring pairs of these values the three bytes of leading zeros can be discarded, and 
  the count stored as a prefix}
  \label{INT_REP}
@@ -597,7 +597,7 @@ The implementation details will be provided in the next chapter.
 \begin{mdframed}
  \centering
  \includegraphics[width=0.6\textwidth]{Thesis_Arc.png}
- \caption{Architecture of the loosely coupled benchmarking platform, including external library dependencies. Dependencies are indicated with dashed arrows and interfaces
+ \caption[Component model of the benchmarking platform]{Architecture of the loosely coupled benchmarking platform, including external library dependencies. Dependencies are indicated with dashed arrows and interfaces
  are specified using ball-and-socket notation (for example the ICompressor interface).}
  \label{TOOL_ARCH}
 \end{mdframed}
@@ -606,7 +606,7 @@ The implementation details will be provided in the next chapter.
 \begin{mdframed}
  \centering
  \includegraphics[width=0.25\textwidth]{Thesis_Flow.png}
- \caption{Behavioral model of the benchmarking platform. In order to optimize reading from HDF5 files, for testing purposes, data is buffered in blocks of 1 GiB and distibuted in time
+ \caption[Process flow model of the benchmarking platform]{Behavioral model of the benchmarking platform. In order to optimize reading from HDF5 files, for testing purposes, data is buffered in blocks of 1 GiB and distibuted in time
  to the compressor (and by implication the decompressor), as would be the case in a data received over a network. The MeerKAT engineering team plans to distribute the data, first in time
  and then frequency to a large cluster of commodity servers.}
  \label{TOOL_FLOW}
@@ -624,7 +624,7 @@ zero count does not have to be computed for each element being decompressed, sin
 \begin{mdframed}
  \centering
  \includegraphics[width=0.85\textwidth]{Thesis_Alg.png}
- \caption{Prediction and compaction process proposed for compressing SKA 32-bit IEEE 754 floating-point data, distributed in time. The predictor can use any number of previous time-slices to make its prediction,
+ \caption[Prediction and compaction process]{Prediction and compaction process proposed for compressing SKA 32-bit IEEE 754 floating-point data, distributed in time. The predictor can use any number of previous time-slices to make its prediction,
  but this will increase the memory requirement of the predictor. Once a prediction is made the prediction is exclusive ored with its corresponding observation at the time-slice currently being
  processed. If the differences between predictions and the actual values are small the most significant bits of this difference will be a run of zeros, which is counted by a leading-zero counter. The count is 
  stored as a prefix (compacted at bit level). The remaining bits, or residuals can be compacted at either bit or byte level.}
@@ -733,7 +733,7 @@ architectures) are executed in lockstep.
 \begin{mdframed}
  \centering
  \includegraphics[width=0.8\textwidth]{fermi_arch.png}
- \caption{Architecture of the Fermi family of Nvidia GPUs \cite{wittenbrink2011fermi}. The GPU consists of multiple Streaming Multiprocessors (SMs), which in turn is divided into groups
+ \caption[Architecture of the Fermi family of Nvidia GPUs]{Architecture of the Fermi family of Nvidia GPUs \cite{wittenbrink2011fermi}. The GPU consists of multiple Streaming Multiprocessors (SMs), which in turn is divided into groups
  of cores (called warps). Each of these warps will have dedicated floating point arithmetic units, along with an allocation fast special operations units, containing many instructions that
  are commonly used for graphics processing (for instance a dedicated square root instruction is provided, because it is used for vector normalization). Each half-warp of threads
  are executed in lockstep, all performing the same instruction, and each SM operates in parallel.}
@@ -786,9 +786,22 @@ This report will focus on the following analysis:
        breakdown of performance in terms of both throughput and compression ratios.
 \end{enumerate}
 \section{Implementation}
+ \subsection{Overview}
+ In this section we discuss the technical details surrounding our implementation of a parallel predictive compression algorithm on both multicore CPUs and GPUs. First the basic 
+ packing algorithm is discussed, along with technical details on alternative predictive schemes, then details on achieving parallelization is provided and finally the tradeoffs 
+ of using each of the alternative predictive schemes and parallelization are discussed. 
  \subsection{Basic algorithm}
   In order to give a more detailed description to the algorithm illustrated in figure~\ref{PACKING_ALGORITHM} in the previous section, the pseudo code for the compaction
-  process is given below:
+  process is given in figure~\ref{BASIC_PSEUDO}. After a linear predictive step is performed and the predicted value exclusive ored with the actual value the leading zeros are 
+  counted. The number of bytes worth of leading zeros ($\frac{\text{lzc}}{8}$) is computed and stored as fixed-length prefixes, each three bits long. Whenever division is performed it
+  refers to performing integer division. The starting position of each prefix in an array of 32-bit values are therefore calculated as: $\frac{\text{index}\times 3}{32}$. The bit position in
+  each of these prefix stores are the remainder of this division operation modulo 32. Since 3 bytes does not divide 32, some of the prefixes will overflow the store on which its first
+  bits are stored. It is therefore necessary to save the remaining bits into the next index in the prefix array. All bit-shifting operations performed, are \emph{logical}
+  left and right shifts. These shifts do not preserve the sign bit, as opposed to arithmetic shifting operations. When a right shift is performed a zero is added as the 
+  most-significant bit. The process is very similar for residual array, except that, because the residuals varies in length the accumulated number of bits used up to the current 
+  iteration have to be tracked. 
+\begin{figure}[ht!]
+\begin{mdframed}
 \begin{verbatim}
 SUBROUTINE Compact(FLOAT[] data, UNSIGNED INT32 numElements, 
 		    out UNSIGNED INT32[] residuals, 
@@ -803,36 +816,42 @@ BEGIN
 		  same size of "data".
 		  */
 		  UNSIGNED INT32 predictedValue = linearPredict(index) 
-		  UNSIGNED INT8 leadingZeroCount = clz(data[index])
 		  UNSIGNED INT32 difference = predictedValue XOR data[index]
+		  UNSIGNED INT8 leadingZeroCount = clz(difference)
 		  //save the prefix:
-		  prefixes[index*3 INT_DIV 32] = SHIFT (leadingZeroCount INT_DIV 8) to \\
-		    the index*3 MODULO 32 th bit
+		  prefixes[index*3 INT_DIV 32] = SHIFT (leadingZeroCount INT_DIV 8) \\
+		    to the index*3 MODULO 32 th bit
 		  IF there are remaining bits that couldn't be fitted THEN
-		    prefixes[index*3 INT_DIV 32 + 1] = SHIFT remaining bits that couldn't \\
-		      be fitted in the previous operation to the first bit of the next byte
+		    prefixes[index*3 INT_DIV 32 + 1] = SHIFT remaining bits that \\ 
+		      couldn't be fitted in the previous operation to the first \\
+		      bit of the next byte
 		  END IF
 		  //save the residual:
 		  residuals[bitPosInResidualArray INT_DIV 32] = SHIFT difference to \\
 		    the bitPosInResidualArray MODULO 32 th bit
 		  IF there are remaining bits that couldn't be fitted THEN
-		    residuals[bitPosInResidualArray INT_DIV 32 + 1] = SHIFT remaining bits \\
-		      that couldn't be fitted in the previous operation to the first bit \\
-		      of the next byte
+		    residuals[bitPosInResidualArray INT_DIV 32 + 1] = SHIFT remaining \\
+		      bits that couldn't be fitted in the previous operation to the \\
+		      first bit of the next byte
 		  END IF  
 		  //increment position in the residual array
 		  bitPosInResidualArray += leadingZeroCount
 	 END FOR
 END SUBROUTINE 
 \end{verbatim}
-The decompression algorithm is remarkably similar, except that the leading zero count is not computed, but is instead retrieved from the prefix array. The shift
-operations are inverted to retrieve the bits (that may be splitted over two consecutive elements) in both the prefix and residual arrays. The prediction step is moved towards
+\caption[Compaction algorithm pseudo code]{Basic pseudo code for compacting residuals at byte-level and prefixes at bit-level in serial}
+\label{BASIC_PSEUDO}
+\end{mdframed}
+\end{figure}
+
+The decompression algorithm is remarkably similar, except that the leading zero count is not computed, but is instead retrieved from the prefix array. Only the shift
+operations are inverted to retrieve the bits (that may be split over two consecutive elements) in both the prefix and residual arrays and the prediction step is moved towards
 the end of the routine, where the predicted value is exclusive ored with the residual to restore the original, uncompressed, value.
  \subsection{Alternative linear prediction schemes}
   The most basic prediction scheme simply encodes the difference between observations at time \textit{t} and $t+1$. This difference is given as $O[t]$ xor $O[t-1]$. The 
-  downside to this basic predictor is that it is particularly sensitive to the structure of the underlying data. It will only work if \emph{most} consecutive values varies 
-  slowly over time. Using an n-element predictor may help mitigate the effects of noise. However, as pointed out earlier: any operations over these n-elements have to be integer 
-  operations and not floating point operations, due to the rounding errors they may introduce (as pointed out in the background section). All floating-point memory are therefore 
+  downside of this basic predictor is that it is particularly sensitive to the structure of the underlying data. It will only work if \emph{most} consecutive values vary 
+  slowly over time. Using an n-element predictor instead may help mitigate the effects of noise. However, as pointed out earlier: any operations over these n-elements 
+  have to be integer operations, and not floating point operations, due to the rounding errors they may introduce. All floating-point memory is therefore 
   cast to integer-typed memory before values are retrieved.
   
   These predictions, however, still have to be fast and preferably have an average linear computational complexity, $\theta(n)$. The predictor will only 
@@ -840,34 +859,39 @@ the end of the routine, where the predicted value is exclusive ored with the res
   the total number of elements being processed at time $t$.
  \subsubsection{Lorenzo predictor}
  The n-dimensional Lorenzo predictor is a generalization of the two dimensional parallelogram predictor (see figure~\ref{LORENZO}). It can be used to predict scalar 
- functions that are polynomials of degree $n - 1$ and has been proven useful in scalar field compression \cite{CGF:CGF681}. In each of the 3 cases below only simple
- integer additions and subtractions are needed: the sum of the values in red are subtracted from the sum of the values in green. In the two dimensional case this 
- addition and subtraction is known as the \textit{parallelogram rule}. The predicted value is computed from previous observations as as $P = O[t-1] + O[t-2] - O[t-3]$.
- The prediction operation remains simple and should not have a considerable impact on the overall throughput. However, this approach will still be quite sensitive to noise.
+ functions that are polynomials of degree $n - 1$ and has proven useful in scalar field compression \cite{CGF:CGF681}. In each of the 3 cases below only simple
+ integer additions and subtractions are needed: the sum of the values in red are subtracted from the sum of the values in green to derive the value in blue. In the 
+ two-dimensional case this addition and subtraction is known as the \textit{parallelogram rule}. The predicted value is computed from previous observations as as 
+ $P = O[t-1] + O[t-2] - O[t-3]$. The prediction operation remains simple and should not have a significant impact on the overall throughput. However, this approach will 
+ still be quite sensitive to noise.
   \begin{figure}[h!]
   \begin{mdframed}
     \centering
-    \includegraphics[width=0.3\textwidth]{lorenzo.png}
-    \caption{Lorenzo predictor for 2D (upper left), 3D (upper right) and 4D (lower left) data \cite{CGF:CGF681}}
+    \includegraphics[width=0.45\textwidth]{lorenzo.png}
+    \caption[Lorenzo predictor]{Lorenzo predictor for 2D (upper left), 3D (upper right) and 4D (lower left) data \cite{CGF:CGF681}. The sum of red values are subtracted from 
+    the sum of green values, to derive the value indicated in blue.}
     \label{LORENZO}
   \end{mdframed}
   \end{figure} 
  \subsubsection{Moving average and moving mean}
-  An integer-based moving mean is simple to implement and involves only a summation and an integer division (and therefore clearly has a linear computational complexity).
-  However, the mean of a sample is sensitive to outliers, and therefore will not work well for noisy data. A simple solution will be to use a median-based scheme
-  where the predicted value is the center value of a \textit{sorted} list of observations. However, a naive implementation of such a median-based scheme will
-  be slow due to the overheads of sorting. Wirth suggests an algorithm \cite{wirth76} to select the median using a basic \textit{pivoting} scheme in $\theta(n)$
-  time. A pivot divides a dataset into two groups. The elements in the group to the right of the pivot are larger than the pivot and the elements in the group to
-  the left of the pivot are smaller (or equal) to the pivot. The two groups do \emph{not} necessarily have to be ordered. The median is chosen through the following
-  method that selects the \textit{k-th largest value} \cite{wirth76}:
-  \begin{verbatim}
+  An integer-based moving mean is simple to implement and involves only a summation and an integer division, and therefore clearly has a linear computational complexity.
+  However, the mean of a sample is sensitive to outliers, and therefore will not work well for noisy data. In contrast, using a median-based scheme,
+  where the predicted value is the center value of a \textit{sorted} list of observations may fair better. Unfortunately, a naive implementation of such a 
+  median-based scheme will be slow due to the overheads of sorting. Wirth \cite{wirth76} suggests an algorithm to select the median using a basic \textit{pivoting} 
+  scheme in $\theta(n)$ time. A pivot divides a dataset into two groups. The elements in the group to the right of the pivot are larger than the pivot and the elements in the group to
+  the left of the pivot are smaller (or equal) to the pivot. The two groups do \emph{not} necessarily have to be ordered. The median is chosen through the
+  method indicated in figure~\ref{KTH_LARGEST} that selects the \textit{k-th largest value} \cite{wirth76}.
+\begin{figure}[ht!]
+\begin{mdframed}
+\begin{verbatim}
 FUNCTION INT32 pivotMedian(INT32[] data, int n) {
-    INT32 i, j, l, m, k = n/2-1 //k is the kth largest element in the array
+    INT32 i, j, l, m, k = n/2 //k is the kth largest element
     INT32 x, s
 
     l=0 //lower bound
     m=n-1 //upper bound
-    WHILE l<m DO //swap elements in group L and M until the two indexers cross
+    //swap elements in group L and M till the indexers cross
+    WHILE l<m DO 
         x=data[k]
         i=l
         j=m
@@ -891,6 +915,10 @@ FUNCTION INT32 pivotMedian(INT32[] data, int n) {
     RETURN data[k] //mid-point in the array
 }
   \end{verbatim}
+\caption[Pseudo code for selecting the $k^{th}$ largest element of a sequence.]{Pseudo code for selecting the $k^{th}$ largest element of a sequence.}
+\label{KTH_LARGEST}
+\end{mdframed}
+\end{figure}
  \subsubsection{Lagrange prediction}
   Lagrange extrapolation prediction is a gradient-based method that can be used to predict a value of a polynomial at $t+1$, given the values at $t\dots t-n$.
   The method is commonly used for interpolation between known points on a curve, defined by some polynomial. Good extrapolations are only possible for 
@@ -898,14 +926,14 @@ FUNCTION INT32 pivotMedian(INT32[] data, int n) {
   
   If a function $f:[1\dots n] \rightarrow \mathbb{R}$ is evaluated over a time interval $[1\dots n]$ and its results stored as a sequence of values 
   $a_{1}\dots a_{n}$ where $a_{i} = f(i)$, then such a sequence is called \textit{smooth of order m} if for all $j>m$, $a_{j}$ can be approximated with reasonable
-  accuracy from extrapolating from the previous \textit{m} values. Such smooth sequences normally arise as solutions of ordinary differential equations (ODEs) in
+  accuracy by extrapolating from the previous \textit{m} values. Such smooth sequences normally arise as solutions of ordinary differential equations (ODEs) in
   simulation models \cite{engelson2000lossless}.
   
-  The model implemented in this report uses \textit{fixed-step extrapolation} (the time between consecutive observations is assumed to be of constant duration), but
-  the method works just as well if these differences vary in length, as long as the underlying sequence can be approximated some polynomial \cite{engelson2000lossless}. 
-  The method builds from \textit{Lagrange's Rule}. It states, that for a given function, $f$ implicitly defined over the previous \textit{m} 
+  The model implemented in this report uses \emph{fixed-step} extrapolation (the time between consecutive observations is assumed to be of constant duration), but
+  the method works just as well if these differences vary in length, as long as the underlying sequence can be approximated by some polynomial \cite{engelson2000lossless}. 
+  The method builds from \textit{Lagrange's Rule}. It states, that for a given function, $f$, implicitly defined over the previous \textit{m} 
   observed values, given some extrapolation points, indexed by $x\in I = \{i\in\mathbb{N}|i\geq 0\wedge i\leq m\}$ there exists some polynomial, $\varphi_{m}$ such that 
-  $(\forall x\in I) \varphi_{m}(x)=f(x)$. The polynomial is defined as $\varphi_{m}(x^{*})=\sum_{x\in I}L_{x}(x^{*})f(x)$ where each coefficient, $L_{x}(x^{*})$ 
+  $(\forall x\in I) \varphi_{m}(x)=f(x)$. The polynomial is defined as $\varphi_{m}(x^{*})=\sum_{x\in I}L_{x}(x^{*})f(x)$ where each coefficient, $L_{x}(x^{*})$, 
   can be computed by the equation below. Note that $x^{*} = m + 1$, the index of the unknown value of \textit{f}, after the $1\dots m$ previously observed values.
   \begin{equation}
    L_{x}(x^{*}) = \prod_{k\in{I},k\neq x}\left(\frac{x^{*}-k}{x-k}\right)
@@ -913,31 +941,18 @@ FUNCTION INT32 pivotMedian(INT32[] data, int n) {
 
  \subsection{Algorithm parallelization and its implications for GPGPU architectures}
   As pointed out in the design section the parallelization of the basic algorithm discussed earlier can be done by dividing incoming data up into fixed size chunks after which 
-  multiple blocks can be packed in parallel. This approach is detrimental to the compression ratio, since the size of each
-  block's residual stream has to be stored (this effect will be worse if there are a large number of blocks). The approach is relatively straightforward to 
-  implement and does not modify the structure of the basic algorithm at all.
+  multiple blocks can be packed in parallel. This approach is detrimental to the compression ratio, since the size of each block's residual stream has to be stored 
+  (this effect will be worse if there are a large number of blocks). The approach is relatively straightforward to implement and does not modify the structure 
+  of the basic algorithm at all.
   
   The alternative approach is to convert the basic algorithm into an element-wise parallel algorithm. As mentioned in the design chapter this requires a prefix sum to be computed 
-  in order to obtain the starting position of each residual in the residual stream. The prefix scan is a trivial case of a dynamic programming problem and the algorithm 
-  \cite{blelloch1990prefix} is shown below:
-  \begin{verbatim}
-   SUBROUTINE scan(out INT32[] out, INT32[] in)
-    INT32 i = 0
-    out[0] = 0;
-    INT32 sum = in[0]
-    WHILE i < length(in) DO
-      ++i
-      sum += in[i]
-      out[i] = sum
-    END WHILE
-   END SUBROUTINE
-  \end{verbatim}
-  Blelloch suggests a novel approach \cite{blelloch1990prefix} to compute this prefix scan in parallel. The algorithm requires the size of the input array to
-  be a power of 2. If this is not the case padding has to be added to the input array. There are three primary steps to the algorithm, with a synchronization point between each. First
-  an \textit{up-sweep} operation is completed, then the last element is set to 0, and finally a \textit{down-sweep} operation is completed. Both the \textit{up-sweep} and \textit{down-sweep} operations
-  can be respresented by a \textit{complete} binary tree of $\log_2n$ levels (meaning that each level is fully filled). Each level of the tree can be done in parallel and therefore the algorithm has a 
-  complexity of $O(n/p + \log_2{p})$ where \textit{p} is the number of processors in a system. The \textit{up-sweep} and \textit{down-sweep} operations (using integer addition) over a short sequence of integers is shown
-  in figure~\ref{PARALLEL_SCAN}.
+  in order to obtain the starting position of each residual in the residual stream. The prefix scan is a trivial case of a dynamic programming problem. Blelloch 
+  suggests a novel approach \cite{blelloch1990prefix} to compute this prefix scan in parallel. The algorithm requires the size of the input array to be a power of 2. If 
+  this is not the case padding has to be added to the input array. There are three primary steps to the algorithm, with a synchronization point between each. First an 
+  \textit{up-sweep} operation is completed, then the last element is set to 0, and finally a \textit{down-sweep} operation is completed. Both the \textit{up-sweep} and 
+  \textit{down-sweep} operations can be respresented by a \textit{complete} binary tree of $\log_2n$ levels (meaning that each level is fully filled). Each level of the 
+  tree can be done in parallel and therefore the algorithm has a complexity of $O(n/p + \log_2{p})$ where \textit{p} is the number of processors in a system. The 
+  \textit{up-sweep} and \textit{down-sweep} operations (using integer addition) over a short sequence of integers is shown in figure~\ref{PARALLEL_SCAN}.
   \begin{figure}[h!]
   \begin{mdframed}
     \centering
@@ -967,7 +982,7 @@ FUNCTION INT32 pivotMedian(INT32[] data, int n) {
     END FOR
   END FOR
 //EFFICIENCY NOTE: Powers of 2 are efficiently implemented as:
-POW(2,n) = (2 << n-1) //where "<<" is the arithmetic left-shift operator
+POW(2,n) = (2 << n-1) //where "<<" is the logical left-shift operator
 //and n is strictly greater than 0
         \end{verbatim}       
       \end{minipage}
@@ -1043,7 +1058,7 @@ POW(2,n) = (2 << n-1) //where "<<" is the arithmetic left-shift operator
   400 MiB/s and decompression throughputs of around 600 MiB/s on a 16 core test. This is a lot slower than the required throughput of 5 GiB/s. It is duly noted that the throughput rates achieved in the element-wise parallelization 
   includes several optimizations such as the removal of branches (for example branchless implementations of minimums and maximums are employed \footnote{Sean E. Anderson 
   provides several bittwiddled implementations of minimums, maximums and binary logarithms on his website: \url{graphics.stanford.edu/~seander/bithacks.html}. Last accessed: 3 
-  October 2013} for the arithmetic bit shifting operations shown in the pseudo code), as well as the removal of some of the atomic operations as discussed in the previous sections.
+  October 2013} for the logical bit shifting operations shown in the pseudo code), as well as the removal of some of the atomic operations as discussed in the previous sections.
   
   The failure of this approach in a CPU environment, however, does not necessarily preclude a similar approach being taken on a GPU. It has been shown \cite{harris2007parallel} that a 
   prefix sum can be computed up to six times faster on a GPU for large arrays of up to 16.7 million elements. This result, coupled with the fact that elements can be packed in a massively
@@ -1091,7 +1106,7 @@ POW(2,n) = (2 << n-1) //where "<<" is the arithmetic left-shift operator
   As the name suggests these special machine instructions are focused on providing greater flexibility for performing a single instruction on multiple data. A good example of where
   a speedup can be expected is in parallelizing vector addition. However, in the case of implementing a packing algorithm the original SSE instructions are not sufficient since it only allows 
   bit-shifting multiple elements by the same amount. The packing algorithm requires that four 32-bit values each be shifted by a different amount. A simple solution is to employ the AMD XOP 
-  instruction set which adds the ability to perform element-wise arithmetic bit-shifting. The problem with this approach is that no Intel processor prior to the latest (at the time of writing) 
+  instruction set which adds the ability to perform element-wise logical bit-shifting. The problem with this approach is that no Intel processor prior to the latest (at the time of writing) 
   Haswell series of processors support this operation (the Haswell series adds this functionality through the AVX 2 extensions).
   
   The next major problem is that there is both a limited number of registers available, and a packing algorithm does not have the same number of outputs as inputs. Although
