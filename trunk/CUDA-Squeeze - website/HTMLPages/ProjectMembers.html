@@ -1,0 +1,38 @@
+<div class="row">
+	<div class="col-4 col-sm-2 col-lg-2">
+		<div class="list-group">
+			<a class="list-group-item active" onclick="newProgram('HTMLPages/MemberWebsites/Benjamin.html'); return(false);" href="#">Benjamin Hugo</a>
+			<a class="list-group-item " onclick="newProgram('HTMLPages/MemberWebsites/Brandon.html'); return(false);" href="#">Brandon Talbot</a>
+			<a class="list-group-item " onclick="newProgram('HTMLPages/MemberWebsites/Strauss.html'); return(false);" href="#">Heinrich Strauss</a>
+		</div>
+	</div>
+	<div class="col-12 col-sm-10 col-lg-10">
+		<div id="programContent" class="jumbotron" style="display: block;">
+
+		</div>
+	</div>
+</div>
+<script>
+	function newProgram(page) {
+		if (document.getElementById) {
+			$("#programContent").fadeOut(1000, function() {
+				$("#programContent").load(page);
+				$("#programContent").fadeIn(1000);
+			});
+		}
+	};
+
+	$(document).ready(function() {
+
+		$('.list-group a').on('click', function() {
+			$(this).parent().find('.active').removeClass('active');
+			$(this).addClass('active');
+		});
+
+		$("#programContent").fadeOut(0, function() {
+			$("#programContent").load('HTMLPages/MemberWebsites/Benjamin.html');
+			$("#programContent").fadeIn(1000);
+		});
+	});
+
+</script>

@@ -1,0 +1,27 @@
+<div class="logoBar">
+	<div class="row">
+		<div class="col-md-2 col-sm-2">
+			<a href="#" style="vertical-align: middle"> <img src="images/uct.png" style="width: 100%;" /> </a>
+		</div>
+		<div class="col-md-2 col-sm-2">
+			<img src="images/ska.png" style="width: 100%" />
+		</div>
+		<div class="col-md-2 col-sm-2">
+			<img src="images/hex.png" style="width: 100%" />
+		</div>
+		<div class="col-md-2 col-sm-2" >
+			<a href="#" style="vertical-align: middle"> <img src="images/intel.png" style="width: 100%" /> </a>
+		</div>
+		<div class="col-md-2 col-sm-2">
+			<img src="images/nvidia.png" style="width: 100%" />
+		</div>
+		<div class="col-md-2 col-sm-2" style="vertical-align: middle">
+			<img src="images/amd.png" style="width: 100%" />
+		</div>
+	</div>
+</div>
+
+<h1>About SKA-SQUEEZE</h1>
+<p>
+	The SKA (Square Kilometer Array) South Africa requires a compression algorithm that offers reasonable compression ratios, as well as being fast enough to keep up with the antenna output rates. This need arises due to the requirement of saving streaming data onto a storage system and reading queries from that system simultaneously. This is where the focus of our project lies. We will be taking streaming data from correlators and beamformers (which combines pairs of data channels from the antennae) and compress the data-stream using optimised CPU (with SSE and AVX) and GPGPU (General-Purpose Computing on Graphical Processing Units) implementations in order to achieve the speeds that SKA requires, while maintaining reasonable compression ratios. We operate as a 'shim' between the Compute Nodes and the storage sub-system.
+</p>
