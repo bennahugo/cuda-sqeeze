@@ -23,46 +23,40 @@
 						<span class="icon-bar"></span>
 					</button>
 					<a class="navbar-brand" href="#">SKA-SQUEEZE</a>
-				</div>				
+				</div>
 				<div class="navbar-collapse collapse">
 					<ul class="nav navbar-nav">
 						<li class="active">
-							<a onclick="newPage('HTMLPages/test.html'); return(false);" href="#">Home</a>
+							<a onclick="newPage('HTMLPages/About.html'); return(false);" href="#">About</a>
 						</li>
 						<li>
-							<a onclick="newPage('www.google.com'); return(false);" href="#">Test</a>
+							<a onclick="newPage('HTMLPages/Advisors.html'); return(false);" href="#">Advisors</a>
+						</li>
+						<li>
+							<a onclick="newPage('HTMLPages/Timeline.html'); return(false);" href="#">Timeline</a>
+						</li>
+						<li>
+							<a onclick="newPage('HTMLPages/ProjectMembers.html'); return(false);" href="#">Project Members</a>
+						</li>
+						<li>
+							<a onclick="newPage('HTMLPages/LinksDownloads.html'); return(false);" href="#">Extras and Downloads</a>
 						</li>
 					</ul>
 				</div><!--/.nav-collapse -->
 			</div>
 		</div>
-		
-		<div class="container" style="padding-top: 75px">
-		<div class="logoBar">
-			<div class="row">
-				<div class="col-md-2 col-sm-2">
-					<img src="images/uct.png" style="width: 100%;" />
-				</div>
-				<div class="col-md-2 col-sm-2">
-					<img src="images/ska.png" style="width: 100%" />
-				</div>
-				<div class="col-md-2 col-sm-2">
-					<img src="images/hex.png" style="width: 100%" />
-				</div>
-				<div class="col-md-2 col-sm-2" >
-					<img src="images/intel.png" style="width: 100%" />
-				</div>
-				<div class="col-md-2 col-sm-2">
-					<img src="images/nvidia.png" style="width: 100%" />
-				</div>
-				<div class="col-md-2 col-sm-2" style="vertical-align: middle">
-					<img src="images/amd.png" style="width: 100%" />
-				</div>
-			</div>
-		</div>
 
-		<div id="data" style="display: none;">
-		</div>
+		<div class="container" style="padding-top: 75px">
+			<div id="data" style="display: none;">
+				
+			</div>
+
+			<hr>
+			<footer>
+				<p style="color: white;">
+					© Brandon James Talbot, 2013
+				</p>
+			</footer>
 		</div>
 
 		<!-- Bootstrap core JavaScript
@@ -85,11 +79,10 @@
 					$(this).parent().parent().find('.active').removeClass('active');
 					$(this).parent().addClass('active');
 				});
-				
-				$("#data").load("HTMLPages/test.html");
+
+				$("#data").load("HTMLPages/About.html");
 				$("#data").fadeIn(1000);
-				
-				
+
 			});
 		</script>
 

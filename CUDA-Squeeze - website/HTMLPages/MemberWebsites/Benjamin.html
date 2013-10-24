@@ -1,0 +1,11 @@
+<h1>Algorithm</h1>
+<h2>Predictive Compression</h2>
+<p>
+	As we stated in the synopsis our goal is to develop 3 algorithms for compressing the 32 bit floating point radio astronomy data of the Square Kilometer Array (SKA). Although each of the group members are investigating a particular compression scheme, our goal is to publish our findings jointly in order to establish which of the 3 schemes performs best in terms of the tradeoff between throughput and compression ratio.
+	<br />
+	<br />
+	I will be investigating a predictive compression scheme. In such a scheme the streaming data is divided into chunks which can be processed in parallel. The goal is to divide the data in such a way as to exploit dimensional coherency (lets say compressing the values of a particular frequency over several time steps). Since the values will likely not change much (or change relatively slowly over the duration of several steps) the prediction scheme may yield accurate predictions of consequtive values. If this is the case the difference between both mantisa bits and exponent bits of the predicted value and the actual value will result in many leading zero bits, which can be stored in compressed form (saving the residual bits in uncompressed form). Such a scheme is simple and fast (see my paper litterature survey) and is ideal for scenarios where throughput enjoys preference over good compression ratios.
+	<br />
+	<br />
+	I will be implementing both an optimised CPU version (using both a vectorised instruction set when ever possible, as well as being multithreaded) and a GPU version of the code if time permits.
+</p>

@@ -1,0 +1,17 @@
+<h1>Algorithm</h1>
+<h2>Zero-Length Encoding</h2>
+<p>
+	The third implemented algorithm will be Zero-Length Encoding, a derivative of Run-Length Encoding, which I will investigate.
+	<br />
+	<br />
+	Zero-Length Encoding is basically run-length encoding, just performed on the binary representation of data. In Zero-Length Encoding you run through the data and replace sections of the binary stream where there are multiple 0s or 1s with the number of repetitions and what is repeating, Eg. 1000001 becomes 1(5)01. where the (5) is a tag to say it is a number representation and the 5 to tell how many 0s there are. This is a viable option because the data samples we receive are skewed towards the least-significant bits.
+	<br />
+	<br />
+	This algorithm should be tweaked to efficiently handle the various patterns the data will follow, which are dependent on the number of dishes in use for a particular observation and the spectrum being captured.
+	<br />
+	<br />
+	Again, a SSE- and AVX-enabled CPU version will be done, followed by a GPU-optimised implementation.
+	<br />
+	<br />
+	This allows for a cohesive comparison of the different methods, excluding Arithmetic Coding which was shown in practice (by our supervisors, et al.) to provide insufficient throughput for our purposes in 2012.
+</p>
