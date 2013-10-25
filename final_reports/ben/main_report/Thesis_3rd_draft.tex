@@ -435,7 +435,7 @@ for real-time analysis and observation. Low resolution samples can be consistent
 \subsection{Comparison between statistical methods and LZ methods}
 The analysis in figure~\ref{STATISTICAL_VS_LZ} is a summary compiled from works by Shanmugasundaram et al. \cite{shanmugasundaram2011comparative}. It shows the average bits 
 needed to encode each symbol in files taken from the Canterbury Corpus. The Canterbury Corpus website furthermore contains results for several common compression utilities 
-including the GNU compression utility GZIP (based on LZ-77), as well as BZIP2, which employs both the Burrows-Wheeler transform, RLE and Huffman coding. Extracts from the data 
+including the GNU compression utility GZIP (based on LZ-77), as well as BZIP2, which employs the Burrows-Wheeler transform, RLE and Huffman coding. Extracts from the data 
 provided on the site are shown in figure~\ref{BZIP2_VS_GZIP}.
 \begin{figure}[h!]
 \begin{mdframed}
@@ -705,7 +705,7 @@ approaches taken in previous research, specifically that of Klein, Burtscher \& 
  \end{center}
 
  This scan operation can be computed in parallel as suggested by Ladner, Cole and Blelloch et al. \cite{ladner1980parallel,cole1989faster,blelloch1990prefix}.
- Additionally a work-efficient CUDA version of the algorithm is discussed in GPU Gems 3 \cite{harris2007parallel}, based on Blelloch's approach. In this version the algorithm is optimized 
+ Additionally a work-efficient CUDA version of the algorithm discussed in GPU Gems 3 \cite{harris2007parallel} is based on Blelloch's approach. In this version the algorithm is optimized 
  to avoid \textit{bank conflicts} (see the section on GPU architecture) and has been shown to be up to 6 times faster than a sequential CPU implementation for large arrays.
  
  Ladner et al. suggests an algorithm that has a time complexity of $O(\log{n}/\log{\log{n}})$ to compute the prefix sum over $n$ elements, but requires $n\log\log{n}/\log{n}$ processors. 
@@ -731,7 +731,7 @@ approaches taken in previous research, specifically that of Klein, Burtscher \& 
  AVX, respectively). It remains to be investigated whether it is worthwhile to implement the proposed packing algorithm using SSE and XOP instructions.
 \subsection{Porting the implementation to CUDA}
 General Purpose programming using Graphics Processing Units (GPGPU) provides a massively multi-core environment, with hundreds of cores, for performing SIMD-styled 
-processing on large numbers of elements. GPU architectures differs significantly from those of multi-core CPUs: memory and cache-memory layout is completely different (each group of cores have 
+processing on large numbers of elements. GPU architectures differs significantly from those of multi-core CPUs: memory and cache-memory layout is completely different (each group of cores 
 has dedicated shared, cache and texture memory), direct manipulation of cache and shared memory is possible, individual cores on the GPU are less powerful than normal CPU cores (each core does not have its own dedicated floating point 
 processor) and these cores are furthermore grouped into \textit{warps} of threads, where each Streaming Multiprocessor (SM) consists of multiple warps. Figure~\ref{FERMI_ARCH} provides a detailed overview of the microchip die structure of a Nvidia Fermi generation GPU.
 
@@ -744,9 +744,9 @@ architectures) are executed in lockstep.
  \centering
  \includegraphics[width=0.8\textwidth]{fermi_arch.png}
  \caption[Architecture of the Fermi family of Nvidia GPUs]{Architecture of the Fermi family of Nvidia GPUs \cite{wittenbrink2011fermi}. The GPU consists of multiple Streaming Multiprocessors (SMs), which in turn is divided into groups
- of cores (called warps). Each of these warps will have dedicated floating point arithmetic units, along with an allocation fast special operations units, containing many instructions that
+ of cores (called warps). Each of these warps will have dedicated floating point arithmetic units, along with an allocation of fast special operations units, containing many instructions that
  are commonly used for graphics processing (for instance a dedicated square root instruction is provided, because it is used for vector normalization). Each half-warp of threads
- are executed in lockstep, all performing the same instruction, and each SM operates in parallel.}
+ are executed in lockstep, all performing the same instruction, and each SM in turn operates in parallel.}
  \label{FERMI_ARCH}
 \end{mdframed}
 \end{figure}
@@ -841,9 +841,9 @@ BEGIN
     residuals[bitPosInResidualArray INT_DIV 32] = SHIFT difference to \\
 	the bitPosInResidualArray MODULO 32 th bit
     IF there are remaining bits that couldn't be fitted THEN
-	residuals[bitPosInResidualArray INT_DIV 32 + 1] = SHIFT remaining \\
-	  bits that couldn't be fitted in the previous operation to the \\
-	  first bit of the next byte
+	residuals[bitPosInResidualArray INT_DIV 32 + 1] = SHIFT \\
+	  remaining bits that couldn't be fitted in the previous \\ 
+	  operation to the first bit of the next byte
     END IF  
     //increment position in the residual array
     bitPosInResidualArray += leadingZeroCount
@@ -959,7 +959,7 @@ FUNCTION INT32 pivotMedian(INT32[] data, int n) {
   The alternative is to convert the basic algorithm into an element-wise parallel algorithm. As mentioned in the design chapter this requires computing a prefix sum  
   in order to obtain the starting position of each residual in the residual stream. The serial prefix scan is a trivial case of a dynamic programming problem, but a
   parallelization approach is suggested by Blelloch \cite{blelloch1990prefix}. Blelloch's approach has also been employed for GPU-based prefix sum calculation \cite{harris2007parallel}. 
-  Blelloch's parallel algorithm requires the length of the input array be a power of 2, but if this is not the case the input array is simply padded. 
+  This parallel algorithm requires the length of the input array be a power of 2, but if it is not the case the input array is simply padded. 
   
   There are three primary steps to the algorithm, with a synchronization point between each. First an \textit{up-sweep} operation is completed, then the last element is set to 0, 
   and finally a \textit{down-sweep} operation is carried out. Both the \textit{up-sweep} and \textit{down-sweep} operations can be represented as a \textit{complete} binary tree 
@@ -1520,7 +1520,7 @@ All other results are those obtained from running the solution on the same Intel
     \legend{Compression , Decompression}
   \end{axis}  
   \end{tikzpicture}
-  \caption{Comparison between several iterations of the implementation using 16 cores. The LZCNT optimizations are run on a slower AMD Opteron processor, but still outperforms a faster
+  \caption[Comparison of project iterations]{Comparison between several iterations of the implementation using 16 cores. The LZCNT optimizations are run on a slower AMD Opteron processor, but still outperforms a faster
   Intel Xeon E5 processor. For comparison the GPU kernel (with and without memory copy from device to host) is provided as reference.}
   \label{ALG_DEV_COMPARISON}
  \end{mdframed}
@@ -1567,7 +1567,7 @@ in the central Karoo region of South Africa. The array will require processing f
 to reduce both network bandwidth requirements, and ultimately, the storage space required to store data over extended periods of time. Some of the key research questions included:
 \begin{enumerate}
  \item Determining whether a predictive compression scheme achieves comparable results to that of standard compression utilities: we found that
- this goal was not attainable, but that the predictive compressor only produced compression ratios of 9\% on average, in contrast to compression ratios of 39\%.
+ this goal was not attainable, but that the predictive compressor only produced compression ratios of 91\% on average, in contrast to compression ratios of 39\%.
  \item Determining whether such a predictive scheme can operate at Infiniband network speeds of up to 5 GiB/s: the predictive compressor successfully met this target,
  while the decompressor well-exceeded these expectations.
  \item Whether, using different predictors to trade throughput for improved compression ratios and vice-versa, is feasible: although several simple approaches
