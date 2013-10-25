@@ -125,23 +125,23 @@ Jason \textsc{Manley}
  \hline
    & \textbf{Category} & \textbf{Min} & \textbf{Max} & \textbf{Chosen} \\
  \hline
- 1 & Requirement Analysis and Design & 0 & 20 & ? \\
+ 1 & Requirement Analysis and Design & 0 & 20 & 10 \\
  \hline
- 2 & Theoretical Analysis & 0 & 25 & ? \\
+ 2 & Theoretical Analysis & 0 & 25 & 0 \\
  \hline
- 3 & Experiment Design and Execution & 0 & 20 & ? \\
+ 3 & Experiment Design and Execution & 0 & 20 & 5 \\
  \hline
- 4 & System Development and Implementation & 0 & 15 & ? \\
+ 4 & System Development and Implementation & 0 & 15 & 15 \\
  \hline
- 5 & Results, Findings and Conclusion & 10 & 20 & ? \\
+ 5 & Results, Findings and Conclusion & 10 & 20 & 15 \\
  \hline
- 6 & Aim Formulation and Background Work & 10 & 15 & ? \\
+ 6 & Aim Formulation and Background Work & 10 & 15 & 15 \\
  \hline
  7 & Quality of Report Writing and Presentation & \multicolumn{2}{|c|}{10} & 10 \\
  \hline
  8 & Adherence to Project Proposal and Quality of Deliverables & \multicolumn{2}{|c|}{10} & 10 \\
  \hline
- 9 & Overall General Project Evaluation & 0 & 10 & ? \\
+ 9 & Overall General Project Evaluation & 0 & 10 & 0 \\
  \hline
  \multicolumn{2}{|l|}{\textbf{Total marks}} & \multicolumn{2}{|c|}{\textbf{80}} & \textbf{80} \\
  \hline
@@ -164,9 +164,9 @@ Jason \textsc{Manley}
  radio telescope currently under construction in Southern Africa and Australia, which will produce data at rates up to 1 Petabyte every 20 seconds. The compression technique being 
  investigated is based on predictive compression, which has proven successful at achieving high-speed compression in previous research. Several different predictive 
  techniques (which includes polynomial extrapolation), along with CPU- and GPU-based parallelization approaches are discussed. The implementation successfully achieves throughput rates 
- in excess of 6 GiB/s for compression and much higher rates for decompression using a 64-core AMD Opteron machine, achieving file-size reductions of between 7\% and 8\%. Furthermore
+ in excess of 6 GiB/s for compression and much higher rates for decompression using a 64-core AMD Opteron machine, achieving file-size reductions of, on average 9\%. Furthermore
  the results of concurrent investigations into block-based parallel Huffman encoding and Zero-length Encoding are compared to the predictive scheme and it was found that
- the predictive scheme obtains approximately 3\% better compression ratios than the Zero-Length Encoder and is 25 times faster than Huffman encoding on an Intel Xeon E5 processor. The
+ the predictive scheme obtains approximately 4\%-5\% better compression ratios than the Zero-Length Encoder and is 25 times faster than Huffman encoding on an Intel Xeon E5 processor. The
  scheme may be well-suited to address the large network bandwidth requirements of the MeerKAT project.
 \end{abstract}
 
@@ -1010,7 +1010,7 @@ POW(2,n) = (2 << n-1) //where "<<" is the logical left-shift operator
       \caption{Tree representations with respective algorithms to compute each level in parallel (for both up- and down-sweeps)}
       \label{PARALLEL_SCAN_SUB_ALGORITHMS}
     \end{subfigure}
-    \caption{Parrallel scan algorithm example and pseudo code \cite{blelloch1990prefix}}
+    \caption[Parallel scan algorithm]{Parrallel scan algorithm example and pseudo code \cite{blelloch1990prefix}}
     \label{PARALLEL_SCAN}
   \end{mdframed}
   \end{figure}
@@ -1087,8 +1087,8 @@ POW(2,n) = (2 << n-1) //where "<<" is the logical left-shift operator
   works better is entirely dependent on the properties of the data and how accurate the predictions are. From experimentation, we found packing at byte level (up to 3 bytes of leading zeros) to be the most 
   efficient scheme. It gives compression ratios approximately 1\% better than the closest bit-level packing scheme. 
   
-  The compression ratios achieved when encoding the difference between successive observations by means of an exclusive or operation are not very high. Depending on the dataset compression ratios of between 
-  92\% and 93\% are observed. This shows that although the compression scheme is rather basic there is some coherence between successive observations. 
+  The compression ratios achieved when encoding the difference between successive observations by means of an exclusive or operation are not very high. An average compression ratio of 
+  91\% is observed. This shows that although the compression scheme is rather basic there is some coherence between successive observations. 
   
   The ratios mentioned above includes storing the following information:
   \begin{itemize}
@@ -1239,7 +1239,7 @@ POW(2,n) = (2 << n-1) //where "<<" is the logical left-shift operator
    \hline
    \rowcolor[gray]{0.80}\multicolumn{4}{|l|}{\textbf{Basic compression and parallelization:}}\\
    \hline
-   Effective compression ratios & N/A & N/A & Depends, attains ratios between 92\% and 93\% \\
+   Effective compression ratios & N/A & N/A & Depends, attains an average ratio of 91\% \\
    \hline
    Element-wise parallelization & N/A & N/A & No \\
    \hline
@@ -1284,8 +1284,8 @@ In order to eliminate the influence of the external environment from testing the
 \end{enumerate}
 \subsection{Algorithm throughput on a CPU architecture}
 The implementation of the block-based parallel difference predictive scheme was executed on one of the AMD Opteron 6274 nodes of the ICTS High 
-Performance Cluster at the University of Cape Town. These nodes have four 16-core processors clocked at 2200 MHz with 128 GiB primary memory, clocked at 1333 MHz. The average algorithm throughput (which excludes any disk I/O) for a file of 
-216~x~4096~x~112~x~2 32-bit floats (756.0 MiB in total, excluding header information) is shown in figure~\ref{ALG_THROUGPUT}.  As mentioned previously the compression ratio varies between 92\%-93\% for most of the files.
+Performance Cluster at the University of Cape Town. These nodes have four 16-core processors clocked at 2200 MHz with 128 GiB primary memory, clocked at 1333 MHz. The average algorithm throughput excluding any disk I/O, for a file of 
+216~x~4096~x~112~x~2 32-bit floats (756.0 MiB in total, excluding header information) is shown in figure~\ref{ALG_THROUGPUT}. The average compression ratio achieved is 91.02\% with a sample standard deviation of 2.01\%.
 \begin{figure}[ht!]
  \begin{mdframed}
  \centering
@@ -1320,29 +1320,32 @@ Performance Cluster at the University of Cape Town. These nodes have four 16-cor
   \end{axis}
     
   \end{tikzpicture}
-  \caption{Algorithm performance using up to four 16-core AMD Opteron 6274 CPUs}
+  \caption[Throughput results on a 64 core AMD Opteron]{Algorithm performance using up to four 16-core AMD Opteron 6274 CPUs}
   \label{ALG_THROUGPUT}
   \end{mdframed}
 \end{figure}
 \subsection{Benchmark against standard compression utilities}
-The implementation was benchmarked against the standard compression utilities GZIP, BZIP2 and ZIP on an 8 core Intel Xeon E5-2650 CPU\footnote{This processor does not have 
-the \texttt{LZCNT} machine instruction and is therefore much slower than the AMD Opteron.} that supports up to 16 threads. 
-Disk I/O (network-based) has been enabled for this run of the block-based parallel difference-predictive-scheme implementation. The performance comparison can be seen
-in figure~\ref{ALG_UTILITY_COMPARISON}. The experiment was run using the same file (including header) used for the throughput experiment. The utilities was using default compression 
-and decompression settings. Using fast settings gives a 59.15\% improvement (39.159s) for GZIP and a 76.36\% improvement (36.386s) for ZIP. BZIP2 does not show an improvement 
-in speed and the decompression times stay roughly the same for all the utilities.  Only around 0.39s was spent on compression and 0.18s on decompression for the predictive scheme, 
-the rest of the time is spent reading from the original HDF5 files, writing a compressed file, reading the compressed file and finally writing a decompressed file.
+The implementation was also benchmarked against the standard compression utilities GZIP, BZIP2 and ZIP on an 8 core Intel Xeon E5-2650 CPU\footnote{This processor does not have 
+the \texttt{LZCNT} machine instruction and is therefore much slower than the AMD Opteron.} that supports up to 16 threads. The processor is clocked at 2000 MHz and has 64 GB
+primary memory clocked at 1600MHz. Disk I/O (network-based) was enabled for this run of the block-based parallel difference-predictive-scheme implementation in order to offer
+a fair comparison. The performance comparison can be seen in figure~\ref{ALG_UTILITY_COMPARISON}. The experiment was run using the same file (including header) used for the throughput experiment. 
+The utilities were executed using default compression and decompression settings. Using fast settings gives a 59.15\% improvement (39.159s) for GZIP and a 76.36\% improvement (36.386s) for ZIP (figure~\ref{SPEED_COMPARISON}). 
+The compression ratio is decreased by nearly 30\% in both instances (figure~\ref{RATIO_COMPARISON}). BZIP2 does not show an improvement in speed and the decompression times stay roughly the same for all the utilities.  
+Only around 0.39s was spent on compression and 0.18s on decompression for the predictive scheme, the rest of the time was spent on disk I/O: reading from the original HDF5 files, writing a compressed file, 
+reading the compressed file and finally writing a decompressed file.
 \begin{figure}[ht!]
  \begin{mdframed}
  \centering
- \begin{subfigure}[b]{0.5\textwidth}
+ \begin{subfigure}[b]{0.8\textwidth}
  \centering
  \begin{tikzpicture}
   \pgfplotstableread{ % Read the data into a table macro
 	Utility		Compression	Decompression
 	GZIP		62.3726666667	22.3985555556
+	GZIP(f)		39.159		n/a
 	BZIP2		95.1997777778	46.8556666667
 	ZIP		64.1722222222	23.6956666667
+	ZIP(f)		36.386		n/a
 	Predictive	15.5852222222	11.4091111111
   }\datatable
 
@@ -1371,18 +1374,18 @@ the rest of the time is spent reading from the original HDF5 files, writing a co
   \begin{subfigure}[b]{0.7\textwidth}
     \centering
     \vspace{20pt}
-    \begin{tabular}{|c|c|c|c|}
+    \begin{tabular}{|c|c|c|c|c|c|}
       \hline
-      GZIP & BZIP2 & ZIP & Predictive \\
+      GZIP & GZIP(f) & BZIP2 & ZIP & ZIP(f) & Predictive \\
       \hline
-      0.52417 & 0.39415 & 0.52545 & 0.933001 \\
+      0.52417 & 0.7470761 & 0.39415 & 0.52545 & 0.7470763 & 0.933001 \\
       \hline
     \end{tabular}
   \caption{Comparison of compression ratios}
   \label{RATIO_COMPARISON}  
   \end{subfigure}
   
-  \caption{Comparison between the predictive scheme and the standard utilities GZIP, BZIP2 and ZIP}
+  \caption[Comparison to standard utilities]{Comparison between the predictive scheme and the standard utilities GZIP, BZIP2 and ZIP}
   \label{ALG_UTILITY_COMPARISON}
   \end{mdframed}
 \end{figure}
@@ -1474,62 +1477,119 @@ file used in the previous experiments, on the same Intel Xeon E5-2650 CPU that w
   \label{RATIO_CONCURRENT_COMPARISON}  
   \end{subfigure}
   
-  \caption{Comparison between Predictive Compressor, RLE and Huffman coding (excluding Disk I/O)}
+  \caption[Comparison between predictive compressor, parallel Huffman and ZLE compressors]{Comparison between Predictive Compressor, ZLE and Huffman coding (excluding Disk I/O)}
   \label{CONCURRENT_WORK}
   \end{mdframed}
 \end{figure}
+\subsection{Algorithm development and improvements}
+As discussed in the implementation section our investigation included several iterations of improvements. Figure~\ref{ALG_DEV_COMPARISON} provides an overview of how
+different approaches performed in relation to the fully optimized compressor and decompressor running on 16 threads on the AMD Opteron processor used in previous experiments.
+All other results are those obtained from running the solution on the same Intel Xeon E5 processor used previously. All these results excludes disk I/O operations. 
+\begin{figure}[ht!]
+ \begin{mdframed}
+ \centering
+ \begin{tikzpicture}
+  \pgfplotstableread{ % Read the data into a table macro
+	Approach				Compression	Decompression
+	{OMP element-parallel}			0.400		0.600		
+	{Posix Blocked}				0.673		1.178
+	{OMP Blocked}				1.98		3.66			
+	{LZCNT Bit-twiddled}			2.97		5.15
+	{GT780 (kernel)} 			13.6		n/a
+	{GT780 (kernel + Sync Pin MemCpy)} 	0.70		n/a
+  }\datatable
+
+  \begin{axis}[
+    ybar,   % Stacked horizontal bars
+    enlargelimits=0.15, 
+    legend style={at={(0.5,-0.40)}, anchor=north,legend columns=-1},
+    ymin=0,         % Start y axis at 0
+    xtick=data,     % Use as many tick labels as x coordinates
+    xticklabels from table={\datatable}{Approach},  % Get the labels from the Threads column of the \datatable
+    x label style={shift={(0pt,-65pt)}},
+    x tick label style={rotate=90,font=\tiny},
+    xlabel=Approach,
+    ylabel=Throughput (GiB/s),
+    nodes near coords,
+    every node near coord/.append style={font=\tiny},
+    bar width=15pt,
+    width=0.8\textwidth,
+    ]
+    \addplot [pattern weight=doublethick,pattern=north west lines,pattern color=blue] table [x expr=\coordindex, y=Compression] {\datatable};    % Plot the "Compression" column against the data index
+    \addplot table [x expr=\coordindex, y=Decompression] {\datatable};    % Plot the "Decompression" column against the data index
+    \legend{Compression , Decompression}
+  \end{axis}  
+  \end{tikzpicture}
+  \caption{Comparison between several iterations of the implementation using 16 cores. The LZCNT optimizations are run on a slower AMD Opteron processor, but still outperforms a faster
+  Intel Xeon E5 processor. For comparison the GPU kernel (with and without memory copy from device to host) is provided as reference.}
+  \label{ALG_DEV_COMPARISON}
+ \end{mdframed}
+\end{figure} 
 \subsection{Discussion}
-The block-based parallel approach achieved roughly a linear scaling (doubling the number of cores doubles the throughput achieved) up to 32-cores for both the compressor and decompressor. 
+The block-based parallel approach achieves roughly a semi-linear scaling (doubling the number of cores almost doubles the throughput achieved) up to 32-cores for both the compressor and decompressor. 
 After that point increasing the number of cores sees deminishing returns due to the overheads of processing smaller blocks in parallel, coupled with limited memory throughput capacity. 
 
-Although the compression and decompression algorithm is very similar in construction, the large difference in throughput between them can be contributed to the computation of a 
-leading zero count per element in the compressor. Even through this leading zero count is computed using a dedicated machine instruction, the decompression step is roughly 
-twice as fast as the compression step. A faster decompression throughput is not surprising and corresponds to results reported for 64-bit double precision compression schemes 
+Although the compression and decompression algorithm is very similar in construction, the large difference in throughput between them can be attributed to the computation of the 
+leading zero count per element in the compressor. Even though this leading zero count is computed using a dedicated machine instruction, the decompression step is roughly 
+twice as fast as the compression step. Thus, faster decompression throughput is not surprising and corresponds to results reported for 64-bit double precision predictive compression schemes 
 \cite{4976448,O'Neil:2011:FDC:1964179.1964189}.
 
 Even when operating using only 16 threads on a processor without support for the leading zero count instruction, the predictive compressor implementation greatly outperforms the 
-standard compression utilities set at their fastest settings. When common disk I/O is subtracted the predictive compressor is roughly 50 times faster than ZIP (the fastest compression 
-utility by comparison). That said, the predictive compressor fails to achieve good compression ratios when compared to both the standard utilities and the parallel Huffman entropy encoder 
-discussed in concurrent research. The lack of compression ratio can be contributed to noise in the data. Although there is some correlation between consecutive observations, the effectiveness 
+standard compression utilities set at their fastest settings. When common disk I/O is subtracted the predictive compressor is roughly 50 times faster than ZIP (comparitively closest
+compression utility in speed). That said, the predictive compressor fails to achieve good compression ratios when compared to both the standard utilities, as well as the parallel Huffman encoder 
+discussed in concurrent research. The relatively poor compression ratio can be attributed to noise in the data. Although there is some correlation between consecutive observations, the effectiveness 
 of the predictor not only relies on consecutive observations having the same magnitude (the 1 byte exponents should be identical for most predictions), but the values should change very 
 slowly in the top-most bits of the 23-bit significant. This limitation is not only apparent when compressing 32-bit single precision floating point values, but applies to 64-bit double 
 precision floating point values as well.
 
 When compared to the Zero-Length Encoder and Huffman coder on the Xeon E5 processor (without a leading zero count machine instruction) the predictive scheme shows roughly a 3.6\% improvement
-in compression ratio compared to ZLE (this may vary by 1\%-2\% depending on the characteristics of the input file), but the ZLE compressor is significantly faster (2.79 times faster than
-the predictive scheme using 16 threads). Additionally the ZLE scheme does not have the memory requirement of storing observations at both time $t-1$ and \textit{t}. Either one
-of these methods will help in reducing network bandwidth requirements. Although huffman encoding does not meet the throughput requirements of an online compression scheme it is worthwhile to note that this technique may be useful in addressing 
-long term storage requirements. The compression ratios produced by this scheme is on par with BZIP2, while being significantly faster (up to 2.9 times faster compressing
+in compression ratio compared to ZLE (this improvement may vary by 3\%-4\% depending on the characteristics of the input file), but the ZLE compressor is significantly faster (2.79 times faster than
+the predictive scheme using 16 threads). Additionally, the ZLE scheme does not have the memory requirement of storing observations at both time $t-1$ and \textit{t}. Either one
+of these methods will help in reducing network bandwidth requirements. Although Huffman encoding does not meet the throughput requirements of an online compression scheme it is worth noting that 
+this technique may be useful in addressing long-term storage requirements. The compression ratios produced by this scheme is on par with BZIP2, while being significantly faster (up to 2.9 times faster compressing
 and 1.43 times faster decompressing).
 
-The difference in throughput of the implementation discussed in this report and those described in past research may be contributed to different processor speeds, memory clock speed
-and memory access patterns. The compressors mentioned in previous research operates on 64-bit double precision floating-point data and predictions are made on neighboring elements. 
+The difference in throughput of the implementation discussed in this report and those described in past research may be attributed to different processor speeds, memory clock speed
+and memory access patterns. The compressors mentioned in previous research operate on 64-bit double precision floating-point data and predictions are made on neighboring elements.
+
+Over the course of our investigation into parallel predictive schemes several interesting observations were made: generally block-based packing approaches significantly outperforms parallel
+packing algorithms that operate at the element level. In the context of High Performance Computing it is better to use OpenMP to parallelize an implementation than process-based
+POSIX threads. This may be the result of the scheduling overheads associated with using process schedulers. Lastly we've considered implementing a packing algorithm using
+GPUs. We found that although such an implementation is possible, the latency associated with memory transfers between the host and device makes this approach infeasible.
+
+In the context of the SKA, the implementation of a block-based parallel predictive scheme to reduce network bandwidth requirements is certainly attainable, provided that 
+enough primary memory is available to store two time slices of observations, as well as the resulting prefix and residual arrays. Although the parallel predictive scheme
+is slower than the parallel ZLE scheme, it obtains significantly higher compression ratios. Long-term storage requirements is, however, better addressed by a Huffman
+encoder.
 \section{Conclusion}
-This investigation set out to evaluate the feasibility of using a predictive compression scheme in order to achieve high throughput compression on the data produced by the MeerKAT radio telescope array, currently under construction
-in the central Karoo region in South Africa. The array will require processing facilities and network infrastructure capable of handling up 1 Petabyte of data every 20 seconds once completed. A fast compression scheme will be able
-to reduce both network bandwidth requirements and ultimately the storage space required to store data over extended periods of time. Some of the key research questions included:
+This investigation set out to evaluate the feasibility of using a predictive compression scheme to achieve high throughput compression on data produced by the MeerKAT radio telescope array, currently under construction
+in the central Karoo region of South Africa. The array will require processing facilities and network infrastructure capable of handling up 1 Petabyte of data every 20 seconds once completed. A fast compression scheme will be able
+to reduce both network bandwidth requirements, and ultimately, the storage space required to store data over extended periods of time. Some of the key research questions included:
 \begin{enumerate}
- \item Determining whether a predictive compression scheme achieved comparable results to that of standard compression utilities.
- \item Determining whether such a predictive scheme could operate at infiniband network speeds of up to 5 GiB/s.
- \item Whether, using different predictors to trade throughput for improved compression ratios and vice-versa, were feasible.
+ \item Determining whether a predictive compression scheme achieves comparable results to that of standard compression utilities: we found that
+ this goal was not attainable, but that the predictive compressor only produced compression ratios of 9\% on average, in contrast to compression ratios of 39\%.
+ \item Determining whether such a predictive scheme can operate at Infiniband network speeds of up to 5 GiB/s: the predictive compressor successfully met this target,
+ while the decompressor well-exceeded these expectations.
+ \item Whether, using different predictors to trade throughput for improved compression ratios and vice-versa, is feasible: although several simple approaches
+ were investigated, none of them had the desired outcome. This question remains open, as using dictionary-based prediction may still yield the desired tradeoff. 
 \end{enumerate}
 Although several parallel implementations were tested it was found that a block-based parallel approach achieved significantly better throughput rates (up to, and exceeding 5 GiB/s, using 32 cores) compared to an 
-element-wise parallel approach in which the packing scheme is centered around the computation of a parallel prefix sum. This throughput was found to scale roughly linearly up to 32 CPU cores. Furthermore, it was 
-found that employing a vectorized instruction set to enhance the performance of the block-based parallel approach proved infeasible. Additionally merging the two approaches by splitting incoming data into blocks 
+element-wise parallel approach in which the packing scheme is centered around the computation of a parallel prefix sum. This throughput was found to scale roughly linearly up to 32 CPU cores. Furthermore, employing 
+a vectorized instruction set to enhance the performance of the block-based parallel approach proved infeasible. Additionally, merging the two approaches by splitting incoming data into blocks 
 and processing those blocks in parallel on a GPU as a post-processing operation achieved high throughput rates of up to 13.6 GiB/s on a GT780. However, since such a post-processing operation should take the 
-latencies associated with copying memory back to the host into account, GPU-based processing was found to be ineffective if these latencies cannot be mitigated through asynchronous disk operations.
+latencies associated with copying memory back to the host into account, GPU-based processing is ineffective if these latencies cannot be mitigated through asynchronous disk operations.
 
-After investigating improvements in throughput the investigation shifted its focus on improving the average compression ratio achieved by taking the difference between successive samples. Such a basic difference
-scheme takes observations at time $t-1$ and exclusive ors them with observations at time \textit{t} (it was found that using the exclusive or operator instead of normal integer subtraction was both faster and improved the average
-compression ratio). The scheme failed to achieve similar compression ratios compared to the standard compression utilities GZIP, BZIP2 and ZIP, and only achieved savings of between 7\% and 8\% in final file size.
-However, the predictive compression scheme is 20.801 seconds faster than the fastest compression utility (ZIP), when operating at its maximum speed setting. When the common disk I/O latencies are subtracted from these 
+After investigating improvements in throughput focus shifted to improving the average compression ratio achieved, by taking the difference between successive samples. Such a basic difference
+scheme takes observations at time $t-1$ and exclusive ors them with observations at time \textit{t}. It was found that using the exclusive or operator instead of normal integer subtraction was both faster and improved the average
+compression ratio. The scheme, however, failed to achieve similar compression ratios compared to the standard compression utilities GZIP, BZIP2 and ZIP, and only achieved savings of, on average, 9\% in final file size.
+However, the predictive compression scheme is 20.801 seconds faster than the fastest compression utility (ZIP), when the latter operates at its maximum speed setting. When the common disk I/O latencies are subtracted from these 
 timings the solution is roughly 50 times faster than ZIP on a 16-thread implementation (without processor-based leading zero count support).
 
-Using alternative predictors (employing only integer arithmetic operations) proved unsuccessful. These alternative predictors included basing each prediction on a mean, a median and polynomial extrapolation (using both a 
-parallelogram and Lagrange predictor). Only a median-based approach was found to give slightly better results (roughly 1\%) using a small number of previous observations. Even though a pivoting algorithm is employed to 
+Using alternative predictors employing only integer arithmetic operations proved unsuccessful. These alternative predictors included basing each prediction on a mean, a median and polynomial extrapolation using both a 
+parallelogram and Lagrange predictor. Only a median-based approach was found to give slightly better results (roughly 1\%) using a small number of previous observations. However, even though a pivoting algorithm is employed to 
 select the median for each prediction, the implementation is too slow to be considered a viable alternative to the simple difference-based predictor.
 
-Both a predictive or Zero-Length Encoding scheme therefore proves to be a viable solutions for future implementation as part of the network stack employed by the MeerKAT and ultimately the SKA. It remains to be investigated whether a predictive 
+Both predictive or Zero-Length Encoding schemes therefore prove to be viable solutions for future implementation as part of the network stack employed by MeerKAT and ultimately the SKA. It remains to be investigated whether a predictive 
 compression scheme, based on the use of lookup tables gives better results, although this may have considerable memory requirements depending on block size (see \cite{1607248,4589203,4976448}). Using a Zero-Length Encoder on the residual
 stream should also be investigated as this may result in a slight improvement in compression ratio. The predictive scheme clearly outperforms regular compression utilities, as well as a Huffman entropy encoder in terms of throughput, 
 but sacrifices a considerable amount of the possible compression ratio in doing so. An entropy encoder such as Huffman or a parallelization of a Lempel-Ziv scheme, as discussed by Klein et al. \cite{klein2005parallel}, may be better tailored 
