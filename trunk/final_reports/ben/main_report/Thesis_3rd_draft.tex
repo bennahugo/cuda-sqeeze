@@ -48,6 +48,12 @@
 \usepackage{pgfplots, pgfplotstable}
 \usepackage{float}
 \usepackage{multirow}
+\usepackage{listings}
+\lstset{
+  language={[Sharp]C},
+  basicstyle=\footnotesize
+}
+\usepackage{colortbl}
 \usepackage[nonumberlist,toc]{glossaries}
 \usepackage[nottoc,numbib]{tocbibind}
 \usetikzlibrary{patterns}
@@ -526,7 +532,7 @@ interchange formats (32-bit, 64-bit and 128-bit). See figures~\ref{IEEE_FLOAT}~\
 \end{figure}
 The primary scheme proposed in this paper takes its inspiration from the work of O'Neil et al. \cite{O'Neil:2011:FDC:1964179.1964189}, but will operate on 32-bit 
 IEEE 754 \textit{single} precision floating-point values (this is due to the fact that the correlation step in the MeerKAT pipeline transforms the data into 32-bit values). 
-The uncompressed data itself is also structured slightly differently to the model used by O'Neil et al and Burtscher et al. Instead of compressing each neighboring value (or 
+The uncompressed data itself is also structured slightly differently to the model used by O'Neil and Burtscher et al. Instead of compressing each neighboring value (or 
 block of values), the proposed compressor will operate over consecutive time slices. As figure~\ref{MeerKAT_PIPELINE} shows the data is distributed in time, frequency and correlated pairs. 
 The predictor is based on frequency (per correlation), since there should be some correlation between observations on a specific frequency. If the data is very noisy, little to no 
 compression will be achieved. 
@@ -698,10 +704,14 @@ approaches taken in previous research, specifically that of Klein, Burtscher \& 
   \end{verbatim}
  \end{center}
 
- This scan operation can be computed in parallel as suggested by Blelloch \cite{blelloch1990prefix}. This parallel algorithm will be discussed in greater detail in the 
- implementation section. Additionally a work-efficient CUDA version of the algorithm is discussed in GPU Gems 3 \cite{harris2007parallel}. In this version the algorithm is 
- optimized to avoid \textit{bank conflicts} (see the section on GPU architecture) and has been shown to be up to 6 times faster than a sequential CPU implementation for large 
- arrays.
+ This scan operation can be computed in parallel as suggested by Ladner, Cole and Blelloch et al. \cite{ladner1980parallel,cole1989faster,blelloch1990prefix}.
+ Additionally a work-efficient CUDA version of the algorithm is discussed in GPU Gems 3 \cite{harris2007parallel}, based on Blelloch's approach. In this version the algorithm is optimized 
+ to avoid \textit{bank conflicts} (see the section on GPU architecture) and has been shown to be up to 6 times faster than a sequential CPU implementation for large arrays.
+ 
+ Ladner et al. suggests an algorithm that has a time complexity of $O(\log{n}/\log{\log{n}})$ to compute the prefix sum over $n$ elements, but requires $n\log\log{n}/\log{n}$ processors. 
+ Cole et al. suggests an improvement to this approach, achieving a time complexity of $O(\log{n}/\log_2{n})$, but imposes the restriction that the $n$ elements being processed are each $O(\log{n})$ bits in length.
+ Blelloch's approach has a complexity of $O(n/p + \log_2{p})$, where \textit{p} is the number of processors in a system, but only requires the length of the input array to be a power of 
+ 2, and is therefore more flexible than the other approaches. Blelloch's parallel algorithm will be described in the implementation section.
  
  After the indices have been accumulated using the prefix sum algorithm it is easy to see how different threads can pack residuals at the correct positions. Both a bit and byte
  packing scheme will, however, require \textit{atomic} operations to ensure against the \textit{race condition} that arises when multiple threads write to the same memory 
@@ -791,6 +801,7 @@ This report will focus on the following analysis:
  packing algorithm is discussed, along with technical details on alternative predictive schemes, then details on achieving parallelization is provided and finally the tradeoffs 
  of using each of the alternative predictive schemes and parallelization are discussed. 
  \subsection{Basic algorithm}
+ \label{sec:basicScheme}
   In order to give a more detailed description to the algorithm illustrated in figure~\ref{PACKING_ALGORITHM} in the previous section, the pseudo code for the compaction
   process is given in figure~\ref{BASIC_PSEUDO}. After a linear predictive step is performed and the predicted value exclusive ored with the actual value the leading zeros are 
   counted. The number of bytes worth of leading zeros ($\frac{\text{lzc}}{8}$) is computed and stored as fixed-length prefixes, each three bits long. Whenever division is performed it
@@ -802,43 +813,43 @@ This report will focus on the following analysis:
   iteration have to be tracked. 
 \begin{figure}[ht!]
 \begin{mdframed}
-\begin{verbatim}
+\begin{lstlisting}
 SUBROUTINE Compact(FLOAT[] data, UNSIGNED INT32 numElements, 
 		    out UNSIGNED INT32[] residuals, 
 		    out UNSIGNED INT32[] prefixes)
-	 //ASSUMPTION: 3 BITS NEEDED TO STORE UP TO 4 BYTES OF LEADING ZEROS
-	 //ASSUMPTION: COMPACTION IS DONE INTO 32 BIT INTEGER ARRAY
+  //ASSUMPTION: 3 BITS NEEDED TO STORE UP TO 4 BYTES OF LEADING ZEROS
+  //ASSUMPTION: COMPACTION IS DONE INTO 32 BIT INTEGER ARRAY
 BEGIN
-	 UNSIGNED INT32 bitPosInResidualArray = 0
-	 FOR index = 0 TO numElements - 1 DO
-		  /*
-		  This prediction step requires up to "n" arrays of the 
-		  same size of "data".
-		  */
-		  UNSIGNED INT32 predictedValue = linearPredict(index) 
-		  UNSIGNED INT32 difference = predictedValue XOR data[index]
-		  UNSIGNED INT8 leadingZeroCount = clz(difference)
-		  //save the prefix:
-		  prefixes[index*3 INT_DIV 32] = SHIFT (leadingZeroCount INT_DIV 8) \\
-		    to the index*3 MODULO 32 th bit
-		  IF there are remaining bits that couldn't be fitted THEN
-		    prefixes[index*3 INT_DIV 32 + 1] = SHIFT remaining bits that \\ 
-		      couldn't be fitted in the previous operation to the first \\
-		      bit of the next byte
-		  END IF
-		  //save the residual:
-		  residuals[bitPosInResidualArray INT_DIV 32] = SHIFT difference to \\
-		    the bitPosInResidualArray MODULO 32 th bit
-		  IF there are remaining bits that couldn't be fitted THEN
-		    residuals[bitPosInResidualArray INT_DIV 32 + 1] = SHIFT remaining \\
-		      bits that couldn't be fitted in the previous operation to the \\
-		      first bit of the next byte
-		  END IF  
-		  //increment position in the residual array
-		  bitPosInResidualArray += leadingZeroCount
-	 END FOR
+  UNSIGNED INT32 bitPosInResidualArray = 0
+  FOR index = 0 TO numElements - 1 DO
+    /*
+    This prediction step requires up to "n" arrays of the 
+    same size of "data".
+    */
+    UNSIGNED INT32 predictedValue = linearPredict(index) 
+    UNSIGNED INT32 difference = predictedValue XOR data[index]
+    UNSIGNED INT8 leadingZeroCount = clz(difference)
+    //save the prefix:
+    prefixes[index*3 INT_DIV 32] = SHIFT (leadingZeroCount INT_DIV 8) \\
+	to the index*3 MODULO 32 th bit
+    IF there are remaining bits that couldn't be fitted THEN
+	prefixes[index*3 INT_DIV 32 + 1] = SHIFT remaining bits that \\ 
+	couldn't be fitted in the previous operation to the first \\
+	bit of the next byte
+    END IF
+    //save the residual:
+    residuals[bitPosInResidualArray INT_DIV 32] = SHIFT difference to \\
+	the bitPosInResidualArray MODULO 32 th bit
+    IF there are remaining bits that couldn't be fitted THEN
+	residuals[bitPosInResidualArray INT_DIV 32 + 1] = SHIFT remaining \\
+	  bits that couldn't be fitted in the previous operation to the \\
+	  first bit of the next byte
+    END IF  
+    //increment position in the residual array
+    bitPosInResidualArray += leadingZeroCount
+  END FOR
 END SUBROUTINE 
-\end{verbatim}
+\end{lstlisting}
 \caption[Compaction algorithm pseudo code]{Basic pseudo code for compacting residuals at byte-level and prefixes at bit-level in serial}
 \label{BASIC_PSEUDO}
 \end{mdframed}
@@ -883,7 +894,7 @@ the end of the routine, where the predicted value is exclusive ored with the res
   method indicated in figure~\ref{KTH_LARGEST} that selects the \textit{k-th largest value} \cite{wirth76}.
 \begin{figure}[ht!]
 \begin{mdframed}
-\begin{verbatim}
+\begin{lstlisting}
 FUNCTION INT32 pivotMedian(INT32[] data, int n) {
     INT32 i, j, l, m, k = n/2 //k is the kth largest element
     INT32 x, s
@@ -914,7 +925,7 @@ FUNCTION INT32 pivotMedian(INT32[] data, int n) {
     END WHILE
     RETURN data[k] //mid-point in the array
 }
-  \end{verbatim}
+  \end{lstlisting}
 \caption[Pseudo code for selecting the $k^{th}$ largest element of a sequence.]{Pseudo code for selecting the $k^{th}$ largest element of a sequence.}
 \label{KTH_LARGEST}
 \end{mdframed}
@@ -940,39 +951,48 @@ FUNCTION INT32 pivotMedian(INT32[] data, int n) {
   \end{equation}
 
  \subsection{Algorithm parallelization and its implications for GPGPU architectures}
-  As pointed out in the design section the parallelization of the basic algorithm discussed earlier can be done by dividing incoming data up into fixed size chunks after which 
-  multiple blocks can be packed in parallel. This approach is detrimental to the compression ratio, since the size of each block's residual stream has to be stored 
-  (this effect will be worse if there are a large number of blocks). The approach is relatively straightforward to implement and does not modify the structure 
+  As pointed out in the design section, the parallelization of the basic algorithm can be done by dividing incoming data up into fixed size chunks after which 
+  multiple blocks can be packed in parallel. However, this approach is detrimental to the compression ratio, since the size of each block's residual stream has to be stored.
+  This effect will be worse if there are a large number of blocks. On the other hand the approach is relatively straightforward to implement and does not modify the structure 
   of the basic algorithm at all.
   
-  The alternative approach is to convert the basic algorithm into an element-wise parallel algorithm. As mentioned in the design chapter this requires a prefix sum to be computed 
-  in order to obtain the starting position of each residual in the residual stream. The prefix scan is a trivial case of a dynamic programming problem. Blelloch 
-  suggests a novel approach \cite{blelloch1990prefix} to compute this prefix scan in parallel. The algorithm requires the size of the input array to be a power of 2. If 
-  this is not the case padding has to be added to the input array. There are three primary steps to the algorithm, with a synchronization point between each. First an 
-  \textit{up-sweep} operation is completed, then the last element is set to 0, and finally a \textit{down-sweep} operation is completed. Both the \textit{up-sweep} and 
-  \textit{down-sweep} operations can be respresented by a \textit{complete} binary tree of $\log_2n$ levels (meaning that each level is fully filled). Each level of the 
-  tree can be done in parallel and therefore the algorithm has a complexity of $O(n/p + \log_2{p})$ where \textit{p} is the number of processors in a system. The 
-  \textit{up-sweep} and \textit{down-sweep} operations (using integer addition) over a short sequence of integers is shown in figure~\ref{PARALLEL_SCAN}.
+  The alternative is to convert the basic algorithm into an element-wise parallel algorithm. As mentioned in the design chapter this requires computing a prefix sum  
+  in order to obtain the starting position of each residual in the residual stream. The serial prefix scan is a trivial case of a dynamic programming problem, but a
+  parallelization approach is suggested by Blelloch \cite{blelloch1990prefix}. Blelloch's approach has also been employed for GPU-based prefix sum calculation \cite{harris2007parallel}. 
+  Blelloch's parallel algorithm requires the length of the input array be a power of 2, but if this is not the case the input array is simply padded. 
+  
+  There are three primary steps to the algorithm, with a synchronization point between each. First an \textit{up-sweep} operation is completed, then the last element is set to 0, 
+  and finally a \textit{down-sweep} operation is carried out. Both the \textit{up-sweep} and \textit{down-sweep} operations can be represented as a \textit{complete} binary tree 
+  of $\lceil\log_2n\rceil$ fully-filled levels. The \textit{up-sweep} and \textit{down-sweep} operations (using integer addition) over a short sequence of integers are shown in 
+  figure~\ref{PARALLEL_SCAN}. 
+  
+  The up-sweep operation divides the array into pairs of elements and assigns each pair to a processor. It computes partial sums for each pair and 
+  recursively reduces pairs of partial sums. Upon completion of the up-sweep operation the array consists of many partial sums, which the down-sweep step then combine 
+  into a complete prefix sum, by recursively swapping and accumulating from the root down. It has been shown \cite{blelloch1990prefix} that after completing a down-sweep, each node of
+  the tree contains the sum of all preceding leaf nodes.
   \begin{figure}[h!]
   \begin{mdframed}
     \centering
     \begin{subfigure}[b]{0.8\textwidth}
-      \includegraphics[width=0.9\textwidth]{scanOperationOnArray.png}
+      \includegraphics[width=\textwidth]{scanOperationOnArray.png}
       \caption{Steps of the scan operation being executed in order on the sequence [3 1 7 0 4 1 6 3]}
       \label{UPSWEEP_DOWNSWEEP}
     \end{subfigure}
     \begin{subfigure}[b]{\textwidth}
       \centering
-      \includegraphics[width=0.7\textwidth]{upsweep_downsweep.png}
+      \includegraphics[width=0.76\textwidth]{upsweep.png}
       \begin{minipage}{\textwidth}
-        \begin{verbatim}
-//UP-SWEEP:
+        \begin{lstlisting}
   FOR d from 0 TO log2(length(A))-1 DO
     FOR i from 0 TO length(A) - 1 IN STEPS OF POW(2,d+1) IN PARALLLEL DO
       A[i + pow(2,d+1) - 1] += A[i + pow(2,d) - 1]
     END FOR
   END FOR
-//DOWN-SWEEP:
+	\end{lstlisting}
+	\end{minipage}
+	\includegraphics[width=0.76\textwidth]{downsweep.png}
+	\begin{minipage}{\textwidth}
+	\begin{lstlisting}
   A[length(A)-1] = 0
   FOR d from log2(length(A))-1 DOWNTO 0 DO
     FOR i from 0 TO length(A) - 1 IN STEPS OF POW(2,d+1) IN PARALLLEL DO
@@ -984,8 +1004,9 @@ FUNCTION INT32 pivotMedian(INT32[] data, int n) {
 //EFFICIENCY NOTE: Powers of 2 are efficiently implemented as:
 POW(2,n) = (2 << n-1) //where "<<" is the logical left-shift operator
 //and n is strictly greater than 0
-        \end{verbatim}       
+      \end{lstlisting}
       \end{minipage}
+      
       \caption{Tree representations with respective algorithms to compute each level in parallel (for both up- and down-sweeps)}
       \label{PARALLEL_SCAN_SUB_ALGORITHMS}
     \end{subfigure}
@@ -994,157 +1015,184 @@ POW(2,n) = (2 << n-1) //where "<<" is the logical left-shift operator
   \end{mdframed}
   \end{figure}
  
- The entire algorithm can now be turned into three steps that can each be computed in parallel:
+ The entire packing algorithm can now be converted to three steps, that can each be computed in parallel:
  \begin{enumerate}
   \item Perform a leading zero count and store the prefixes as discussed in the basic pseudo code, but store the leading zero count to an array, A. The prefixes are fixed in length, so placing them
   into the prefix stream in parallel does not pose a problem.
   \item Compute $B = scan(A)$ in parallel
-  \item Each element, $B[i]$ is now the stating position (in bits) of the residual of element $D[i]$. This means the variable-length residuals can be placed into the residual stream in parallel.
+  \item Each element, $B[i]$ is now the starting position (in bits) of the residual of element $D[i]$. This means the variable-length residuals can be placed into the residual stream in parallel.
  \end{enumerate}
  
  The algorithm shown in figure~\ref{PARALLEL_SCAN} assumes execution takes place in a \textit{shared-memory} architecture, where each processor has access to the memory of the other processors and that synchronization
  can take place across multiple processors. In CUDA the last condition is not easily met: the global synchronization required by the parallel prefix sum scan can only be achieved through a global memory barrier. 
  However, this will cause a high number of context switches for every SM on the GPU (especially if the number of blocks are much larger than the number of available SMs). The alternative approach is to let each SM
- compute the prefix sum of a sub-sequence of numbers and store its last value of the accumulation as $S_{i}$. Each block total, $S_{i}$ is then distributed to the $i+1\dots n$ blocks of sub-sequence prefix sums in 
+ compute the prefix sum of a sub-sequence of numbers and store its last value of the accumulation as $S_{i}$. Each block total, $S_{i}$, is then distributed to the $i+1\dots n$ blocks of sub-sequence prefix sums in 
  parallel \cite{harris2007parallel}.
  
- The last, distribution, step adds additional overhead to the parallel algorithm. Instead, the dataset can be split into blocks, each a multiple of the warp size in length. This means that the data can be
- spread throughout the entire GPU to achieve a high \textit{occupancy} of the available SMs. Each SM then packs its block in parallel by computing a short prefix sum only for leading zero counts of the block 
- it is processing. 
+ This distribution step can be avoided by splitting the dataset into blocks, where each block is a multiple of the warp size in length. This effectively means that the data can be
+ spread throughout the entire GPU in order to achieve a high \textit{occupancy} of the available SMs, and each SM can then pack its block in parallel, by computing a short prefix sum only for leading zero counts 
+ of the block it is processing. 
  
  If this approach is taken in conjunction with the modifications described in GPU Gems 3 \cite{harris2007parallel}, a fast, work-efficient, parallel prefix sum scan can be implemented, that both minimizes overheads, and 
- includes optimizations through the use of shared memory on the GPU. These modifications includes adding padding  to each shared memory index according to the \textit{degree} of the bank conflict at the associated 
+ includes optimizations through the use of shared memory on the GPU. These modifications include adding padding  to each shared memory index according to the \textit{degree} of the bank conflict at the associated 
  depth of the indexing tree shown in figure~\ref{PARALLEL_SCAN_SUB_ALGORITHMS}, and letting each thread compute two values at a time. By doubling the strides between each successive level in the tree, the modifications 
- ensures that double the number of threads can be executed on that level without bank conflicts. 
+ ensures that double the number of threads can be executed on that level without bank conflicts. See figure~\ref{BANK_CONFLICTS} for an illustration of this solution.
+ \begin{figure}[h!]
+  \begin{mdframed}
+    \centering
+    \includegraphics[width=0.9\textwidth]{avoidBankConflicts.png}
+    \caption[Padding shared memory array indexing to avoid bank conflicts]{Applying padding to avoid a high degree of bank conflicts during the scan operation. The simple
+    addressing scheme at the top results in bank conflicts, while the illustration at the bottom shows how no bank conflicts are encountered when shared memory addressing
+    is padded \cite{harris2007parallel}.}
+    \label{BANK_CONFLICTS}
+  \end{mdframed}
+  \end{figure} 
  
  The next complication for an element-wise packing implementation is the matter of atomic operations. This issue arises due to sharing an atomic memory location between multiple threads that require simultaneous access
  to that location. The following example illustrates a race condition between 2 threads, packing residuals into a 32-bit residual array: thread 0 tries to pack 00000000 00000000 00011101 01100111 into residual store 
  $R[0]$ while thread 2 tries to split 00000000 01001010 01110001 01111111 into the same $R[0]$ and its successor, $R[1]$. Since $R[0]$ can only be written to by one thread at a time, either thread 1 will overwrite what has
- been written by thread 0, or the converse. This clearly causes irreversible loss of data. One way to avoid this is to lock the memory location for reading and writing while another thread is reading and writing to the 
- location. This potentially serializes the memory access.
+ been written by thread 0, or the converse. This clearly causes irreversible loss of data. One way to avoid this is to lock the memory location for reading and writing, while another thread is reading and writing to the 
+ location. This potentially serializes the memory access and can destroy parallelism.
  
- One way to avoid two atomic operations per residual is to use an array of bytes as the atomic units of the residual stream. However, since each element is 4 bytes in length, there may be anything from 0 up to 4 global memory
- write operations, along with the necessary control logic that will result in \textit{branch-diversion}. In the context of general GPU architecture this has potentially devastating consequences for simultaneous execution. As mentioned
- earlier each SM consists of many arithmetic units that are executed in atomic groups (each performing the same basic instruction). When some threads are required to perform one task while the others have to perform another the
+ One way to avoid two atomic operations per residual is to use an array of bytes as the atomic unit of the residual stream. However, since each element is 4 bytes in length, this may involve anything from 0 up to 4 global memory
+ write operations, along with the necessary control logic, and this will result in \textit{branch-divergence}. In the context of general GPU architecture this has potentially devastating consequences for simultaneous execution. As mentioned
+ earlier each SM consists of many arithmetic units that are executed in atomic groups (each performing the same basic instruction). When some threads are required to perform one task, while others have to perform another, the
  SM is forced to let all the threads perform both tasks in sequence, each time discarding values from the threads that are not supposed to execute through a masking operation. This means that double the number of clock cycles are needed
- to perform a branch. This problem becomes worse if a 3- or 4-way branch is necessary. This branch-diversion, coupled with multiple costly memory accesses may prove worse than using an atomic operation. 
+ to perform a branch. This problem becomes worse if a 3- or 4-way branch is necessary. This branch-divergence, coupled with multiple costly memory accesses may prove worse than using an atomic operation. 
  
- Furthermore, it is possible to remove the atomic operations from the prefix compaction operation by storing only prefixes with a length that divides the length of the closest atomic unit (byte, short or integer). If the compacting 
+ Furthermore, it is possible to remove the atomic operations from the prefix compaction operation by storing only prefixes with a length that divides into the length of the closest atomic unit (byte, short or integer). If the compacting 
  operation is constrained to packing up to 3 leading zero bytes of residuals, only 2 bits are needed to store this count per element. Every $16^{th}$ thread then has to store 16 leading zero counts simultaneously 
- into a single 32-bit prefix store. In order to avoid multiple write operations to global memory the 16 prefixes can be stored into a register before a call to global memory is made.
+ into a single 32-bit prefix store. In order to avoid multiple write operations to global memory, the 16 prefixes can be stored in a register before a call to global memory is made. This is accomplished through
+ shifting and bit-wise oring each prefix into a 32-bit integer variable before writing that to global memory. The following provide an example of this:
+ \begin{verbatim}
+  C = [2,1,3,1,...] //10,01,11,01 in binary
+  UINT32 sixteenPrefixes = C[0]|(C[1] << 2)|(C[2] << 4)|(C[3] << 6)|...
+  This shifting and oring will result in the following computation:
+                    (MSB)                         (LSB)    
+  sixteenPrefixes = 00000000 00000000 00000000 00000000
+                  | 00000000 00000000 00000000 00000010
+                  | 00000000 00000000 00000000 00000100
+                  | 00000000 00000000 00000000 00110000
+                  | 00000000 00000000 00000000 01000000
+                  |                ...
+  At the end of the operation sixteenPrefixes will have the following value,
+  before being written to global address space:
+  ........ ........ ........ 01110110
+ \end{verbatim}
+
  \subsection{Feasibility analysis}
   \subsubsection{Compression feasibility}
   As mentioned previously the packing of residuals can be done at either bit or byte level. When packing at a bit level $\lfloor\log_2n\rfloor + 1$ bits are needed to represent
-  \textit{n} leading zeros. When packing up to 31 leading zeros 5 bits are needed whereas 3 bytes of leading zeros can be packed using only 2 bits for each prefix as explained earlier. Which scheme
-  works better is entirely dependent on the properties of the data and how accurate the predictions are. From experimentation, packing at byte level (up to 3 bytes of leading zeros) is the most 
-  efficient scheme. It gives compression ratios approximately 1\% better than the closest bit-level packing scheme. The compression ratios achieved when encoding the
-  difference between successive observations (by means of an exclusive or operation) are not very high. Depending on the dataset compression ratios of between 92\% and 93\% are observed. This shows that 
-  although the compression scheme is rather basic there is some coherence between successive observations. 
+  \textit{n} leading zeros. When packing up to 31 leading zeros 5 bits are needed, whereas 3 bytes of leading zeros can be packed using only 2 bits for each prefix, as explained earlier. Which scheme
+  works better is entirely dependent on the properties of the data and how accurate the predictions are. From experimentation, we found packing at byte level (up to 3 bytes of leading zeros) to be the most 
+  efficient scheme. It gives compression ratios approximately 1\% better than the closest bit-level packing scheme. 
+  
+  The compression ratios achieved when encoding the difference between successive observations by means of an exclusive or operation are not very high. Depending on the dataset compression ratios of between 
+  92\% and 93\% are observed. This shows that although the compression scheme is rather basic there is some coherence between successive observations. 
   
   The ratios mentioned above includes storing the following information:
   \begin{itemize}
-   \item All observations at time, $t=0$ are stored in their uncompressed form, along with the total number of values per time step. Both the compressor and decompressor are 
-   initialized with this size and the values at this initial time step. When the number of observations changes (say due to a larger number of frequencies being sampled, both the
+   \item All observations at time $t=0$ are stored in their uncompressed form, along with the total number of values per time step. Both the compressor and decompressor are 
+   initialized with this size and the values at this initial time step. When the number of observations changes (say due to a larger number of frequencies being sampled), both the
    compressor and decompressor have to be re-initialized.
-   \item For the block-based approach the number of blocks must be stored if this value is not fixed by the implementation of the scheme.
-   \item Since the residual arrays varies in length, the length of the residual array (per block if necessary) is stored before storing each block of residuals.
-   \item The prefix array is stored without a length field, due to the fact that the prefix array size can be computed from the number of elements (per block if necessary).
+   \item For the block-based approach the number of blocks must be stored if this value is not fixed.
+   \item Since the residual arrays vary in length, the length of the residual array is stored before storing each block of residuals, per block if necessary.
+   \item The prefix array is stored without a length field, due to the fact that the prefix array size can be computed from the number of elements.
   \end{itemize}
-  The ratios, however, do not reflect additional header meta information (as found in the sample h5 files) and are solely based on the number of 32-bit floating-point values each
-  h5 file contains. 
+  The ratios, however, do not reflect additional header meta-information as found in the sample HDF5 files, and are solely based on the number of 32-bit floating-point values each
+  HDF5 file contains. 
   \subsubsection{Parallelization approaches and optimizations on the CPU}
-  The initial implementation considered parallelizing the algorithm at element level using prefix sums as described in the previous section. Even when using up to 16 CPU threads through OpenMP the overheads of computing a prefix 
-  sum over all the elements turned out to be too costly on a CPU-based architecture. Although the implementation scaled roughly linear in throughput per core added it only managed to achieve compression throughputs of around 
-  400 MiB/s and decompression throughputs of around 600 MiB/s on a 16 core test. This is a lot slower than the required throughput of 5 GiB/s. It is duly noted that the throughput rates achieved in the element-wise parallelization 
-  includes several optimizations such as the removal of branches (for example branchless implementations of minimums and maximums are employed \footnote{Sean E. Anderson 
-  provides several bittwiddled implementations of minimums, maximums and binary logarithms on his website: \url{graphics.stanford.edu/~seander/bithacks.html}. Last accessed: 3 
-  October 2013} for the logical bit shifting operations shown in the pseudo code), as well as the removal of some of the atomic operations as discussed in the previous sections.
+  For the initial implementation we considered parallelizing the algorithm at the element level, using prefix sums as described in the previous section. Unfortunately, even when using up to 16 CPU 
+  threads through OpenMP the overheads of computing a prefix sum over all the elements turned out to be too costly on a CPU-based architecture. Although the implementation scale 
+  roughly linear in throughput per core, it only manages to achieve compression throughputs of around 400 MiB/s and decompression throughputs of around 600 MiB/s on a 16 core test. This 
+  is significantly slower than the required throughput of 5 GiB/s. It is duly noted that the throughput rates achieved in the element-wise parallelization 
+  include several optimizations such as the removal of branches (for example branchless implementations of minimums and maximums are employed \footnote{Sean E. Anderson 
+  provides several bit-twiddled implementations of minimums, maximums and binary logarithms on his website: \url{graphics.stanford.edu/~seander/bithacks.html}. Last accessed: 3 
+  October 2013} for the logical bit shifting operations shown in the pseudo code), as well as the removal of some of the atomic operations, as discussed in the previous sections.
   
   The failure of this approach in a CPU environment, however, does not necessarily preclude a similar approach being taken on a GPU. It has been shown \cite{harris2007parallel} that a 
   prefix sum can be computed up to six times faster on a GPU for large arrays of up to 16.7 million elements. This result, coupled with the fact that elements can be packed in a massively
-  parallel environment is reason enough to investigate a CUDA implementation (more details on this can be found later in this chapter).
+  parallel environment, is reason enough to investigate a CUDA implementation. More details on this can be found later in this chapter.
   
   The alternative approach to this element-wise parallel scheme, is to separate the data into blocks. There is one downside to this approach: it will degrade the compression
   ratio by a small amount depending on the number of blocks chosen (since the length of the residual array has to be stored). This approach proved more feasible than the 
-  element-wise parallel packing. Using pthreads up to 0.673 GiB/s was achieved for the compression scheme and 1.178 GiB/s for the decompressor (using 16 cores). After replacing
-  the p-threaded model with OpenMP a major breakthrough was made: the compressor achieved rates up to 1.98 GiB/s and the decompressor up to 3.66 GiB/s using 16 cores. Further 
+  element-wise parallel packing: the compressor achieves rates up to 1.98 GiB/s and the decompressor up to 3.66 GiB/s using 16 cores. Further 
   optimizations included using a leading zero count assembler instruction \footnote{\texttt{LZCNT rO,rI} is a machine instruction found on most AMD processors (since the 
   introduction of their XOP vector instruction set), as well as newer Intel processors. Nvidia GPUs have similar support for leading zero counts.} instead of loops to obtain 
   the count. This optimization increases the throughput by up to 200 MiB/s on a quad-core processor. When the implementation is run for large files on a 32 core AMD Opteron platform
   the desired throughput of 5 GiB/s is achieved. A detailed breakdown is given in the results section.
   \subsubsection{Alternative prediction schemes}
-  The basic difference scheme discussed earlier will not work well in the case where the sign bit of 2 consecutive observations differs (as previously mentioned the sign bit is the most significant bit of an IEEE 754 
+  The basic difference scheme discussed in section~\ref{sec:basicScheme} will not work well in the case where the sign bit of 2 consecutive observations differs (as previously mentioned the sign bit is the most significant bit of an IEEE 754 
   floating point representation, implying that there will be no leading zeros to encode). A solution to this is to dedicate an extra bit per prefix in order to store the sign value. From experimentation it was determined that
   this trade-off between storing an extra bit for every prefix and the number of signed differences is not worth encoding: a saving of less than 0.01\% is made for a number of the sample datasets. 
   
-  The next simple modification to the scheme is to test whether using normal integer subtraction fairs better than an exclusive or operation. Burtscher et al. points out that integer subtraction faired much worse both in terms of
-  compression ratio and throughput for their FPC compressor operating on 64-bit floating points values \cite{4589203}. This is the same for the 32-bit KAT-7 being considered in this report. A loss of between 2\% to 3\% in 
-  compression ratio is observed. It is therefore better to stick with a simple exclusive or operation.
+  The next simple modification to the scheme is to test whether using normal integer subtraction fairs better than an exclusive or operation. Burtscher et al. point out that integer subtraction fairs much worse, both in terms of
+  compression ratio, and throughput for their dictionary-based predictive compressor operating on 64-bit floating points values \cite{4589203}. This accords with our findings on 32-bit KAT-7 data considered in this report. 
+  A loss of between 2\% to 3\% in compression ratio is observed. It is therefore better to adopt a simple exclusive or operation.
   
-  The integer mean predictor fairs poorly compared to the simple difference scheme by degrading the compression ratio by 3\% to almost 7\% (thereby inflating the data). The effect worsens when the number of prediction 
-  steps are increased. As pointed out earlier such a mean scheme is prone to outliers (which can be expected in noisy data). The median scheme was expected to fair better as mentioned earlier and an implementation of the pivoting 
-  scheme confirmed this suspicion. Compression ratios similar or slightly smaller (roughly 1\%) than the normal difference-based scheme are observed, depending on the number of prediction steps being used. However, although the 
-  pivoting algorithm discussed earlier has an average linear computational complexity, it does have a number of branches. This caries a severe penalty on throughput: over 
-  71\% of the throughput is lost in the case of compression, while just short of 90\% is lost when decompressing. The effect worsens as the number of predictive steps are increased. In light of this result the median scheme is not
-  a viable alternative to the basic difference scheme.
+  The integer mean predictor fairs poorly compared to the simple difference scheme by degrading the compression ratio by, from 3\% to almost 7\% (thereby inflating the data). The effect worsens when the number of prediction 
+  steps is increased. As pointed out earlier such a mean-based scheme is prone to outliers, which can be expected in noisy data. The median scheme was expected to fair better, and an implementation of Wirth's pivot-based  
+  algorithm confirmed this hypothesis. Similar or slightly smaller (roughly 1\%) compression ratios to that achieved with the normal difference-based scheme are observed, depending on the number of prediction steps being used. 
+  However, although the pivoting algorithm has an average linear computational complexity, it does have a number of branches. This imposes a severe penalty on throughput: over 
+  71\% of the throughput is lost in the case of compression, while just short of 90\% is lost when decompressing. The effect worsens as the number of predictive steps increase. In light of this result the median 
+  scheme is not a viable alternative to the basic difference scheme.
   
-  The Lagrange predictor is accurate for smooth data (for example that of a sinusoid) that can be well approximated by some polynomial of degree \textit{n}. However, the noise present in the KAT-7 data renders this
-  method of prediction unsuitable for the purposes of compression. Similar to the mean-based predictor, the scheme inflated the data when up to ten predictive steps were chosen. Similarly, the parallelogram predictor 
-  also degraded the compression ratio by approximately 3\%.
+  The Lagrange predictor is accurate for smooth data that can be well approximated by some polynomial of degree \textit{n}, for example a sinusoid. However, the noise present in the KAT-7 data renders this
+  method of prediction unsuitable for the purposes of compression. Similar to the mean-based predictor, the scheme inflates the data when up to ten predictive steps are chosen. Similarly, the parallelogram predictor 
+  also degrades the compression ratio by approximately 3\%.
   
-  Other solutions not explored in this project include using a lookup table to store predictions. This approach is used in the FPC predictor mentioned earlier \cite{4589203,4976448}.
-  This scheme uses the same block-based parallel approach investigated in this report. However, the primary concern with this 
-  scheme is that, as the number of observed values grow, so does the size of the lookup table. This approach is therefore not as well-tailored towards a GPU implementation as the difference-based scheme investigated 
-  in this report, because it will require more global memory accesses than a simple lookup of a single previous observation. It may be worthwhile to investigate whether a CPU implementation of FPC will work on the sample 
-  data produced by the KAT-7 array in future work.
+  Other solutions not explored in this investigation include using a lookup table to store predictions. This approach is used in the dictionary-based predictor by Burtscher et al. \cite{4589203,4976448}.
+  This scheme uses the same block-based parallel approach investigated in this report. However, our primary concern with this approach is that, as the number of observed values grow, so does the size of the lookup table. 
+  This approach is therefore not as well-tailored towards a GPU implementation as our difference-based scheme, because it will require more global memory accesses than a 
+  simple lookup of a single previous observation. In future work it may be worthwhile to investigate whether a CPU implementation of the dictionary approach will work on the sample 
+  data produced by the KAT-7 array.
   \subsubsection{Vector intrinsics}
-  The Intel Multimedia Extensions (MMX), SSE and AVX along with the original 3DNow, SSE extensions and XOP extensions added by AMD, forms a family of vectorized instruction sets which adds the ability to 
-  perform a single instruction on multiple data elements of the same type in parallel. The original SSE instruction set added eight special 128-bit registers. The instruction set adds 
+  The Intel Multimedia Extensions (MMX), SSE and AVX, along with the original 3DNow, SSE extensions and XOP extensions added by AMD, form a family of vectorized instruction sets which add the ability to 
+  perform a single instruction on multiple data elements of the same type in parallel. The original SSE instruction set added eight special 128-bit registers. This adds 
   the ability to perform both integer-arithmetic operations and floating-point operations on any continuous sequence of elements stored into these special registers. It imposes the special condition that the 
   elements loaded into a single register are all of the same bit-length (64, 32, 16 or 8-bit values).
   
   As the name suggests these special machine instructions are focused on providing greater flexibility for performing a single instruction on multiple data. A good example of where
-  a speedup can be expected is in parallelizing vector addition. However, in the case of implementing a packing algorithm the original SSE instructions are not sufficient since it only allows 
+  a speedup can be expected is in parallelizing vector addition. However, in the case of implementing a packing algorithm, the original SSE instructions are not sufficient since they only allow 
   bit-shifting multiple elements by the same amount. The packing algorithm requires that four 32-bit values each be shifted by a different amount. A simple solution is to employ the AMD XOP 
-  instruction set which adds the ability to perform element-wise logical bit-shifting. The problem with this approach is that no Intel processor prior to the latest (at the time of writing) 
-  Haswell series of processors support this operation (the Haswell series adds this functionality through the AVX 2 extensions).
+  instruction set, which adds the ability to perform element-wise logical bit-shifting. The problem with this approach is that no Intel processor prior to the latest (at the time of writing) 
+  Haswell series supports this operation. This functionality is only added through the AVX 2 extensions.
   
-  The next major problem is that there is both a limited number of registers available, and a packing algorithm does not have the same number of outputs as inputs. Although
-  the majority of the algorithm can be written as SSE and XOP instructions while the storage section can be written as as four separate instructions this avenue of research
+  The next major problems are the limited number of 128-bit registers available, as well as the fact that the packing algorithm does not have the same number of outputs as inputs. Although
+  much of the implementation can be rewritten as SSE and XOP instructions, while the storage section can be written as four separate instructions, this avenue of research
   proved fruitless, because of both the limited number of registers available, and the overheads of employing both normal instructions and vectorized code (specifically conversion
-  between the two). In both the compressor and decompressor the augmented code halves the throughput achieved before the SSE and XOP instructions were added. This finding precludes
-  using the AVX 2 instruction set which adds several 256-bit registers (that can be used to perform 8 32-bit integer/floating point operations), since it will likely suffer from
+  between the two). In both the compressor and decompressor, the augmented code halves the throughput achieved before the SSE and XOP instructions were added. This finding precludes
+  using the AVX 2 instruction set, which adds several 256-bit registers, that can be used to perform 8 32-bit integer/floating point operations, since it will likely suffer from
   the same problems as the SSE- and XOP-augmented implementation.
   \subsubsection{GPGPU implementation using CUDA}
-  The GPU implementation is structured slightly different to the CPU implementation as mentioned before. Instead of only splitting the data into blocks, each block is distributed to
-  an SM which processes the block in parallel as well. This approach ensures that a high occupancy is achieved (in other words, all the multiprocessors are used). Since the data is
+  The GPU implementation is structured slightly differently to the CPU implementation. Instead of only splitting the data into blocks, each block is now distributed to
+  an SM, which processes the block in parallel as well. This approach ensures that a high occupancy is achieved (in other words, all the multiprocessors are used). Since the data is
   split into SM-sized blocks each SM is free to execute with no need for intra-SM synchronization. 
   
-  The implementation of the packing algorithm is based arround the parallel prefix sum implementation described in GPU Gems 3 \cite{harris2007parallel}. The parallel prefix sum computes two 
-  elements at a time, making use shared memory to store preliminary results for each parallel step of the scan algorithm as discussed earlier. The block size, therefore, has to be both a power of 
-  two, as well as small enough in order for the leading zero count array and its accumulation to be stored in shared memory (with the necessary padding per level to avoid bank conflicts as mentioned 
-  earlier).
+  The implementation of the packing algorithm is based around the parallel prefix sum implementation described in GPU Gems 3 \cite{harris2007parallel}. The parallel prefix sum computes two 
+  elements at a time, making use of shared memory to store preliminary results for each parallel step of the scan algorithm. The block size, therefore, has to be both a power of 
+  two, as well as small enough in order for the leading zero count array, and its accumulation, to be stored in shared memory, with the necessary padding per level to avoid bank conflicts.
   
-  Due to the fact that both the packing and unpacking algorithm is so similar in their construction, and for the sake of time constraints, only the packing algorithm was implemented in CUDA, as it 
-  gives a fair estimation on whether a decompression scheme is feasible. As mentioned previously the GPU implementation can be viewed as a post-processing step, after existing signal processing 
-  routines have been executed on the data. A general compacting kernel requires the use of atomics as mentioned earlier, but still achieves up to 5.2 GiB/s on a GT670, and up to 13.6 GiB/s on a 
-  GT780 when processing a sufficiently large number of observations (distributed over time as before), which fills the memory capacity of the GPU. It was found that the best performance in terms 
-  of throughput is given when block sizes of 256 elements are used. However, using such small blocks (and the associated increase in header information) can result in a penalty on the compression 
-  ratio of up to 2.7\% compared to a CPU version using a small number of blocks.
+  Since both the packing and unpacking algorithms are similar in construction, and for the sake of time constraints, only the packing algorithm was implemented in CUDA, as it 
+  provides a fair estimation of whether a decompression scheme is feasible. As mentioned previously, the GPU implementation can be viewed as a post-processing step, which is executed after 
+  existing signal processing routines have been performed. A general compacting kernel requires the use of atomics, but still achieves up to 5.2 GiB/s on a GT670, and up to 13.6 GiB/s on a 
+  GT780 when processing a sufficiently large number of observations (distributed over time as before), to fill the memory capacity of the GPU. It was found that the best throughput performance 
+  is given when block sizes of 256 elements are used. However, using such small blocks (and the associated increase in header information) can result in a penalty in compression 
+  ratio of up to 2.7\% compared to a CPU version which uses a small number of blocks by comparison.
   
-  Currently the number of correlated antennae are limited to 7+1 sources each with 2 polarizations. However, as the number of antennae grow (to around 3000) the number of correlations will exhibit 
-  a factorial growth rate. It therefore makes sense to flood the SIMD environment of the cards with enough information to fill the on-board memory of the card completely in order to mitigate the setup 
-  costs involved when launching device kernels. The current datasets are artificially extended by duplicating the observations at time \textit{t} until it fills the memory of the card being tested on 
-  (it is reasonable to assume that the overall properties of the datasets are preserved if the number of antennae are increased).
+  Currently, the number of correlated antennae is limited to 7+1 sources, each with 2 polarizations. However, as the number of antennae grow (to around 3000) the number of correlations will exhibit 
+  a quadratic growth rate. It is therefore sensible to flood the SIMD environment of the cards with enough information to fill the on-board memory of the card completely, in order to mitigate the setup 
+  costs involved when launching device kernels. The current datasets are artificially extended by duplicating the observations at time \textit{t} until they fill the memory of the card. 
+  It is reasonable to assume that the overall properties of the datasets are preserved if the number of antennae are increased.
   
-  The approaches to remove the atomic operations from both prefix and residual compaction, as discussed previously, was implemented without much success. As mentioned earlier branch divergence and multiple
-  write operations to global memory (in the case of residual compaction) proved to be just as expensive as using atomic operations. The throughput remained roughly the same for both these approaches.
+  The approaches to removing the atomic operations from both prefix and residual compaction, as discussed previously, were implemented without much success. Branch-divergence and multiple
+  write operations to global memory (in residual compaction) proved to be just as expensive as using atomic operations. The throughput remained roughly the same for both these approaches.
   
-  After considering all the kernel-level optimizations, including minimizing branch divergence, using shared memory (and associated issues regarding bank conflicts) and investigating the removal of atomic 
+  After considering all the kernel-level optimizations, including minimizing branch-divergence, using shared memory (and associated issues regarding bank conflicts) and investigating the removal of atomic 
   operations, the issue of memory transfer between the device and host was taken into consideration. This copy operation should be taken into account in a scenario where post-processing is required, since
-  no other operations are likely to follow a compression step, as well as due to the limitations in transfer speeds imposed by the PCI-Express bus. Normally the cost of transfer should be hidden by executing multiple 
-  kernels while memory transfers are made through the use of asynchronous memory calls. However, due to the limited amount of memory on these cards and the amount of data being processed, duplicating memory allocations
-  in order to execute kernels and memory copies asynchronously is not a viable option. On both the GT670 and the GT780 the latency associated with a memory copy between each kernel launch proved to be very detrimental to
+  no other operations are likely to follow a compression step, as well as due to the limitations in transfer speeds imposed by the PCI Express bus. Normally the cost of transfer can be hidden by executing multiple 
+  kernels while memory transfers are made through the use of asynchronous memory calls. However, due to the limited amount of memory on these cards, and the amount of data being processed, duplicating memory allocations
+  in order to execute kernels and copy memory asynchronously is not a viable option. On both the GT670 and the GT780 the latency associated with a memory copy between each kernel launch proved to be very detrimental to
   the high throughputs seen for the execution of the compression kernel itself. When taking the transfer of the blocks of residuals and prefixes into account the compression throughput dropped to below 1 GiB/s.
   
   Several different strategies were taken to minimize this latency, including transferring all the blocks of residuals and prefixes using a single copy operation (with the necessary padding between blocks of residuals to
@@ -1152,45 +1200,92 @@ POW(2,n) = (2 << n-1) //where "<<" is the logical left-shift operator
   of memory in host RAM that cannot be swapped out to secondary storage, whereas zero-copy operations make memory transfers between host and device transparent, by mapping the host memory address space directly to the GPU memory 
   address space. Such zero-copy operations are particularly useful when the memory allocation needed exceeds the limited on-board memory of a GPU. 
   
-  None of these approaches made a significant improvement in terms of throughput, although pinned memory showed a small 200-300 MiB/s increase in throughput if a large number of observations are transfered between the 
-  device and the host. In light of these results a post-processing GPU implementation may not be feasible unless the latency added by the memory copy operation can be hidden as part of the transfer cost between the host and RAID disk
+  Unfortunately, none of these approaches made a significant improvement in terms of throughput, although pinned memory showed a small 200-300 MiB/s increase in throughput if a large number of observations are transfered between the 
+  device and the host. In light of these results, a post-processing GPU implementation may not be feasible unless the latency added by the memory copy operation can be hidden as part of the transfer cost between the host and RAID disk
   array (which can sustain transfer rates up to 4GB/s according to sources at the MeerKAT offices in Pinelands). Such a modification is, however, beyond the scope of the current investigation.
   \subsubsection{Notes on memory overheads}
-  Due to the fact that the parallel algorithm is based on a block-based approach, all the observations at time \textit{t} should be received before compression can commence. It will therefore be necessary to allocate
-  enough space to accommodate buffering data, while compression is completed in a production environment. The difference-based predictor scheme (compacting up to 3 bytes at a time) requires at most $2n + \lceil 2n/8 \rceil + n + c$ 32-bit values every 
-  time the algorithm is executed. This is due to the fact that all the observations at time \textit{t} and $t-1$ have to 
-  be stored, as well as an array of $\lceil 2n/8\rceil$ to store the prefixes, and an array $n$ to store residuals (this includes padding the residual array in order to avoid unnecessary branch divergence within the algorithm). Some negligible 
-  amount, \textit{c} accounts for the rest of the program.
+  Due to the parallel algorithm being based on a block-based approach, all the observations at time \textit{t} should be received before compression can commence. It will therefore be necessary to allocate
+  enough space to accommodate buffering data, while compression is completed in a production environment. The difference-based predictive scheme, compacting up to 3 bytes at a time, requires at most $2n + \lceil 2n/8 \rceil + n + c$ 32-bit values every 
+  time the algorithm is executed. These numbers can be attributed to the following requirements:
+  \begin{itemize}
+   \item All observations at time \textit{t} and $t-1$ have to be stored.
+   \item An array of length $\lceil 2n/8\rceil$ is required to store the prefixes.
+   \item An array of length $n$ to store residuals, which includes padding in order to avoid unnecessary branch divergence within the algorithm.
+   \item Some negligible amount, \textit{c}, accounts for the rest of the program. 
+  \end{itemize}
   \subsubsection{Notes on fault tolerance and error propagation}
-  Due to the fact that the reconstruction of each observation at time \textit{t} depends on the preciding, corresponding, observation at time $t-1$, which in turn 
-  depends on the corresponding observation at time $t-2$, error propagation will become a problem in a production environment (especially if network transmission uses a transport
-  protocol without integrity checking, like UDP). 
+  Due to the fact that the reconstruction of each observation at time \textit{t} depends on the preceding, corresponding, observation at time $t-1$, which in turn 
+  depends on the corresponding observation at time $t-2$, error propagation could become a problem in a production environment, especially if network transmission uses a transport
+  protocol without integrity checking, like the User Datagram Protocol (UDP). 
   
   If one of the residuals becomes corrupted (either through network error or disk corruption) each subsequent, corresponding, 
-  observation will be decoded to the wrong value. Since multiple observations can be stored into a single 32-bit store the observations in the immediate vacinity of the corrupted
-  store (and their successors) will be affected. On the other hand if one (or more) of the prefixes becomes corrupted, all the residuals after the first corrupted prefix, $P[c]$ will be decoded 
-  incorrectly as well. This is due to the fact that the accumulated prefix count over $P[0]\dots P[c]\dots P[m]$ are used to reconstruct the residual at index \textit{m}. These 
+  observation will be decoded to the wrong value. Since multiple observations can be written into a single 32-bit store, the observations in the immediate vicinity of the corrupted
+  store (and their successors) will be affected. In addition, if one (or more) of the prefixes becomes corrupted, all the residuals after the first corrupted prefix, $P[c]$ will be decoded 
+  incorrectly as well. This is due to the fact that the accumulated prefix count over $P[0]\dots P[c]\dots P[m]$ is used to reconstruct the residual at index \textit{m}. These 
   errors will continue to propagate until a fresh initialization is done on both the compressor and decompressor. 
     
-  In a production environment it will be necessary to include integrity checks using a \textit{checksum} algorithm like the Merkle Damgard 5 (MD5) message digest, in order to validate output after all the observations
+  In a production environment it may be necessary to include integrity checks using a \textit{checksum} algorithm like the Merkle Damgard 5 (MD5) message digest, in order to validate output after all the observations
   at time \textit{t} have been decoded. A message digest algorithm is simply a function that takes an arbitrary length input, \textit{M} and maps it to a fixed length output, 
   \textit{N}. Any slight change in the input, $M'$ will result in a substantially different output, $N'$. The chances of a collision ($N = N'$) are very slim, meaning that 
   the checksum provides a viable way of checking archive integrity. A checksum produced by MD5 is only 128 bits long and will not have a significant detremental impact on the
-  compression ratio, since it only has to be saved for the entire set of observations at time \textit{t} and not per block. Any errors can be mitigated by ensuring that the 
-  compressor and decompressor is reinitialized regularly.
+  compression ratio, since it only has to be saved for the entire set of observations at time \textit{t} and not per block. Future work should investigate if such an integrity
+  check can attain the throughput rates required. Alternatively, any errors can be mitigated by ensuring that the compressor and decompressor are reinitialized regularly.
+  \subsection{Summary}
+  We set out to describe the technical details of implementing a basic prediction algorithm, along with several alternative approaches to prediction and parallelization. The following
+  table summarizes the results obtained from several implementation iterations:
+  \begin{tabular}{|p{0.3\textwidth}|p{0.15\textwidth}|p{0.15\textwidth}|p{0.3\textwidth}|}
+   \hline
+   \rowcolor[gray]{0.70}\textbf{Approach} & \textbf{Throughput increase} & \textbf{Compression ratio increase} & \textbf{Success}\\
+   \hline
+   \rowcolor[gray]{0.80}\multicolumn{4}{|l|}{\textbf{Basic compression and parallelization:}}\\
+   \hline
+   Effective compression ratios & N/A & N/A & Depends, attains ratios between 92\% and 93\% \\
+   \hline
+   Element-wise parallelization & N/A & N/A & No \\
+   \hline
+   Block-based parallelization & N/A & N/A & Yes, attained 5+ GiB/s compressing and 9+ GiB/s decompressing \\
+   \hline
+   \rowcolor[gray]{0.80}\multicolumn{4}{|l|}{\textbf{Alternative predictors:}}\\
+   \hline
+   Storing dedicated sign-bit & No & Yes & Insignificant \\
+   \hline
+   Using integer subtraction instead of exclusive or & No & No & No\\
+   \hline
+   Integer mean predictor & No & No & No\\
+   \hline
+   Median predictor & No & Yes (~1\%) & No, significantly decreases throughput\\
+   \hline
+   Simple parallelogram rule-based prediction & No & No & No\\
+   \hline
+   Lagrange extrapolation predictor & No & No & No\\
+   \hline
+   \rowcolor[gray]{0.80}\multicolumn{4}{|l|}{\textbf{Advanced parallelization techniques}}\\
+   \hline
+   Vectorized instruction sets (Intel SSE and AMD XOP) & No & N/A & No\\
+   \hline
+   Post-processing GPU packing algorithm & Depends & N/A & Kernel achieves 13+ GiB/s. Not effective due to memory copy latencies.\\
+   \hline
+   Removal of atomics in GPU kernel & No & N/A & No\\
+   \hline
+  \end{tabular}
+
 \section{Results}
+\subsection{Overview}
+We present detailed results on the algorithm throughput achieved by the basic difference-based predictor, compare the predictive compression scheme to standard utilities, 
+as well as to techniques developed in concurrent research into MeerKAT data compression. The results are followed by a detailed discussion section.
 \subsection{Constraints on benchmarking environment}
-In order to eliminate the influence of the external testing environment the following special conditions are specified:
+In order to eliminate the influence of the external environment from testing the following special conditions are specified:
 \begin{enumerate}
- \item Files in excess of 500 MB will be used for benchmarking. This will greatly reduce variability in timings.
- \item No other processes should be making intensive use of primary memory once benchmarking has commenced. The sheer quantity of data being processed makes benchmarking a memory-bound operation.
- \item Experiments will be repeated at least 10 times to ensure outliers can be removed before a mean is computed.
+ \item Files in excess of 500 MB will be used for benchmarking. This greatly reduces variability in timings.
+ \item No other processes should make intensive use of primary memory once benchmarking has commenced. The sheer quantity of data being processed makes 
+ benchmarking a memory-bound operation.
+ \item Experiments will be repeated at least 10 times to ensure outliers can be removed before a mean is computed. Timings varying by more than roughly 10\% to 15\% from the 
+ average are considered outliers.
 \end{enumerate}
 \subsection{Algorithm throughput on a CPU architecture}
 The implementation of the block-based parallel difference predictive scheme was executed on one of the AMD Opteron 6274 nodes of the ICTS High 
-Performance Cluster at the University of Cape Town. The average algorithm throughput (which excludes any disk I/O) for a file of 
-216~x~4096~x~112~x~2 32-bit floats (756.0 MiB in total, excluding header information) is shown in figure~\ref{ALG_THROUGPUT}. Similar results are 
-achieved for larger files. As mentioned previously the compression ratio varies between 92\%-93\% for most of the files.
+Performance Cluster at the University of Cape Town. These nodes have four 16-core processors clocked at 2200 MHz with 128 GiB primary memory, clocked at 1333 MHz. The average algorithm throughput (which excludes any disk I/O) for a file of 
+216~x~4096~x~112~x~2 32-bit floats (756.0 MiB in total, excluding header information) is shown in figure~\ref{ALG_THROUGPUT}.  As mentioned previously the compression ratio varies between 92\%-93\% for most of the files.
 \begin{figure}[ht!]
  \begin{mdframed}
  \centering
@@ -1383,7 +1478,7 @@ file used in the previous experiments, on the same Intel Xeon E5-2650 CPU that w
   \label{CONCURRENT_WORK}
   \end{mdframed}
 \end{figure}
-\section{Discussion}
+\subsection{Discussion}
 The block-based parallel approach achieved roughly a linear scaling (doubling the number of cores doubles the throughput achieved) up to 32-cores for both the compressor and decompressor. 
 After that point increasing the number of cores sees deminishing returns due to the overheads of processing smaller blocks in parallel, coupled with limited memory throughput capacity. 
 
