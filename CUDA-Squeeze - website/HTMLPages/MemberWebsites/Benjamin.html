@@ -25,8 +25,8 @@
 	only be small if the two samples are of the same magnitude. Consider encoding the following 
 	64-bit samples:
 </p>
-<div align="center" width="100%">
-<table border="1px"><tbody>
+<div align="center" width="100%" color="white">
+<table border="1px" style="color: white; text-align: center"><tbody>
 <tr><td></td><td></td><td>byte</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>6</td><td>7</td><td>8</td></tr>
 <tr><td>a1</td><td>2.3667176745585676</td><td>⇒</td><td>40</td><td>02</td><td>ef</td><td>09</td><td>ad</td><td>18</td><td>c0</td><td>f6</td></tr>
 <tr><td>a2</td><td>2.3667276745585676</td><td>⇒</td><td>40</td><td>02</td><td>ef</td><td>0e</td><td>eb</td><td>46</td><td>23</td><td>2f</td></tr>
@@ -36,7 +36,7 @@
 	The difference between the two values are obtained through a bitwise exclusive or operation. 
 	This operator takes two operands and return false if both operands are the same. In this 
 	example the first 3 bytes will become a run of 24 zeros. This run can then be encoded using 
-	2 bits, if runs up to 3 bytes can be encoded at a time.  
+	2 bits, if runs up to 3 bytes can be encoded at a time. 
 </p>
 <p>
 	If the data is smooth and can be accurately reconstructed by some polynomial it is possible 
@@ -46,10 +46,10 @@
 	<i>t-n … t-1</i>, to encode the sample at time <i>t</i>. 
 </p>
 <p>
-In light of these requirements and description of predictive compression the following 
+	In light of these requirements and description of predictive compression the following 
 	aims can be formulated:
 </p>
-<ul>
+<ul style="color:white">
 	<li>Compression throughput rates at line rate (5 GiB/s) using multi-core commodity 
 		servers and/or GPU acceleration.</li>
 	<li>Achieving reasonable compression ratios, possible similar to those 
@@ -64,4 +64,60 @@ In light of these requirements and description of predictive compression the fol
 		schemes.
 	</li>
 </ul>
-
+<h3>Implementation</h3>
+<p>
+The following illustration shows the structure of the predictive compression algorithm. After
+correlation between pairs of antennae each frequency (per correlation) is a stream of 32-bit IEEE
+754 single precision values. If the predicted and actual values are of similar magnitude significant
+savings will be made.
+</p>
+<div width="100%" style="border:2px solid;" align="center">
+	<img src="images/Thesis_Alg.png" alt="Predictive algorithm" width="80%"/>
+	<p><b>Figure 1</b><em>Prediction and compaction process proposed for compressing SKA 32-bit IEEE
+	754 floating-point data, distributed in time. The predictor can use any number of previous
+	time-slices to make its prediction, but this will increase the memory requirement of the
+	predictor. Once a prediction is made the prediction is exclusive ored with its corresponding
+	observation at the time-slice currently being processed. If the differences between predictions 
+	and the actual values are small the most significant bits of this difference will be a
+	run of zeros, which is counted by a leading-zero counter. The count is stored as a prefix
+	(compacted at bit level). The remaining bits, or residuals can be compacted at either bit
+	or byte level.</em></p>
+</div>
+<p>
+	In order to investigate whether better compression ratios could be achieved we investigated using 
+	an integer-based mean, median, Lorenzo predictor and parallelogram predictor. Only the median scheme 
+	achieved slightly better compression ratios (1% in some instances), but is too slow, even though a 
+	pivot-based algorithm, with linear average complexity, was implemented.
+</p>
+<p>
+	There are two predominant approaches to achieve parallelism in this context. Either the data can be 
+	separated into blocks and divided amongst the available processors on the node, or a the elements can 
+	be processed in parallel. The first approach will add to the header size of the compressed file, while 
+	the second requires a prefix scan to be computed in order to save the variable length residual
+	stream seen in figure 1. 
+</p>
+<p>
+	Whichever scheme proves more feasible can further be augmented using Streaming SIMD instructions to 
+	achieve further element-level parallelism. Each CPU core (both Intel and AMD) have special 128-bit 
+	registers that can be used to perform 4 32-bit floating point operations simultaneously. Under optimal 
+	circumstances this exploits the optimal parallel performance of a multi-core CPU. However, it was 
+	found that the packing algorithm we proposed is not well-tailored to this augmentation.
+</p>
+<p>
+	A combined approach that included element-wise and block-based parallelism was implemented on GPU 
+	architectures using CUDA. In this context the compression is completed as a post-processing operation.
+	Although the compression kernel operates in excess of 13 GiB/s on a GT780, the latencies associated 
+	with the memory transfer between the GPU and host is simply too slow. Unless these latencies can be hidden
+	in the latencies associated with disk storage this approach is simply infeasible.
+</p>
+<h3>Results</h3>
+<p>
+	Using up to 64 cores on an AMD Opteron 6274 (2200 MHz) and a special machine leading zero count intrinsic
+	we achieved the desired 5 GiB/s for the compressor and up to 9 GiB/s for the decompressor. The scheme only 
+	obtains compression ratios of 91% on average with a sample standard deviation of 2%. Although Strauss'
+	zero-length encoding scheme achieves much higher performance (more than 2 times the throughput) it only achieves 
+	compression ratios of arroun 96%-97%, but uses less memory. Any one of these two approaches can be used
+	to reduce network bandwidth requirements. Brandon's Huffman encoder is well-tailored for long term storage requirements,
+	since it is significantly faster than BZIP2 and achieves similar compression ratios. It however does not achieve 
+	the desired throughput requirements of the SKA.
+</p>
