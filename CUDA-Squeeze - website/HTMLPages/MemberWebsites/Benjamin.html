@@ -1,11 +1,67 @@
 <h1>Algorithm</h1>
 <h2>Predictive Compression</h2>
+<h3>Motivation and Aims</h3>
 <p>
-	As we stated in the synopsis our goal is to develop 3 algorithms for compressing the 32 bit floating point radio astronomy data of the Square Kilometer Array (SKA). Although each of the group members are investigating a particular compression scheme, our goal is to publish our findings jointly in order to establish which of the 3 schemes performs best in terms of the tradeoff between throughput and compression ratio.
-	<br />
-	<br />
-	I will be investigating a predictive compression scheme. In such a scheme the streaming data is divided into chunks which can be processed in parallel. The goal is to divide the data in such a way as to exploit dimensional coherency (lets say compressing the values of a particular frequency over several time steps). Since the values will likely not change much (or change relatively slowly over the duration of several steps) the prediction scheme may yield accurate predictions of consequtive values. If this is the case the difference between both mantisa bits and exponent bits of the predicted value and the actual value will result in many leading zero bits, which can be stored in compressed form (saving the residual bits in uncompressed form). Such a scheme is simple and fast (see my paper litterature survey) and is ideal for scenarios where throughput enjoys preference over good compression ratios.
-	<br />
-	<br />
-	I will be implementing both an optimised CPU version (using both a vectorised instruction set when ever possible, as well as being multithreaded) and a GPU version of the code if time permits.
+	The KAT-7 array is using high-speed, Infiniband, network switches that is capable of achieving 
+	transmission rates of up to 40 Gbit/s (5 GiB/s). Furthermore the completed SKA array is expected
+	sample at the rate of 1 Petabyte every 20 seconds. Many of these observations will be stored for
+	long-term analysis (up to 6 months) and will therefore require exabytes of persistant storage. The 
+	goal is to decrease these requirements as far as possible, while still maintaining compression at 
+	line-rates. A compression technique that may achieve these requirements is known as predictive 
+	compression. 
 </p>
+<p>
+	As pointed out in the background section on the MeerKAT and SKA samples from 
+	pairs of correlated antennae are distributed in time and frequency, forming a 
+	large collection of time-series. Previous research found that predictive compression 
+	can effectively be employed to reduce network bandwidth requirements while being 
+	significantly faster than employing standard compression utilities like BZIP2 and 
+	GNU GZIP (Burtscher et al.). 
+</p>
+<p>
+	Generally these schemes all rely on the temporal locality of neighboring observations. 
+	If the difference between two samples are relatively small it can be encoded using fewer 
+	bits than storing the the two observations by themselves. However, this difference will 
+	only be small if the two samples are of the same magnitude. Consider encoding the following 
+	64-bit samples:
+</p>
+<div align="center" width="100%">
+<table border="1px"><tbody>
+<tr><td></td><td></td><td>byte</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>6</td><td>7</td><td>8</td></tr>
+<tr><td>a1</td><td>2.3667176745585676</td><td>⇒</td><td>40</td><td>02</td><td>ef</td><td>09</td><td>ad</td><td>18</td><td>c0</td><td>f6</td></tr>
+<tr><td>a2</td><td>2.3667276745585676</td><td>⇒</td><td>40</td><td>02</td><td>ef</td><td>0e</td><td>eb</td><td>46</td><td>23</td><td>2f</td></tr>
+</tbody></table>
+</div>
+<p>
+	The difference between the two values are obtained through a bitwise exclusive or operation. 
+	This operator takes two operands and return false if both operands are the same. In this 
+	example the first 3 bytes will become a run of 24 zeros. This run can then be encoded using 
+	2 bits, if runs up to 3 bytes can be encoded at a time.  
+</p>
+<p>
+	If the data is smooth and can be accurately reconstructed by some polynomial it is possible 
+	to take this difference-based technique one step further by employing a polynomial extrapolation
+	step in order to predict the next value of the time-series, or if there is a significant amount
+	of noise in the time-series it may be possible to use the median over a few previous samples, 
+	<i>t-n … t-1</i>, to encode the sample at time <i>t</i>. 
+</p>
+<p>
+In light of these requirements and description of predictive compression the following 
+	aims can be formulated:
+</p>
+<ul>
+	<li>Compression throughput rates at line rate (5 GiB/s) using multi-core commodity 
+		servers and/or GPU acceleration.</li>
+	<li>Achieving reasonable compression ratios, possible similar to those 
+		achieved by standard compression utilities like BZIP2 and GZIP. Even if this 
+		is not possible achieving some compression will still have significant. This 
+		may surmount to reducing transmission bandwidth requirements by several terabytes 
+		every second. This can translate to large monetary savings, both in terms of 
+		initial infrastructure requirements, as well as long-term storage maintenance 
+		costs.</li>
+	<li>
+		Whether throughput can be traded for compression ratio, using more complex predictive
+		schemes.
+	</li>
+</ul>
+
