@@ -2,8 +2,8 @@
 <h2>Predictive Compression</h2>
 <h3>Motivation and Aims</h3>
 <p>
-	The KAT-7 array is using high-speed, Infiniband, network switches that is capable of achieving 
-	transmission rates of up to 40 Gbit/s (5 GiB/s). Furthermore the completed SKA array is expected
+	The KAT-7 array is using high-speed, Infiniband, network switches that are capable of achieving 
+	transmission rates up to 40 Gbit/s (5 GiB/s). Furthermore the completed SKA array is expected
 	sample at the rate of 1 Petabyte every 20 seconds. Many of these observations will be stored for
 	long-term analysis (up to 6 months) and will therefore require exabytes of persistant storage. The 
 	goal is to decrease these requirements as far as possible, while still maintaining compression at 
@@ -11,9 +11,9 @@
 	compression. 
 </p>
 <p>
-	As pointed out in the background section on the MeerKAT and SKA samples from 
+	As pointed out in the background section on the MeerKAT, samples from the
 	pairs of correlated antennae are distributed in time and frequency, forming a 
-	large collection of time-series. Previous research found that predictive compression 
+	large number of time-series. Previous research found that predictive compression 
 	can effectively be employed to reduce network bandwidth requirements while being 
 	significantly faster than employing standard compression utilities like BZIP2 and 
 	GNU GZIP (Burtscher et al.). 
@@ -43,7 +43,7 @@
 	to take this difference-based technique one step further by employing a polynomial extrapolation
 	step in order to predict the next value of the time-series, or if there is a significant amount
 	of noise in the time-series it may be possible to use the median over a few previous samples, 
-	<i>t-n … t-1</i>, to encode the sample at time <i>t</i>. 
+	<i>t-n … t-1</i>, to predict the sample at time <i>t</i>. 
 </p>
 <p>
 	In light of these requirements and description of predictive compression the following 
@@ -52,7 +52,7 @@
 <ul style="color:white">
 	<li>Compression throughput rates at line rate (5 GiB/s) using multi-core commodity 
 		servers and/or GPU acceleration.</li>
-	<li>Achieving reasonable compression ratios, possible similar to those 
+	<li>Achieving reasonable compression ratios, if possible similar to those 
 		achieved by standard compression utilities like BZIP2 and GZIP. Even if this 
 		is not possible achieving some compression will still have significant. This 
 		may surmount to reducing transmission bandwidth requirements by several terabytes 
@@ -67,7 +67,7 @@
 <h3>Implementation</h3>
 <p>
 The following illustration shows the structure of the predictive compression algorithm. After
-correlation between pairs of antennae each frequency (per correlation) is a stream of 32-bit IEEE
+correlation between pairs of antennae, each frequency (per correlation) is a stream of 32-bit IEEE
 754 single precision values. If the predicted and actual values are of similar magnitude significant
 savings will be made.
 </p>
@@ -84,7 +84,7 @@ savings will be made.
 	or byte level.</em></p>
 </div>
 <p>
-	In order to investigate whether better compression ratios could be achieved we investigated using 
+	In order to investigate whether better compression ratios can be achieved we investigated 
 	an integer-based mean, median, Lorenzo predictor and parallelogram predictor. Only the median scheme 
 	achieved slightly better compression ratios (1% in some instances), but is too slow, even though a 
 	pivot-based algorithm, with linear average complexity, was implemented.
@@ -97,14 +97,14 @@ savings will be made.
 	stream seen in figure 1. 
 </p>
 <p>
-	Whichever scheme proves more feasible can further be augmented using Streaming SIMD instructions to 
-	achieve further element-level parallelism. Each CPU core (both Intel and AMD) have special 128-bit 
+	The scheme that proves more feasible of the two can be augmented with Streaming SIMD instructions to 
+	achieve additional parallelism at the element-level. Each CPU core (both Intel and AMD) have special 128-bit 
 	registers that can be used to perform 4 32-bit floating point operations simultaneously. Under optimal 
-	circumstances this exploits the optimal parallel performance of a multi-core CPU. However, it was 
+	circumstances this exploits the optimal parallel performance of a modern multi-core CPU. However, it was 
 	found that the packing algorithm we proposed is not well-tailored to this augmentation.
 </p>
 <p>
-	A combined approach that included element-wise and block-based parallelism was implemented on GPU 
+	A combined approach, that included element-wise and block-based parallelism, was implemented on GPU 
 	architectures using CUDA. In this context the compression is completed as a post-processing operation.
 	Although the compression kernel operates in excess of 13 GiB/s on a GT780, the latencies associated 
 	with the memory transfer between the GPU and host is simply too slow. Unless these latencies can be hidden
@@ -115,9 +115,9 @@ savings will be made.
 	Using up to 64 cores on an AMD Opteron 6274 (2200 MHz) and a special machine leading zero count intrinsic
 	we achieved the desired 5 GiB/s for the compressor and up to 9 GiB/s for the decompressor. The scheme only 
 	obtains compression ratios of 91% on average with a sample standard deviation of 2%. Although Strauss'
-	zero-length encoding scheme achieves much higher performance (more than 2 times the throughput) it only achieves 
-	compression ratios of arroun 96%-97%, but uses less memory. Any one of these two approaches can be used
-	to reduce network bandwidth requirements. Brandon's Huffman encoder is well-tailored for long term storage requirements,
-	since it is significantly faster than BZIP2 and achieves similar compression ratios. It however does not achieve 
+	zero-length encoding scheme achieves much higher performance (more than 2 times the throughput), it only achieves 
+	compression ratios of arroun 96%-97%, but uses less memory than the Predictive Coder. Any one of these two approaches can be used
+	to reduce network bandwidth requirements. On the other hand, Brandon's Huffman encoder is well-tailored for long term storage requirements,
+	since it is significantly faster than BZIP2 and achieves similar compression ratios. It, however does not achieve 
 	the desired throughput requirements of the SKA.
 </p>
