@@ -47,7 +47,9 @@ html {
 }
 
 body {
-  background: url(../images/bodybkg.jpg) repeat-y;
+  background-image: url(../images/bodybkg.jpg);
+  background-color: black;
+  background-repeat: no-repeat;
   background-size: 100%;
   margin: 0;
 }
@@ -4932,32 +4934,9 @@ a.list-group-item.active > .badge,
 .jumbotron {
   padding: 30px;
   margin-bottom: 30px;
-  font-size: 21px;
-  font-weight: 200;
-  line-height: 2.1428571435;
-  color: inherit;
   background: url(../images/cbkg.png) repeat;
 }
 
-.jumbotron h1 {
-  line-height: 1;
-  margin-bottom: 0px;
-  color: orange;
-}
-
-.jumbotron h2 {
-  line-height: 1;
-  margin-top: 2px;
-  margin-left: 20px;
-  margin-bottom: 0px;
-  color: #FF6633;
-}
-
-.jumbotron p {
-  margin-left: 45px;
-  line-height: 1.4;
-  color: white;
-}
 
 #data h1 {
   line-height: 1;
@@ -4973,13 +4952,23 @@ a.list-group-item.active > .badge,
   color: #FF6633;
 }
 
+#data h3 {
+  line-height: 1;
+  margin-bottom: 5px;
+  margin-left: 35px;
+  color: #006666;
+}
+
 #data p {
   margin-left: 50px;
   margin-right: 5px;
   line-height: 1.4;
   color: white;
 }
-
+#data ul li {
+  margin-left: 50px;
+  line-height: 1.4;
+}
 #data .jumbotron {
   border-radius: 6px;
 }
@@ -5285,7 +5274,9 @@ a.thumbnail:focus {
   padding-left: 0;
   margin-bottom: 20px;
 }
-
+.list-group hr {
+  border-color: black;
+}
 .list-group-item {
   position: relative;
   display: block;
