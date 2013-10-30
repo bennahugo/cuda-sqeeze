@@ -1,2 +1,55 @@
 <h1>Algorithm</h1>
 <h2>Huffman Coding</h2>
+<h3>Motivations &amp; Aims</h3>
+<p>
+	SKA require a compression algorithm in order to save on network transfer costs and storage. Since with the current antannae array, KAT-7, they generate 2TB of floating point data a second.
+	The data rate is reduced by the current network configuration, which reduces the speed to 40Gigabits per second (5GB per second). SKA are upgrading the antennae array to a full Square Kilometer Array
+	of antennae, which will generate up to 1 petabyte of data every 20 seconds. Each observation, which run over several hours, will thus reach the exabyte range in size. SKA thus need a compression
+	scheme which can compress the data without slowing down the original pipe line and still acheiving good compression.
+	<br />
+	<br />
+	Each observation is done on a specific section of the sky, and that area does not change for the full observation. This means that the data comprises of allot of floats (unique and real)
+	that span a small range of the floating point spectrum. Few unique values compared to total data is thus expected, which means an Entropy Encoder such as Huffman Coding or Arithmetic Coding should
+	acheive good compression ratios.
+	<br />
+	<br />
+	Since Arithmetic Coding utalizes a Dynamic Programming scheme for its entire process of both encoding and decoding data, it is very hard to parallelise. Huffman coding contains fewer Dynamic
+	Programming methods and has many fully parallelisable methods. Huffman coding thus has a greater probability of reaching the speeds required by SKA than Arithmetic coding. Huffman coding uses
+	a tree structure to convert each unique symbol into a shorter binary sequence, then replaces all the symbols in the data with the shorter representation to achieve compression.
+	<br />
+	<br />
+	There are 2 types of Huffman coding, Dynamic and Adaptive. Adaptive Huffman Coding is an adaption of Huffman Coding which allows Huffman coding to compress streaming data since the
+	original Huffman Coding (which is the Dynamic version) requires the entire data set in advance to calculate the counts of all unique values.
+	Adaptive Huffman coding is able to compress data it has not seen before by having many tree updation procedures that are run each and every time a value is encoded or decoded. Since these
+	update methods need to be run every encoding/decoding step, it is impossible to safely parallelise Adaptive Huffman Coding. Luckily the SKA data arrives in 5GB blocks, thus it was decided that
+	Dynamic Huffman Coding is the better algorithm as each block can be encoded by Dynamic Huffman Coding and placed after each other in the output file.
+	<br />
+	<br />
+	The following aims for the Huffman Coding algorithm are needed for the SKA compression project:
+</p>
+<ul>
+	<li>
+		A compression throughput rate of 5GB/s on SKA data with a multicore system or even a GPU.
+	</li>
+	<li>
+		A compression ratio on par with the standard compression tools such as BZIP2 and GZIP. And a better throughput than these standard compression tools.
+	</li>
+</ul>
+<h3>Implementation</h3>
+<p>
+	Both a CPU-only and a combined GPU-CPU algorithm was produced. Since many people have shown that Huffman Coding does not fair well on the GPU, we decided that a CPU based approach is the
+	best solution. So a parallelised Huffman Coding algorithm and a Blocked versios were produced for the CPU. The Blocked version of the algorithm was determined to be the fastest of the 2. We 
+	then decided to try and convert certain sections of the blocked CPU algorithm into a GPU approach, sections that have been proven to work well on the GPU such as Binning and a prefix sum. 
+	The standard Huffman Coding algorithm was adpated slightly in order to speed certain sections up. The tree is created to determine each code, and then deleted after a Hash Map of unique Value to
+	binary sequence has been constructed. This allows for faster lookups of each floats binary sequence and saves memory space as the tree is deleted.
+	<br />
+	<br />
+	The CPU-only algorithm breaks each 5GB block into smaller chunks as they arrive, then runs the adapted Dynamic Huffman Coding on each chunk in parallel. The first construction of this algorithm used 
+	a Dynamic Programming approach to the binary sequnce (codes) to byte array conversion. It was determined that that conversion section was the largest bottleneck and thus a prefix sum method was used.
+	This prefix sum method uses a prefix sum to flatten a 2D array of binary sequences into a 1D array in parallel. That flattened arrays then allows for a parallel conversion to byte arrray. Since it has been showen 
+	that the prefix sum cannot be done in parallel on the CPU as it actually slows the prefix sum down. A linear prefix sum is thus used on the CPU-only algorithm.
+	<br />
+	<br />
+	
+</p>
+<h3>Results</h3>
