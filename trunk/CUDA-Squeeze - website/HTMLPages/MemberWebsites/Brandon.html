@@ -38,7 +38,7 @@
 <h3>Implementation</h3>
 <p>
 	Both a CPU-only and a combined GPU-CPU algorithm was produced. Since many people have shown that Huffman Coding does not fair well on the GPU, we decided that a CPU based approach is the
-	best solution. So a parallelised Huffman Coding algorithm and a Blocked versios were produced for the CPU. The Blocked version of the algorithm was determined to be the fastest of the 2. We 
+	best solution. So a parallelised Huffman Coding algorithm and a Blocked version were produced for the CPU. The Blocked version of the algorithm was determined to be the fastest of the 2. We 
 	then decided to try and convert certain sections of the blocked CPU algorithm into a GPU approach, sections that have been proven to work well on the GPU such as Binning and a prefix sum. 
 	The standard Huffman Coding algorithm was adpated slightly in order to speed certain sections up. The tree is created to determine each code, and then deleted after a Hash Map of unique Value to
 	binary sequence has been constructed. This allows for faster lookups of each floats binary sequence and saves memory space as the tree is deleted.
@@ -46,10 +46,18 @@
 	<br />
 	The CPU-only algorithm breaks each 5GB block into smaller chunks as they arrive, then runs the adapted Dynamic Huffman Coding on each chunk in parallel. The first construction of this algorithm used 
 	a Dynamic Programming approach to the binary sequnce (codes) to byte array conversion. It was determined that that conversion section was the largest bottleneck and thus a prefix sum method was used.
-	This prefix sum method uses a prefix sum to flatten a 2D array of binary sequences into a 1D array in parallel. That flattened arrays then allows for a parallel conversion to byte arrray. Since it has been showen 
+	This prefix sum method uses a prefix sum to flatten a 2D array of binary sequences into a 1D array in parallel. That flattened array then allows for a parallel conversion to a byte arrray. Since it has been showen 
 	that the prefix sum cannot be done in parallel on the CPU as it actually slows the prefix sum down. A linear prefix sum is thus used on the CPU-only algorithm.
 	<br />
 	<br />
-	
+	The GPU-CPU combined method was constructed using the NVIDIA Thrust library. This library contains many algorithms already constructed for use on the GPU, this allowed the testing of a GPU approach to certain sections
+	of the algorithm. The first test was for the binning procedure, Thrust contains a few methods in order to do this. Unfortunetly the first attempt did not work as the methods used could not binn the data in-place and thus
+	memory issues insued. Pinned momory was thus used to allow for the algorithm to binn the entire 5GB chunk. The final section that was converted to a GPU method was the Prefix sum. This time only the actual prefix sum which is
+	used to convert the 2D codes array to a 1D array is constructed on the GPU, from there it is done on the CPU as swapping methods do not fair well on the GPU.
 </p>
 <h3>Results</h3>
+<p>
+	The final combined GPU-CPU method achieves 79MB/s throughput on a Intel Xeon E5 with 16 cores and a NVIDIA Tesla K20x. The average compression ratio for the algorithm on SKA data is 41.18%. This throughput 
+	does not meet the required 5GB/s for the SKA's needs, but it is both faster and achieves a better compression ratio than any publically available compression tool. The other SKA compression projects, Predictive and RLE schemes, 
+	achieve much better throughput. Huffman coding is thus best for long term storage but not a good choice for network bandwith reduction as it will most likely slow down the entire pipeline.
+</p>
