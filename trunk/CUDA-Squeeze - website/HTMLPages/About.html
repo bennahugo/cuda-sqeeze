@@ -24,18 +24,24 @@
 <h1>About</h1>
 <h2>SKA</h2>
 <p>
-	The Square Kilometre Array Radio Telescope, or SKA, will be the world's biggest telescope and one of the biggest scientific projects ever. SKA currently have a 7 antennae radio telescope set up in South 
+	The Square Kilometre Array Radio Telescope, or SKA, will be the world's biggest telescope and one of the biggest scientific projects ever. SKA currently have a 7 antennae radio telescope set up in South
 	Africa called KAT-7. The KAT-7 will be upgraded through a set of tiers to become the full Square Killemeter Array which will consist of 3000 antenna and will produce up to 1 Petabyte of data per second.
 	<br />
 	<br />
 	Currently the KAT-7 array produces 2 terrabytes of data per second. This data is then sent through the South African network to the SKA main office in Cape Town. The current network speeds are 40 gigabits
-	 or 5 Gigabytes per second. 
+	or 5 Gigabytes per second. The set up for the SKA pipe line is as follows:
+</p>
+<center>
+	<img src="images/Process.png" style="width: 600px" />
+</center>
+<p>
+	
 </p>
 <h2>SKA-SQUEEZE Project</h2>
 <p>
 	The SKA (Square Kilometer Array) South Africa requires a compression algorithm that offers reasonable compression ratios, as well as being fast enough to keep up with the antenna output rates.
 	This need arises due to the requirement of saving streaming data onto a storage system and reading queries from that system simultaneously. This is where the focus of our project lies.
-	We will be taking streaming data from correlators and beamformers (which combines pairs of data channels from the antennae) and compress the data-stream using optimised CPU (with SSE and AVX) 
-	and GPGPU (General-Purpose Computing on Graphical Processing Units) implementations in order to achieve the speeds that SKA requires, while maintaining reasonable compression ratios. We operate as 
+	We will be taking streaming data from correlators and beamformers (which combines pairs of data channels from the antennae) and compress the data-stream using optimised CPU (with SSE and AVX)
+	and GPGPU (General-Purpose Computing on Graphical Processing Units) implementations in order to achieve the speeds that SKA requires, while maintaining reasonable compression ratios. We operate as
 	a 'shim' between the Compute Nodes and the storage sub-system.
 </p>
