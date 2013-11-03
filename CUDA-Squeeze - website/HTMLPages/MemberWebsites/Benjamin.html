@@ -3,7 +3,7 @@
 <h3>Motivation and Aims</h3>
 <p>
 	The KAT-7 array is using high-speed, Infiniband, network switches that are capable of achieving 
-	transmission rates up to 40 Gbit/s (5 GiB/s). Furthermore the completed SKA array is expected
+	transmission rates up to 40 Gbit/s (5 GiB/s). Furthermore the completed SKA array is expected to
 	sample at the rate of 1 Petabyte every 20 seconds. Many of these observations will be stored for
 	long-term analysis (up to 6 months) and will therefore require exabytes of persistant storage. The 
 	goal is to decrease these requirements as far as possible, while still maintaining compression at 
@@ -14,7 +14,7 @@
 	As pointed out in the background section on the MeerKAT, samples from the
 	pairs of correlated antennae are distributed in time and frequency, forming a 
 	large number of time-series. Previous research found that predictive compression 
-	can effectively be employed to reduce network bandwidth requirements while being 
+	can be effectively employed to reduce network bandwidth requirements while being 
 	significantly faster than employing standard compression utilities like BZIP2 and 
 	GNU GZIP (Burtscher et al.). 
 </p>
@@ -39,9 +39,9 @@
 	2 bits, if runs up to 3 bytes can be encoded at a time. 
 </p>
 <p>
-	If the data is smooth and can be accurately reconstructed by some polynomial it is possible 
+	If the data is smooth, and can be accurately reconstructed by some polynomial, it is possible 
 	to take this difference-based technique one step further by employing a polynomial extrapolation
-	step in order to predict the next value of the time-series, or if there is a significant amount
+	step in order to predict the next value of the time-series. On the other hand, if there is a significant amount
 	of noise in the time-series it may be possible to use the median over a few previous samples, 
 	<i>t-n … t-1</i>, to predict the sample at time <i>t</i>. 
 </p>
@@ -68,7 +68,7 @@
 <p>
 The following illustration shows the structure of the predictive compression algorithm. After
 correlation between pairs of antennae, each frequency (per correlation) is a stream of 32-bit IEEE
-754 single precision values. If the predicted and actual values are of similar magnitude significant
+754 single precision values. If the predicted and actual values are of similar magnitude, significant
 savings will be made.
 </p>
 <div width="100%" style="border:2px solid;" align="center">
@@ -97,8 +97,8 @@ savings will be made.
 	stream seen in figure 1. 
 </p>
 <p>
-	The scheme that proves more feasible of the two can be augmented with Streaming SIMD instructions to 
-	achieve additional parallelism at the element-level. Each CPU core (both Intel and AMD) have special 128-bit 
+	The scheme that proves the more feasible of the two can be augmented with Streaming SIMD instructions, to 
+	achieve additional parallelism at the element-level. Each CPU core (both modern Intel and AMD) have special 128-bit 
 	registers that can be used to perform 4 32-bit floating point operations simultaneously. Under optimal 
 	circumstances this exploits the optimal parallel performance of a modern multi-core CPU. However, it was 
 	found that the packing algorithm we proposed is not well-tailored to this augmentation.
@@ -107,8 +107,8 @@ savings will be made.
 	A combined approach, that included element-wise and block-based parallelism, was implemented on GPU 
 	architectures using CUDA. In this context the compression is completed as a post-processing operation.
 	Although the compression kernel operates in excess of 13 GiB/s on a GT780, the latencies associated 
-	with the memory transfer between the GPU and host is simply too slow. Unless these latencies can be hidden
-	in the latencies associated with disk storage this approach is simply infeasible.
+	with the memory transfer between the GPU and host is simply too high. Unless these latencies can be hidden
+	in the latencies associated with disk storage this approach is infeasible.
 </p>
 <h3>Results</h3>
 <p>
@@ -116,7 +116,7 @@ savings will be made.
 	we achieved the desired 5 GiB/s for the compressor and up to 9 GiB/s for the decompressor. The scheme only 
 	obtains compression ratios of 91% on average with a sample standard deviation of 2%. Although Strauss'
 	zero-length encoding scheme achieves much higher performance (more than 2 times the throughput), it only achieves 
-	compression ratios of arroun 96%-97%, but uses less memory than the Predictive Coder. Any one of these two approaches can be used
+	compression ratios of arround 96%-97%, but uses less memory than the Predictive Coder. Either one of these two approaches can be used
 	to reduce network bandwidth requirements. On the other hand, Brandon's Huffman encoder is well-tailored for long term storage requirements,
 	since it is significantly faster than BZIP2 and achieves similar compression ratios. It, however does not achieve 
 	the desired throughput requirements of the SKA.
