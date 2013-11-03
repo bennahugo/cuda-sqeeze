@@ -48,7 +48,7 @@ int main(int argc, char **argv) {
     //CPURegisters info = getCPUFeatures();
     string filename(argv[1]);
      astroReader::file f(filename);
-    int origSize = 1;
+    long origSize = 1;
     cout << "File dimensions: ";
     for (int i = 0; i < f.getDimensionCount(); ++i){
       cout << f.getDimensionSize(i) << ((i == f.getDimensionCount() -1) ? "\n" : " x ");
@@ -134,7 +134,7 @@ int main(int argc, char **argv) {
 	std::cout << "NOTE: DECOMPRESSING FROM FILE" << std::endl;
 	decompressFromFile(filename);
     }
-    std::cout << "COMPRESSION RATIO: " << (totalCompressSize/((float)origSize*memoryScaling)) << std::endl;
+    std::cout << "COMPRESSION RATIO: " << (totalCompressSize/((double)origSize*memoryScaling)) << std::endl;
     std::cout << "COMPRESSED IN " << totalCompressTime << " seconds @ " << 
 	      origSize*memoryScaling*sizeof(float)/1024.0f/1024.0f/1024.0f/totalCompressTime << " GB/s" << std::endl;
 
@@ -142,15 +142,16 @@ int main(int argc, char **argv) {
       std::cout << "DECOMPRESSED IN " << totalDecompressTime << " seconds @ " << 
 	origSize*memoryScaling*sizeof(float)/1024.0f/1024.0f/1024.0f/totalDecompressTime << " GB/s" << std::endl;
     }
-    if (writeStream){
-      std::cout << "COMPRESSION DISK I/O READ TIME: " << totalCompressDiskReadTime << std::endl;
-      std::cout << "COMPRESSION DISK I/O WRITE TIME: " << totalCompressTime << std::endl;
-      if (!skipDecompression){
-	std::cout << "DECOMPRESSION DISK I/O WRITE TIME: " << totalDecompressTime << std::endl;
-	std::cout << "DECOMPRESSION DISK I/O READ TIME: " << totalDecompressDiskReadTime << std::endl;
-	fclose(fdecomp);
-      }
-    }
+    //better to time from terminal:
+//     if (writeStream){
+//       std::cout << "COMPRESSION DISK I/O READ TIME: " << totalCompressDiskReadTime << std::endl;
+//       std::cout << "COMPRESSION DISK I/O WRITE TIME: " << totalCompressTime << std::endl;
+//       if (!skipDecompression){
+// 	std::cout << "DECOMPRESSION DISK I/O WRITE TIME: " << totalDecompressTime << std::endl;
+// 	std::cout << "DECOMPRESSION DISK I/O READ TIME: " << totalDecompressDiskReadTime << std::endl;
+// 	fclose(fdecomp);
+//       }
+//     }
     if (useCUDA)
       gpuCode::releaseCard();
     return 0;
@@ -181,7 +182,10 @@ void decompressFromFile(std::string filename){
     totalDecompressDiskReadTime += timer::toc();
     uint32_t chunkSize = numElements/numBlocks;
     //write the IV to decompressed file:
-    gpuCode::decompressor::initDecompressor((float*)ts,numElements);
+    if (useCUDA)
+      gpuCode::decompressor::initDecompressor((float*)ts,numElements);
+    else
+      cpuCode::decompressor::initDecompressor((float*)ts,numElements);
     
     timer::tic();
     fwrite(ts,sizeof(uint32_t),numElements,fdecomp);
@@ -209,7 +213,11 @@ void decompressFromFile(std::string filename){
 	fread(compressedResiduals[i],sizeof(uint32_t),compressedResidualIntCount,compressedFile);
 	totalDecompressDiskReadTime += timer::toc();
       }
-      gpuCode::decompressor::decompressData(numElements,numBlocks,chunkSizes,
+      if (useCUDA)
+	gpuCode::decompressor::decompressData(numElements,numBlocks,chunkSizes,
+ 					 compressedResiduals,compressedPrefixes,decompressCallback);
+      else
+	cpuCode::decompressor::decompressData(numElements,numBlocks,chunkSizes,
  					 compressedResiduals,compressedPrefixes,decompressCallback);
       //free residual and prefix stores:
       for (uint32_t i = 0; i < numBlocks; ++i){
@@ -220,8 +228,14 @@ void decompressFromFile(std::string filename){
       delete [] compressedPrefixes;
       delete [] chunkSizes;
     }
-    totalDecompressTime += gpuCode::decompressor::getAccumulatedRunTimeSinceInit();
-    gpuCode::decompressor::releaseResources();
+    if (useCUDA){
+      totalDecompressTime += gpuCode::decompressor::getAccumulatedRunTimeSinceInit();
+      gpuCode::decompressor::releaseResources();
+    }
+    else{
+      totalDecompressTime += cpuCode::decompressor::getAccumulatedRunTimeSinceInit();
+      cpuCode::decompressor::releaseResources();
+    }  
     fclose(compressedFile);
     delete[] ts;
     std::cout << "FINISHED DECOMPRESSION ROUTINE FROM FILE" << std::endl;
@@ -272,8 +286,14 @@ void compressCallback(uint32_t elementCount, uint32_t * compressedResidualsIntCo
     }
     else{
       if (!skipDecompression){ //decompression from file only decompresses at the end
-	gpuCode::decompressor::decompressData(elementCount,chunkCount,chunkSizes,
+	if (useCUDA){
+	  gpuCode::decompressor::decompressData(elementCount,chunkCount,chunkSizes,
  					 compressedResiduals,compressedPrefixes,decompressCallback);
+	}
+	else {
+	  cpuCode::decompressor::decompressData(elementCount,chunkCount,chunkSizes,
+ 					 compressedResiduals,compressedPrefixes,decompressCallback);
+	}
       }
     }
 }
@@ -287,10 +307,15 @@ void processStride(const astroReader::stride & data){
     data.getTimeStampData(0,ts);
     for (uint32_t i = 1; i < memoryScaling; ++i)
       memcpy(ts+i*data.getTimeStampSize(),ts,data.getTimeStampSize()*sizeof(float));
-    gpuCode::compressor::initCompressor(ts,tsSize);
-    if (!writeStream)
-      gpuCode::decompressor::initDecompressor(ts,tsSize);
-    
+    if (useCUDA){
+      gpuCode::compressor::initCompressor(ts,tsSize);
+      if (!writeStream)
+	gpuCode::decompressor::initDecompressor(ts,tsSize);
+    } else {
+      cpuCode::compressor::initCompressor(ts,tsSize);
+      if (!writeStream)
+	cpuCode::decompressor::initDecompressor(ts,tsSize);
+    }
     timer::tic();
     if (writeStream){
       fwrite(&tsSize,sizeof(uint32_t),1,fcomp);  //number of elements
@@ -305,14 +330,27 @@ void processStride(const astroReader::stride & data){
         data.getTimeStampData(t,ts);
 	for (uint32_t i = 1; i < memoryScaling; ++i)
 	  memcpy(ts+i*data.getTimeStampSize(),ts,data.getTimeStampSize()*sizeof(float));
-        gpuCode::compressor::compressData(ts,tsSize,compressCallback);
+	if (useCUDA)
+	  gpuCode::compressor::compressData(ts,tsSize,compressCallback);
+	else
+	  cpuCode::compressor::compressData(ts,tsSize,compressCallback);
     }
-    totalCompressTime += gpuCode::compressor::getAccumulatedRunTimeSinceInit();  
-    totalCompressSize += gpuCode::compressor::getAccumulatedCompressedDataSize();
-    gpuCode::compressor::releaseResources();
-    if (!writeStream){
-      totalDecompressTime += gpuCode::decompressor::getAccumulatedRunTimeSinceInit();
-      gpuCode::decompressor::releaseResources();
+    if (useCUDA) {
+      totalCompressTime += gpuCode::compressor::getAccumulatedRunTimeSinceInit();  
+      totalCompressSize += gpuCode::compressor::getAccumulatedCompressedDataSize();
+      gpuCode::compressor::releaseResources();
+      if (!writeStream){
+	totalDecompressTime += gpuCode::decompressor::getAccumulatedRunTimeSinceInit();
+	gpuCode::decompressor::releaseResources();
+      }
+    } else {
+      totalCompressTime += cpuCode::compressor::getAccumulatedRunTimeSinceInit();  
+      totalCompressSize += cpuCode::compressor::getAccumulatedCompressedDataSize();
+      cpuCode::compressor::releaseResources();
+      if (!writeStream){
+	totalDecompressTime += cpuCode::decompressor::getAccumulatedRunTimeSinceInit();
+	cpuCode::decompressor::releaseResources();
+      }
     }
     delete[] ts;
 }
