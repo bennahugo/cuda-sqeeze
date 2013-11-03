@@ -1,0 +1,14 @@
+COMPILE:
+Ensure cmake is installed
+create a directory "CompressionStreamer/build
+cd to build
+now type cmake ../
+cmake will find required packages and generate a make file
+now type make
+the project should be compiled: run it using the path to the MeerKAT h5 file, check main.cpp for other flags
+
+P.S to run with a different version of the compressor/decompressor you need to change the library
+build target in Compressor/CMakeLists.txt
+P.S if you want SSE + XOP support you will simply need to uncomment the line in Compressor/CMakeLists.txt
+
+
