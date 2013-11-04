@@ -2,21 +2,20 @@
 <h2>Zero-Length Encoding</h2>
 <h3>Motivations &amp; Aims</h3>
 <p>
-	The third implemented algorithm will be Zero-Length Encoding, a derivative of Run-Length Encoding, which I will investigate.
-	<br />
-	<br />
-	Zero-Length Encoding is basically run-length encoding, just performed on the binary representation of data. In Zero-Length Encoding you run through the data and replace sections of the binary stream where there are multiple 0s or 1s with the number of repetitions and what is repeating, Eg. 1000001 becomes 1(5)01. where the (5) is a tag to say it is a number representation and the 5 to tell how many 0s there are. This is a viable option because the data samples we receive are skewed towards the least-significant bits.
-	<br />
-	<br />
-	This algorithm should be tweaked to efficiently handle the various patterns the data will follow, which are dependent on the number of dishes in use for a particular observation and the spectrum being captured.
-	<br />
-	<br />
-	Again, a SSE- and AVX-enabled CPU version will be done, followed by a GPU-optimised implementation.
-	<br />
-	<br />
-	This allows for a cohesive comparison of the different methods, excluding Arithmetic Coding which was shown in practice (by our supervisors, et al.) to provide insufficient throughput for our purposes in 2012.
-</p>
+Zero-Length Encoding is a basic form of run-length encoding performed on the binary representation of data. In Zero-Length Encoding, the data is run through and replace sections of the binary stream where there are multiple 0s or 1s with the number of repetitions and what is repeating, Eg. 1000001 becomes 1(5)01. where the (5) is a tag to indicate a repitition representation and the 5 denotes the number of zeroes. This is a viable option because the data samples we receive are skewed towards the least-significant bits and, in fact, contain large numbers of 24- to 32-bit zero runs.
+</p></p>
+<ul><li><em>Throughput:</em> A line-rate of 36-40 Gb/s (or around 5GB/s) is achieved. This corresponds to the bandwidth on the network and storage subsystems at the SKA; and</li><li><em>Compression Ratio:</em>A compression ratio comparable to general compression utilities' (or at least with two significant digits'-worth of compression in the worst case.)</li></ul>
 
+<p>Given the nature of this algorithm, the first aim was prioritised over the second, in the knowledge that the second may not be attainable.</p>
+
+<p>It should be noted that unfavourable data-sets will lead to inflation of data instead of compression. Given the limitation on selection of symbols, this could result in a 200%+16 byte inflation. However, given the operational reaction at the SKA observation nodes to large values (``blowouts'') during observations (either nullification or exclusion of data), this will have a negligible effect on data processed.</p>
 <h3>Implementation</h3>
+<p>By blocking the input data into regularly-sized blocks, it is trivial to parallelize the implementation. This allows for an arbitrary number of concurrent threads to operate piecewise on the input stream.</p>
+<p>The chief concern for the output is ensuring that the threads emit data coherently. This is ensured by a block-wise header encoding the size and sequence number. These can be read sequentially from disk (although the blocks do not need to be written or read in-sequence).</p>
+<p>An infrequently used character (with binary representation of all-ones) is used to denote a run marker; this chosen marker is confirmed by frequency analysis on the raw sample data files to be at most as frequently occurring as a random 8-bit sequence. Unfortunately, no candidate for least-frequently used sequence is identifiable across multiple data sets (nor is it possible to determine this frequency before selecting a marker).</p>
+<p>While the block-size per processing core is tunable, little variation is seen in throughput when adjusting block-size. The largest impact is on memory consumption, since the threading-model requires maximally 3-times the block-size of primary memory per thread (in case of full inflation).</p> 
+<p>Both throughput and memory consumption metrics compare favourably to sampled iterations of parallel bzip2 (pbzip2), which was the fastest traditional algorithm measured.</p>
 <h3>Results</h3>
-<p>Call Alice (when she was just small)</p>
+<p>The multithreaded CPU version achieves the targeted 5GB/s throughput using 16-cores for both compression and decompression. The compression rates are the lowest of the sampled compression algorithms (Zero-Length Encoding, Predictive Encoding, Huffman Encoding), which is as expected at the onset of the project.</p>
+<p>This makes it suited to compression over the network or as a shim for disk I/O, but it is not a good compression algorithm for long-term storage, since it would not even negate the inflation from the HDF5 metadata stored.</p>
+<p>Of the sampled compression algorithms, this is the least processing intensive and the fastest algorithm over a given data-set.</p>
